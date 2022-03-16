@@ -1,0 +1,373 @@
+// Copyright 2022 The Fleetbench Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto2";
+
+package fleetbench;
+
+message M437 {
+  optional bytes f1 = 2;
+  repeated bytes f2 = 3;
+  optional bytes f3 = 4;
+  optional bytes f4 = 5;
+  optional bytes f5 = 6;
+  optional bytes f6 = 11;
+  optional bytes f7 = 13;
+  message M438 {
+    optional bytes f1 = 1;
+    message M439 {
+      optional bytes f1 = 1;
+      message M440 {
+        optional bytes f1 = 9;
+        optional bytes f2 = 10;
+        optional string f3 = 11;
+      }
+      optional M440 f2 = 2;
+    }
+    optional M439 f2 = 2;
+    repeated bytes f3 = 4;
+    message M441 {
+      message M442 {
+        optional bytes f1 = 1;
+      }
+      optional M442 f1 = 1;
+      repeated bytes f2 = 2;
+    }
+    optional M441 f4 = 6;
+    optional bytes f5 = 7;
+    message M443 {
+      repeated string f1 = 8;
+      optional bytes f2 = 10;
+      optional int64 f3 = 11;
+      repeated int32 f4 = 12;
+      repeated int32 f5 = 13;
+      repeated bytes f6 = 15;
+      message M444 {
+        message M445 {
+          optional bytes f1 = 1;
+          optional bytes f2 = 3;
+        }
+        optional M445 f1 = 1;
+        optional int32 f2 = 2;
+      }
+      optional M444 f7 = 17;
+      repeated float f8 = 19;
+      repeated bytes f9 = 20;
+      repeated float f10 = 21;
+      optional string f11 = 22;
+    }
+    optional M443 f6 = 8;
+    optional bytes f7 = 9;
+    optional bytes f8 = 10;
+    optional bytes f9 = 11;
+    message M446 {
+      optional bytes f1 = 1;
+    }
+    optional M446 f10 = 12;
+    message M447 {
+      optional string f1 = 1;
+      message M448 {
+        repeated sint32 f1 = 1;
+        optional bytes f2 = 3;
+        optional bytes f3 = 4;
+        optional string f4 = 11;
+        repeated bytes f5 = 12;
+        optional string f6 = 13;
+        optional bytes f7 = 14;
+        optional float f8 = 15;
+        message M449 {
+          optional bytes f1 = 1;
+          optional int32 f2 = 2;
+        }
+        optional M449 f9 = 16;
+        optional int32 f10 = 19;
+        optional bool f11 = 20;
+        optional bytes f12 = 22;
+        message M450 {
+          optional bytes f1 = 1;
+        }
+        optional M450 f13 = 23;
+      }
+      optional M448 f2 = 2;
+    }
+    optional M447 f11 = 13;
+    message M451 {
+      optional string f1 = 2;
+      message M452 {
+        message M453 {
+          optional bytes f1 = 1;
+          optional bytes f2 = 2;
+          optional bytes f3 = 4;
+        }
+        optional M453 f1 = 1;
+        message M454 {
+          optional bytes f1 = 3;
+          optional bytes f2 = 4;
+          repeated bytes f3 = 8;
+        }
+        optional M454 f2 = 2;
+        optional string f3 = 3;
+      }
+      optional M452 f2 = 3;
+    }
+    optional M451 f12 = 14;
+    message M455 {
+      optional string f1 = 2;
+      repeated string f2 = 4;
+      optional string f3 = 5;
+      optional string f4 = 6;
+    }
+    optional M455 f13 = 16;
+  }
+  optional M438 f8 = 14;
+  message M456 {
+    optional bytes f1 = 1;
+    message M457 {
+      optional bytes f1 = 1;
+      message M458 {
+        optional bytes f1 = 1;
+        optional string f2 = 2;
+        optional int32 f3 = 9;
+        enum E1 {
+          E1_CONST_1 = 66;
+          E1_CONST_2 = 2789;
+          E1_CONST_3 = 77;
+          E1_CONST_4 = 20;
+          E1_CONST_5 = 26;
+        }
+        optional E1 f4 = 10;
+        repeated bytes f5 = 11;
+        enum E2 {
+          E2_CONST_1 = 1;
+          E2_CONST_2 = 35;
+          E2_CONST_3 = 12;
+          E2_CONST_4 = 47;
+          E2_CONST_5 = 58;
+        }
+        optional E2 f6 = 13;
+        optional bytes f7 = 15;
+        optional bytes f8 = 16;
+      }
+      optional M458 f2 = 2;
+    }
+    optional M457 f2 = 2;
+    message M459 {
+      message M460 {
+        optional string f1 = 2;
+        repeated bytes f2 = 6;
+        optional bytes f3 = 7;
+        repeated int32 f4 = 8;
+        optional bytes f5 = 16;
+        message M461 {
+          repeated sint32 f1 = 5;
+          optional bytes f2 = 6;
+          optional bytes f3 = 7;
+          message M462 {
+            optional bytes f1 = 1;
+            optional string f2 = 2;
+          }
+          optional M462 f4 = 8;
+          optional bytes f5 = 11;
+        }
+        optional M461 f6 = 23;
+      }
+      optional M460 f1 = 2;
+      repeated bytes f2 = 3;
+    }
+    optional M459 f3 = 3;
+    message M463 {
+      optional bytes f1 = 1;
+    }
+    optional M463 f4 = 5;
+  }
+  optional M456 f9 = 16;
+  message M464 {
+    message M465 {
+      repeated int32 f1 = 3;
+      optional bytes f2 = 4;
+      message M466 {
+        optional bytes f1 = 1;
+        repeated string f2 = 2;
+        optional bytes f3 = 3;
+        message M467 {
+          optional bytes f1 = 1;
+          message M468 {
+            repeated bytes f1 = 1;
+            enum E1 {
+              E1_CONST_1 = 6;
+              E1_CONST_2 = 104;
+              E1_CONST_3 = 105;
+              E1_CONST_4 = 94;
+              E1_CONST_5 = 95;
+            }
+            optional E1 f2 = 2;
+            repeated float f3 = 3;
+            optional bytes f4 = 4;
+          }
+          optional M468 f2 = 2;
+        }
+        optional M467 f4 = 7;
+      }
+      optional M466 f3 = 5;
+    }
+    optional M465 f1 = 2;
+    optional bytes f2 = 3;
+    message M469 {
+      optional string f1 = 1;
+    }
+    optional M469 f3 = 5;
+    message M470 {
+      message M471 {
+        optional bytes f1 = 1;
+        message M472 {
+          optional bytes f1 = 1;
+          optional bytes f2 = 2;
+          optional string f3 = 5;
+          message M473 {
+            optional int32 f1 = 3;
+            message M474 {
+              message M475 {
+                optional bytes f1 = 2;
+                optional bytes f2 = 6;
+                message M476 {
+                  message M477 {
+                    repeated bytes f1 = 1;
+                    optional bytes f2 = 2;
+                    message M478 {
+                      optional int64 f1 = 2;
+                    }
+                    optional M478 f3 = 3;
+                    optional bytes f4 = 4;
+                    optional bytes f5 = 6;
+                  }
+                  optional M477 f1 = 1;
+                  optional string f2 = 2;
+                }
+                optional M476 f3 = 8;
+                message M479 {
+                  optional float f1 = 1;
+                }
+                optional M479 f4 = 11;
+              }
+              optional M475 f1 = 1;
+              optional bytes f2 = 7;
+              optional bytes f3 = 8;
+              optional int64 f4 = 9;
+              optional int64 f5 = 10;
+              repeated bytes f6 = 18;
+              optional bytes f7 = 19;
+              message M480 {
+                optional float f1 = 4;
+                message M481 {
+                  optional uint64 f1 = 2;
+                }
+                optional M481 f2 = 5;
+                optional bytes f3 = 6;
+                optional bytes f4 = 7;
+                optional float f5 = 8;
+                optional bytes f6 = 11;
+              }
+              optional M480 f8 = 25;
+            }
+            optional M474 f2 = 5;
+            message M482 {
+              optional bytes f1 = 3;
+              message M483 {
+                optional bytes f1 = 2;
+                optional bytes f2 = 3;
+                repeated bytes f3 = 4;
+                optional bytes f4 = 5;
+                optional bytes f5 = 6;
+                optional string f6 = 8;
+                repeated int32 f7 = 9;
+                optional uint32 f8 = 10;
+                optional bytes f9 = 11;
+              }
+              optional M483 f2 = 4;
+            }
+            optional M482 f3 = 7;
+          }
+          optional M473 f4 = 7;
+        }
+        optional M472 f2 = 2;
+        optional bytes f3 = 4;
+      }
+      optional M471 f1 = 4;
+      message M484 {
+        message M485 {
+          optional bytes f1 = 1;
+          optional bytes f2 = 4;
+        }
+        optional M485 f1 = 2;
+        repeated bytes f2 = 5;
+        message M486 {
+          optional bytes f1 = 1;
+          optional bytes f2 = 2;
+        }
+        optional M486 f3 = 7;
+        optional bytes f4 = 10;
+        repeated float f5 = 11;
+        message M487 {
+          optional bool f1 = 2;
+          optional bytes f2 = 3;
+          optional bool f3 = 4;
+        }
+        optional M487 f6 = 12;
+        message M488 {
+          optional int32 f1 = 1;
+          message M489 {
+            optional bytes f1 = 1;
+            message M490 {
+              optional bytes f1 = 1;
+              optional bytes f2 = 2;
+              optional int64 f3 = 3;
+              optional bytes f4 = 4;
+              optional string f5 = 5;
+            }
+            optional M490 f2 = 4;
+            optional string f3 = 8;
+          }
+          optional M489 f2 = 2;
+          message M491 {
+            optional bytes f1 = 1;
+            optional bytes f2 = 2;
+            repeated sint32 f3 = 7;
+            repeated int32 f4 = 8;
+            optional string f5 = 9;
+          }
+          optional M491 f3 = 3;
+          repeated bytes f4 = 4;
+          optional bytes f5 = 5;
+          optional bytes f6 = 6;
+          optional string f7 = 8;
+          optional int32 f8 = 12;
+          optional string f9 = 13;
+        }
+        optional M488 f7 = 13;
+        optional int64 f8 = 14;
+      }
+      optional M484 f2 = 5;
+      optional int64 f3 = 7;
+    }
+    optional M470 f4 = 6;
+    message M492 {
+      optional bytes f1 = 1;
+    }
+    optional M492 f5 = 7;
+    repeated bytes f6 = 8;
+  }
+  optional M464 f10 = 19;
+  optional bytes f11 = 21;
+  optional int64 f12 = 26;
+}
