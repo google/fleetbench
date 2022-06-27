@@ -1,62 +1,54 @@
 # Fleetbench
 
-Fleetbench is a benchmarking suite for Google workloads.
-It's a [portmanteau](https://en.wikipedia.org/wiki/Portmanteau) of
+Fleetbench is a benchmarking suite for Google workloads. It's a
+[portmanteau](https://en.wikipedia.org/wiki/Portmanteau) of
 "[fleet](https://services.google.com/fh/files/misc/fleet_management_at_scale_white_paper.pdf)"
-and "benchmark".
-It is meant for use by chip vendors, compiler researchers, and others
-interested in making performance optimizations beneficial to workloads similar
-to Google's.
-This repository contains the Fleetbench C++ code.
-
-[TOC]
+and "benchmark". It is meant for use by chip vendors, compiler researchers, and
+others interested in making performance optimizations beneficial to workloads
+similar to Google's. This repository contains the Fleetbench C++ code.
 
 ## Overview
 
 Fleetbench is a benchmarking suite that consists of a curated set of
-microbenchmarks for hot functions across Google's fleet.
-The data set distributions it uses for executing the benchmarks are derived
-from data collected in production.
+microbenchmarks for hot functions across Google's fleet. The data set
+distributions it uses for executing the benchmarks are derived from data
+collected in production.
 
-IMPORTANT: The benchmarking suite is not complete at this time.
-As described in [this paper](https://research.google/pubs/pub44271/), a
-significant portion of compute is spent in code common to many applications -
-the so-called ‘Data Center Tax’.
-This benchmark at `v0.1` represents subset of core libraries used across the
-fleet.
-Future releases will continue to increase this coverage.
-The goal is to expand coverage iteratively and keep distributions up-to-date,
-so always use its version at `HEAD`.
+IMPORTANT: The benchmarking suite is not complete at this time. As described in
+[this paper](https://research.google/pubs/pub44271/), a significant portion of
+compute is spent in code common to many applications - the so-called ‘Data
+Center Tax’. This benchmark at `v0.1` represents subset of core libraries used
+across the fleet. Future releases will continue to increase this coverage. The
+goal is to expand coverage iteratively and keep distributions up-to-date, so
+always use its version at `HEAD`.
 
 For more information, see:
 
-* [Versioning](#versioning) on the details of Fleetbench's releases.
-* [Future Work](#future-work) section on all that we plan to add.
-* [Setup](#setup) for how to run the benchmark.
-
+*   [Versioning](#versioning) on the details of Fleetbench's releases.
+*   [Future Work](#future-work) section on all that we plan to add.
+*   [Setup](#setup) for how to run the benchmark.
 
 ## Benchmark fidelity
 
-Benchmark fidelity is an important consideration in building this suite.
-There are 3 levels of fidelity that we consider:
+Benchmark fidelity is an important consideration in building this suite. There
+are 3 levels of fidelity that we consider:
 
-1. The suite exercises the same functionality as production.
-1. The suite's performance counters match production.
-1. An optimization's impact on the suite matches the impact on production.
+1.  The suite exercises the same functionality as production.
+1.  The suite's performance counters match production.
+1.  An optimization's impact on the suite matches the impact on production.
 
 The goal of the suite for Y22 is to achieve the first level of fidelity.
 
 ## Versioning
 
-Fleetbench uses [semantic versioning](http://semver.org) for its releases,
-where `PATCH` versions will be used for bug fixes,
-`MINOR` for updates to distributions and category coverage,
-and `MAJOR` for substantial changes to the benchmarking suite.
-All releases will be tagged, and the suite can be built and run at any version
-of the tag.
+Fleetbench uses [semantic versioning](http://semver.org) for its releases, where
+`PATCH` versions will be used for bug fixes, `MINOR` for updates to
+distributions and category coverage, and `MAJOR` for substantial changes to the
+benchmarking suite. All releases will be tagged, and the suite can be built and
+run at any version of the tag.
 
-If you're starting out, authors recommend you always use the latest version
-at HEAD only.
+If you're starting out, authors recommend you always use the latest version at
+HEAD only.
 
 ## Setup
 
@@ -109,8 +101,8 @@ bazel build -c opt fleetbench/swissmap:hot_swissmap_benchmark
 bazel-bin/fleetbench/swissmap/hot_swissmap_benchmark --benchmark_filter=all
 ```
 
-NOTE: the suite will be expanded with the ability to execute all
-benchmarks with one target.
+NOTE: the suite will be expanded with the ability to execute all benchmarks with
+one target.
 
 WARNING: MacOS and Windows have not been tested, and are not currently supported
 by Fleetbench.
@@ -119,14 +111,13 @@ by Fleetbench.
 
 Potential areas of future work include:
 
-* Increasing the set of benchmarks included in the suite to capture more of the
-  range of code executed by google workloads.
-* Generate benchmarking score.
-* Update data distributions based on new fleet measurements.
-* Rewrite individual components with macrobenchmarks.
-* Extend the benchmarking suite to allow for drop-in replacement of equivalent
-  implementations for each category of workloads.
-
+*   Increasing the set of benchmarks included in the suite to capture more of
+    the range of code executed by google workloads.
+*   Generate benchmarking score.
+*   Update data distributions based on new fleet measurements.
+*   Rewrite individual components with macrobenchmarks.
+*   Extend the benchmarking suite to allow for drop-in replacement of equivalent
+    implementations for each category of workloads.
 
 ## License
 
