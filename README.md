@@ -9,8 +9,6 @@ interested in making performance optimizations beneficial to workloads similar
 to Google's.
 This repository contains the Fleetbench C++ code.
 
-[TOC]
-
 ## Overview
 
 Fleetbench is a benchmarking suite that consists of a curated set of
