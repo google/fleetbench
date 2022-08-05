@@ -341,8 +341,10 @@ BENCHMARK_TEMPLATE(BM_EraseInsert_Hot, ::absl::node_hash_set, 64)
 //   set.insert(key1);
 //   ...
 //   set.insert(keyN);
-template <class Set>
+template <template <class...> class SetT, size_t kValueSizeT>
 static void BM_InsertManyOrdered_Hot(benchmark::State& state) {
+  using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
+
   // The higher the value, the less contribution std::shuffle makes. The price
   // is longer benchmarking time. With 64 std::shuffle adds around 0.3 ns to
   // the benchmark results.
@@ -369,14 +371,28 @@ static void BM_InsertManyOrdered_Hot(benchmark::State& state) {
   }
 }
 
-BENCHMARK_TEMPLATE(BM_InsertManyOrdered_Hot, ::absl::flat_hash_set<uint32_t>)
+BENCHMARK_TEMPLATE(BM_InsertManyOrdered_Hot, ::absl::flat_hash_set, 4)
     ->ArgNames({"set_size", "density"})
     ->Ranges({
         {1 << 4, 1 << 20},
         {static_cast<int64_t>(Density::kMin),
          static_cast<int64_t>(Density::kMax)},
     });
-BENCHMARK_TEMPLATE(BM_InsertManyOrdered_Hot, ::absl::node_hash_set<uint32_t>)
+BENCHMARK_TEMPLATE(BM_InsertManyOrdered_Hot, ::absl::flat_hash_set, 64)
+    ->ArgNames({"set_size", "density"})
+    ->Ranges({
+        {1 << 4, 1 << 20},
+        {static_cast<int64_t>(Density::kMin),
+         static_cast<int64_t>(Density::kMax)},
+    });
+BENCHMARK_TEMPLATE(BM_InsertManyOrdered_Hot, ::absl::node_hash_set, 4)
+    ->ArgNames({"set_size", "density"})
+    ->Ranges({
+        {1 << 4, 1 << 20},
+        {static_cast<int64_t>(Density::kMin),
+         static_cast<int64_t>(Density::kMax)},
+    });
+BENCHMARK_TEMPLATE(BM_InsertManyOrdered_Hot, ::absl::node_hash_set, 64)
     ->ArgNames({"set_size", "density"})
     ->Ranges({
         {1 << 4, 1 << 20},
@@ -397,8 +413,10 @@ BENCHMARK_TEMPLATE(BM_InsertManyOrdered_Hot, ::absl::node_hash_set<uint32_t>)
 // What we really need is to clear the container without releasing memory. For
 // most containers this can be expressed as `set.clear()` but for SwissTable
 // containers this call can release memory.
-template <class Set>
+template <template <class...> class SetT, size_t kValueSizeT>
 static void BM_InsertManyUnordered_Hot(benchmark::State& state) {
+  using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
+
   // The higher the value, the less contribution std::shuffle makes. The price
   // is longer benchmarking time. With 64 std::shuffle adds around 0.3 ns to
   // the benchmark results.
@@ -423,14 +441,28 @@ static void BM_InsertManyUnordered_Hot(benchmark::State& state) {
   }
 }
 
-BENCHMARK_TEMPLATE(BM_InsertManyUnordered_Hot, ::absl::flat_hash_set<uint32_t>)
+BENCHMARK_TEMPLATE(BM_InsertManyUnordered_Hot, ::absl::flat_hash_set, 4)
     ->ArgNames({"set_size", "density"})
     ->Ranges({
         {1 << 4, 1 << 20},
         {static_cast<int64_t>(Density::kMin),
          static_cast<int64_t>(Density::kMax)},
     });
-BENCHMARK_TEMPLATE(BM_InsertManyUnordered_Hot, ::absl::node_hash_set<uint32_t>)
+BENCHMARK_TEMPLATE(BM_InsertManyUnordered_Hot, ::absl::flat_hash_set, 64)
+    ->ArgNames({"set_size", "density"})
+    ->Ranges({
+        {1 << 4, 1 << 20},
+        {static_cast<int64_t>(Density::kMin),
+         static_cast<int64_t>(Density::kMax)},
+    });
+BENCHMARK_TEMPLATE(BM_InsertManyUnordered_Hot, ::absl::node_hash_set, 4)
+    ->ArgNames({"set_size", "density"})
+    ->Ranges({
+        {1 << 4, 1 << 20},
+        {static_cast<int64_t>(Density::kMin),
+         static_cast<int64_t>(Density::kMax)},
+    });
+BENCHMARK_TEMPLATE(BM_InsertManyUnordered_Hot, ::absl::node_hash_set, 64)
     ->ArgNames({"set_size", "density"})
     ->Ranges({
         {1 << 4, 1 << 20},
