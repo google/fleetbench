@@ -43,9 +43,9 @@ http_archive(
 # TCMalloc
 http_archive(
     name = "com_google_tcmalloc",
-    urls = ["https://github.com/google/tcmalloc/archive/0ccc0b30e23d0f3b02d06571327623db2410bba1.zip"],
-    strip_prefix = "tcmalloc-0ccc0b30e23d0f3b02d06571327623db2410bba1",
-    sha256 = "7ffe0cd7696aa495aa708a4d93c15f06f4e31cb97de7610e8e056e9287e5a92d",
+    urls = ["https://github.com/google/tcmalloc/archive/48808681a9f38e974b49619a126f6f949ff59520.zip"],
+    strip_prefix = "tcmalloc-48808681a9f38e974b49619a126f6f949ff59520",
+    sha256 = "18bde75174866059a8db37dc42a921192b9182f57e7900a66d9f26cdd72599af",
 )
 
 # Dependencies of TCMalloc
