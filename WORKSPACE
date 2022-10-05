@@ -18,10 +18,10 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # Abseil
 http_archive(
-    name = "com_google_absl",  # 2022-03-04T15:22:54Z
-    urls = ["https://github.com/abseil/abseil-cpp/archive/04bde89e5cb33bf4a714a5496fac715481fc4831.zip"],
-    strip_prefix = "abseil-cpp-04bde89e5cb33bf4a714a5496fac715481fc4831",
-    sha256 = "92d469a1a652fd1944398e560bd0d92ee8e3affbd61ed41fca89bb624b59109e",
+    name = "com_google_absl", # 2022-10-05
+    urls = ["https://github.com/abseil/abseil-cpp/archive/b3162b1da62711c663d0025e2eabeb83fd1f2728.zip"],
+    strip_prefix = "abseil-cpp-b3162b1da62711c663d0025e2eabeb83fd1f2728",
+    sha256 = "d5c91248c33269fcc7ab35897315a45cfa2c37abb4c6d4ed36cb5c82f366367a",
 )
 
 # Google benchmark.
