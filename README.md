@@ -118,6 +118,25 @@ Potential areas of future work include:
 *   Rewrite individual components with macrobenchmarks.
 *   Extend the benchmarking suite to allow for drop-in replacement of equivalent
     implementations for each category of workloads.
+    
+
+## FAQs
+
+1.  Q: How do I compare results of the two different runs of a benchmark, e.g.
+    contender vs baseline?
+
+    A: Fleetbench is using the
+    micro[benchmark framework](https://github.com/google/benchmark). Please
+    reference its documentation for comparing results across benchmark runs:
+    [link](https://github.com/google/benchmark/blob/main/docs/tools.md).
+
+1.  Q: How do I build the benchmark with FDO?
+
+    A: This is currently blocked on
+    [Bazel 6.0.0](https://github.com/bazelbuild/bazel/issues/16159) becoming
+    available. See
+    [Bazel FDO GH issue](https://github.com/bazelbuild/bazel/pull/13620) for
+    details.
 
 ## License
 
