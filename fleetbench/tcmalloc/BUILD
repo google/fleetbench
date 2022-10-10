@@ -1,8 +1,15 @@
+load("//fleetbench:tcmalloc_copts.bzl", "TCMALLOC_DEFAULT_COPTS")
+
+package(
+    default_visibility = ["//visibility:private"],
+)
+
 cc_library(
     name = "empirical",
     testonly = 1,
     srcs = ["empirical.cc"],
     hdrs = ["empirical.h"],
+    copts = TCMALLOC_DEFAULT_COPTS,
     deps = [
         "@com_google_absl//absl/algorithm:container",
         "@com_google_absl//absl/functional:function_ref",
@@ -18,6 +25,7 @@ cc_library(
 cc_test(
     name = "empirical_test",
     srcs = ["empirical_test.cc"],
+    copts = TCMALLOC_DEFAULT_COPTS,
     linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
@@ -33,6 +41,7 @@ cc_library(
     testonly = 1,
     srcs = ["empirical_distributions.cc"],
     hdrs = ["empirical_distributions.h"],
+    copts = TCMALLOC_DEFAULT_COPTS,
     deps = [
         ":empirical",
         "@com_google_absl//absl/types:span",

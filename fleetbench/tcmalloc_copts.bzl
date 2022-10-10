@@ -42,6 +42,6 @@ TCMALLOC_GCC_FLAGS = [
 ]
 
 TCMALLOC_DEFAULT_COPTS = select({
-    "//tcmalloc:llvm": TCMALLOC_LLVM_FLAGS,
+    "//fleetbench:llvm": TCMALLOC_LLVM_FLAGS,
     "//conditions:default": TCMALLOC_GCC_FLAGS,
 })
