@@ -178,9 +178,7 @@ class EmpiricalData {
   // Allocates ~(total_mem bytes / thread count) to put us in a "steady state".
   EmpiricalData(size_t seed, const absl::Span<const Entry> weights,
                 size_t total_mem, absl::FunctionRef<void*(size_t)> alloc,
-                absl::FunctionRef<void(void*, size_t)> dealloc,
-                bool record_and_replay_mode = false,
-                bool touch_allocated = false);
+                absl::FunctionRef<void(void*, size_t)> dealloc);
 
   ~EmpiricalData();
 
@@ -280,8 +278,6 @@ class EmpiricalData {
   std::vector<void**> death_object_pointers_;
   uint32_t birth_or_death_index_ = 0;
   uint32_t death_object_index_ = 0;
-
-  bool touch_allocated_;
 };
 
 using EmpiricalProfile = absl::Span<const EmpiricalData::Entry>;

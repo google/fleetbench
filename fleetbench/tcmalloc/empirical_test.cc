@@ -126,7 +126,7 @@ TEST(EmpiricalRecordAndReplay, Basic) {
   auto const& expected = dummy();
   absl::BitGen rng;
   EmpiricalData data(absl::Uniform<uint32_t>(rng), expected, kSize, alloc,
-                     sized_delete, /*record_and_replay_mode=*/true);
+                     sized_delete);
   size_t total_allocations = data.total_num_allocated();
   size_t total_bytes_allocated = data.total_bytes_allocated();
 
