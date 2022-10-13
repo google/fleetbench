@@ -29,15 +29,6 @@ namespace tcmalloc {
 
 namespace {
 
-inline void sized_delete(void* ptr, size_t size) {
-#ifdef __cpp_sized_deallocation
-  ::operator delete(ptr, size);
-#else
-  (void)size;
-  ::operator delete(ptr);
-#endif
-}
-
 void* alloc(size_t s) { return ::operator new(s); }
 
 using testing::Pointwise;
