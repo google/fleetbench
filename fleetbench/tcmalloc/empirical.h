@@ -71,7 +71,7 @@ class AdjustableSampler {
   // weights are all zeroes
   explicit AdjustableSampler(size_t n)
       : n_(NextPowerOfTwo(n)), tree_(2 * n_ - 1, 0) {
-    CHECK_GE(n, 1);
+    CHECK_GE(n, static_cast<size_t>(1));
   }
 
   explicit AdjustableSampler(const std::vector<double>& weights)
