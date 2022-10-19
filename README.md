@@ -124,7 +124,6 @@ Potential areas of future work include:
 *   Rewrite individual components with macrobenchmarks.
 *   Extend the benchmarking suite to allow for drop-in replacement of equivalent
     implementations for each category of workloads.
-    
 
 ## FAQs
 
@@ -143,6 +142,12 @@ Potential areas of future work include:
     available. See
     [Bazel FDO GH issue](https://github.com/bazelbuild/bazel/pull/13620) for
     details.
+
+1.  Q: My question isn't addressed here. How do I contact the development team?
+
+    A: Please see
+    [previous GH issues](https://github.com/google/fleetbench/issues) and file a
+    new one, if your question isn't addressed there.
 
 ## License
 
