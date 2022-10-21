@@ -92,7 +92,7 @@ bazel run -c opt fleetbench/proto:proto_benchmark -- --benchmark_min_time=30
 The TCMalloc's Empirical Driver benchmark can take ~1hr to run all benchmarks:
 
 ```
-bazel run -c opt fleetbench/tcmalloc:empirical_driver
+bazel run -c opt fleetbench/tcmalloc:empirical_driver -- --benchmark_counters_tabular=true
 ```
 
 To do build and execution of the benchmark in separate steps, run the commands

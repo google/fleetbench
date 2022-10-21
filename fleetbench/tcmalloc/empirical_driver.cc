@@ -403,19 +403,68 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
     threads.push_back(std::thread(&SimThread::Run, sim_threads[i].get()));
   }
 
+  // Initialize the counters.
+  size_t bytes = 0;
+  size_t allocations = 0;
+  size_t in_use;
+  size_t local;
+  size_t pageheap;
+  size_t released;
+  size_t waste;
+  size_t central;
+
   b.Block();
   // Block until all threads have precalculated the birth / death sequence.
   record_and_replay_barrier.Block();
 
-  while (state.KeepRunning()) {
-    // TODO(aysylu): record counters
+  for (auto _ : state) {
+    in_use = GetProp("generic.current_allocated_bytes");
+    local = GetProp("tcmalloc.local_bytes");
+    pageheap = GetProp("tcmalloc.pageheap_free_bytes");
+    released = GetProp("tcmalloc.pageheap_unmapped_bytes");
+    waste = GetProp("tcmalloc.external_fragmentation_bytes");
+    central = waste - local - pageheap;
   }
   for (const auto& st : sim_threads) {
     st->mark_thread_done();
+    bytes += st->total_bytes_allocated();
+    allocations += st->load_allocations();
   }
   for (auto& t : threads) {
     t.join();
   }
+
+  // Counters of total for the entire execution of the benchmark.
+  state.counters["SpikesBytes"] =
+      benchmark::Counter(spike_usage.value(), benchmark::Counter::kDefaults,
+                         benchmark::Counter::OneK::kIs1024);
+
+  // Bytes and allocations per second is most useful for applications.
+  state.counters["RateBytes"] = benchmark::Counter(
+      bytes, benchmark::Counter::kIsRate, benchmark::Counter::OneK::kIs1024);
+  state.counters["RateAllocations"] =
+      benchmark::Counter(allocations, benchmark::Counter::kIsRate,
+                         benchmark::Counter::OneK::kIs1000);
+  state.counters["SpikesRate"] =
+      benchmark::Counter(dead_spikes.value(), benchmark::Counter::kIsRate,
+                         benchmark::Counter::OneK::kIs1000);
+
+  // All other counters are per-iteration.
+  state.counters["AllocatedBytes"] = benchmark::Counter(
+      in_use, benchmark::Counter::kDefaults, benchmark::Counter::OneK::kIs1024);
+  state.counters["WasteTotal"] = benchmark::Counter(
+      waste, benchmark::Counter::kDefaults, benchmark::Counter::OneK::kIs1024);
+  state.counters["WasteLocal"] = benchmark::Counter(
+      local, benchmark::Counter::kDefaults, benchmark::Counter::OneK::kIs1024);
+  state.counters["WasteCentral"] =
+      benchmark::Counter(central, benchmark::Counter::kDefaults,
+                         benchmark::Counter::OneK::kIs1024);
+  state.counters["WastePageheap"] =
+      benchmark::Counter(pageheap, benchmark::Counter::kDefaults,
+                         benchmark::Counter::OneK::kIs1024);
+  state.counters["SpaceReleased"] =
+      benchmark::Counter(released, benchmark::Counter::kDefaults,
+                         benchmark::Counter::OneK::kIs1024);
 }
 
 // If it's necessary to benchmark with a multiplier of NumCPUs(), e.g. 2x, use:
