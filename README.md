@@ -113,6 +113,31 @@ one target.
 WARNING: MacOS and Windows have not been tested, and are not currently supported
 by Fleetbench.
 
+### Reducing run-to-run variance
+
+It is expected that there will be some variance in the reported CPU times across
+benchmark executions. The benchmark itself runs the same code, so the causes of
+the variance are mainly in the environment. The following is a non-exhaustive
+list of techniques that help with reducing run-to-run latency variance:
+
+*   Ensure no other workloads are running on the machine at the same time. Note
+    that this makes the environment less representative of production, where
+    multi-tenant workloads are common.
+*   Run the benchmark for longer, controlled with `--benchmark_min_time`.
+*   Run multiple repetitions of the benchmarks in one go, controlled with
+    `--benchmark_repetitions`.
+*   Recommended by the benchmarking framework
+    [here](https://github.com/google/benchmark/blob/main/docs/reducing_variance.md#reducing-variance-in-benchmarks):
+    *   Disable frequently scaling,
+    *   Bind the process to a core by setting its affinity,
+    *   Disable processor boosting,
+    *   Disable Hyperthreading/SMT (should not affect single-threaded
+        benchmarks).
+    *   NOTE: We do not recommend reducing the working set of the benchmark to
+        fit into L1 cache, contrary to the recommendations in the link, as it
+        would significantly reduce this benchmarking suite's representativeness.
+*   Disable memory randomization (ASLR).
+
 ## Future Work
 
 Potential areas of future work include:
