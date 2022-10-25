@@ -27,9 +27,9 @@ http_archive(
 # Google benchmark.
 http_archive(
     name = "com_google_benchmark",
-    urls = ["https://github.com/google/benchmark/archive/v1.6.1.zip"],
-    strip_prefix = "benchmark-1.6.1",
-    sha256 = "367e963b8620080aff8c831e24751852cffd1f74ea40f25d9cc1b667a9dd5e45",
+    urls = ["https://github.com/google/benchmark/archive/v1.7.0.zip"],
+    strip_prefix = "benchmark-1.7.0",
+    sha256 = "e0e6a0f2a5e8971198e5d382507bfe8e4be504797d75bb7aec44b5ea368fa100",
 )
 
 # GoogleTest/GoogleMock framework. Used by most unit tests.

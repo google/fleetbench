@@ -46,7 +46,7 @@ void* alloc(size_t s) { return ::operator new(s); }
 // The constants below represent the defaults in the benchmark construction
 // parameters.
 
-static constexpr size_t kBatch = 100;
+static constexpr int64_t kBatch = 100;
 // Total size of base heap.
 static constexpr uint64_t kBaseHeapSize = 16ul << 30;
 // Additional size of data allocated at program start, then freed before running
@@ -235,7 +235,7 @@ class SimThread {
 
   void RecordBirthsAndDeaths(EmpiricalData* load) {
     // Round number of births / deaths to record down to a multiple of kBatch.
-    size_t buffer_size = (kRecordAndReplayBufferSize / kBatch) * kBatch;
+    const int buffer_size = (kRecordAndReplayBufferSize / kBatch) * kBatch;
     for (int i = 0; i < buffer_size; ++i) {
       load->RecordNext();
     }
@@ -406,12 +406,12 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
   // Initialize the counters.
   size_t bytes = 0;
   size_t allocations = 0;
-  size_t in_use;
-  size_t local;
-  size_t pageheap;
-  size_t released;
-  size_t waste;
-  size_t central;
+  size_t in_use = 0;
+  size_t local = 0;
+  size_t pageheap = 0;
+  size_t released = 0;
+  size_t waste = 0;
+  size_t central = 0;
 
   b.Block();
   // Block until all threads have precalculated the birth / death sequence.
@@ -472,25 +472,35 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
 // NOTE: this will result in ~2 hour runtime for the benchmark with
 // --benchmark_filter=all.
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta)
-    ->Range(1, absl::base_internal::NumCPUs());
+    ->Range(1, absl::base_internal::NumCPUs())
+    ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBravo)
-    ->Range(1, absl::base_internal::NumCPUs());
+    ->Range(1, absl::base_internal::NumCPUs())
+    ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kCharlie)
-    ->Range(1, absl::base_internal::NumCPUs());
+    ->Range(1, absl::base_internal::NumCPUs())
+    ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kDelta)
-    ->Range(1, absl::base_internal::NumCPUs());
+    ->Range(1, absl::base_internal::NumCPUs())
+    ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kEcho)
-    ->Range(1, absl::base_internal::NumCPUs());
+    ->Range(1, absl::base_internal::NumCPUs())
+    ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kFoxtrot)
-    ->Range(1, absl::base_internal::NumCPUs());
+    ->Range(1, absl::base_internal::NumCPUs())
+    ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kMerced)
-    ->Range(1, absl::base_internal::NumCPUs());
+    ->Range(1, absl::base_internal::NumCPUs())
+    ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kSierra)
-    ->Range(1, absl::base_internal::NumCPUs());
+    ->Range(1, absl::base_internal::NumCPUs())
+    ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kSigma)
-    ->Range(1, absl::base_internal::NumCPUs());
+    ->Range(1, absl::base_internal::NumCPUs())
+    ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kUniform)
-    ->Range(1, absl::base_internal::NumCPUs());
+    ->Range(1, absl::base_internal::NumCPUs())
+    ->MinWarmUpTime(0.5);
 
 }  // namespace tcmalloc
 }  // namespace fleetbench

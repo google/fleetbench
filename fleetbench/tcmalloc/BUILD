@@ -61,6 +61,7 @@ cc_library(
 create_fleetbench_benchmark(
     name = "empirical_driver",
     srcs = ["empirical_driver.cc"],
+    benchmark_min_time = "1",
     deps = [
         ":empirical",
         ":empirical_distributions",
