@@ -341,6 +341,10 @@ void ProtoLifecycle::Run() {
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
+    Destroy(m437_other_messages_[i]);
+  }
+  std::shuffle(indices_.begin(), indices_.end(), GetRNG());
+  for (const auto& i : indices_) {
     M95_Get_F1(m95_messages_[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
@@ -509,6 +513,10 @@ void ProtoLifecycle::Run() {
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
+    Destroy(m95_other_messages_[i]);
+  }
+  std::shuffle(indices_.begin(), indices_.end(), GetRNG());
+  for (const auto& i : indices_) {
     Copy(m151_messages_[i], m151_other_messages_[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
@@ -526,6 +534,10 @@ void ProtoLifecycle::Run() {
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
     Destroy(m493_messages_[i]);
+  }
+  std::shuffle(indices_.begin(), indices_.end(), GetRNG());
+  for (const auto& i : indices_) {
+    Destroy(m493_other_messages_[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
