@@ -15,8 +15,8 @@
 #ifndef THIRD_PARTY_FLEETBENCH_PROTO_POPULATE_PROTOS_H_
 #define THIRD_PARTY_FLEETBENCH_PROTO_POPULATE_PROTOS_H_
 
-#include <string>
 #include <array>
+#include <string>
 
 #include "benchmark/benchmark.h"
 #include "fleetbench/proto/representative1.pb.h"
@@ -123,7 +123,7 @@ void Deserialize(M* message, std::string* serialized) {
 
 template <typename M>
 void Destroy(M* message) {
-  message->~M();
+  if (message->GetArena() == nullptr) delete message;
   benchmark::ClobberMemory();
 }
 
