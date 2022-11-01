@@ -55,3 +55,19 @@ create_fleetbench_benchmark(
         "@com_google_benchmark//:benchmark",
     ],
 )
+
+sh_test(
+    name = "hot_sanitizer_test",
+    size = "medium",
+    srcs = ["hot_sanitizer_test.sh"],
+    data = [":hot_swissmap_benchmark"],
+    deps = [],
+)
+
+sh_test(
+    name = "cold_sanitizer_test",
+    size = "medium",
+    srcs = ["cold_sanitizer_test.sh"],
+    data = [":cold_swissmap_benchmark"],
+    deps = [],
+)
