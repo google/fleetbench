@@ -175,3 +175,11 @@ create_fleetbench_benchmark(
         "@com_google_protobuf//:protobuf_lite",
     ],
 )
+
+sh_test(
+    name = "sanitizer_test",
+    size = "medium",
+    srcs = ["sanitizer_test.sh"],
+    data = [":proto_benchmark"],
+    deps = [],
+)
