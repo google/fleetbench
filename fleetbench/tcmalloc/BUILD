@@ -62,7 +62,7 @@ create_fleetbench_benchmark(
     name = "empirical_driver",
     srcs = ["empirical_driver.cc"],
     benchmark_filter = ".*DistributionProfile::(kBravo|kSierra).*",
-    benchmark_min_time = "1",
+    benchmark_min_time = "5",
     deps = [
         ":empirical",
         ":empirical_distributions",
