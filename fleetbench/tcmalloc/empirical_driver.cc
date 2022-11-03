@@ -476,7 +476,7 @@ BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta)
     ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBravo)
     ->Range(1, absl::base_internal::NumCPUs())
-    ->MinWarmUpTime(0.5);
+    ->MinWarmUpTime(2);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kCharlie)
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
