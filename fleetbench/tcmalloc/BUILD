@@ -88,3 +88,30 @@ cc_test(
         "@com_google_googletest//:gtest_main",
     ],
 )
+
+create_fleetbench_benchmark(
+    name = "empirical_driver_sanitizer_only",
+    srcs = ["empirical_driver.cc"],
+    benchmark_min_time = "0.1",
+    defines = ["SAN"],
+    deps = [
+        ":empirical",
+        ":empirical_distributions",
+        ":empirical_driver_lib",
+        "@com_google_absl//absl/base",
+        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_absl//absl/time",
+        "@com_google_benchmark//:benchmark",
+        "@com_google_tcmalloc//tcmalloc:malloc_extension",
+    ],
+)
+
+sh_test(
+    name = "sanitizer_test",
+    size = "enormous",
+    srcs = ["sanitizer_test.sh"],
+    data = [":empirical_driver_sanitizer_only"],
+    deps = [],
+)

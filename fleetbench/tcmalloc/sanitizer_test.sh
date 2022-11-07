@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# This file defines the skeleton of generated benchmark files. It contains
+# the includes, gunit benchmark code, and main entrypoint.
 
-# Same as TCMalloc .bazelrc
-build --cxxopt='-std=c++17'
+#!/bin/bash
 
-test --test_timeout=1500
+set -ex
 
-# Define the --config=asan-libfuzzer configuration.
-build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:libfuzzer
-build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer
-build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan
+"${TEST_SRCDIR}/com_google_fleetbench/fleetbench/tcmalloc/empirical_driver_sanitizer_only"
+
+echo "PASS"

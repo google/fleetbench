@@ -382,14 +382,15 @@ size_t GetProp(absl::string_view name) {
 
 }  // namespace
 
-template <DistributionProfile kProfile>
+template <DistributionProfile kProfile, uint64_t kHeapSize>
 static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
   //  Initialize the profile now before startup so we get early errors.
   Profile(kProfile);
 
   const size_t nthreads = state.range(0);
-  const size_t per_thread_size = kBaseHeapSize / nthreads;
-  const size_t per_thread_transient = kTransientHeapSize / nthreads;
+  const size_t per_thread_size = kHeapSize / nthreads;
+  const size_t per_thread_transient =
+      std::max(kTransientHeapSize / nthreads, 1ul);
 
   absl::Barrier b(nthreads + 1);
   absl::Barrier record_and_replay_barrier(nthreads + 1);
@@ -467,40 +468,57 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
                          benchmark::Counter::OneK::kIs1024);
 }
 
+#ifdef SAN
+// This benchmark is only useful for sanitizer tests.
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta,
+                   16ul << 10)
+    ->Arg(4);
+#else
 // If it's necessary to benchmark with a multiplier of NumCPUs(), e.g. 2x, use:
 // ->RangeMultiplier(2)->Range(1, 2 * absl::base_internal::NumCPUs())
 // NOTE: this will result in ~2 hour runtime for the benchmark with
 // --benchmark_filter=all.
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta,
+                   kBaseHeapSize)
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBravo)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBravo,
+                   kBaseHeapSize)
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(2);
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kCharlie)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kCharlie,
+                   kBaseHeapSize)
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kDelta)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kDelta,
+                   kBaseHeapSize)
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kEcho)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kEcho,
+                   kBaseHeapSize)
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kFoxtrot)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kFoxtrot,
+                   kBaseHeapSize)
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kMerced)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kMerced,
+                   kBaseHeapSize)
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kSierra)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kSierra,
+                   kBaseHeapSize)
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kSigma)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kSigma,
+                   kBaseHeapSize)
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kUniform)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kUniform,
+                   kBaseHeapSize)
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
+#endif
 
 }  // namespace tcmalloc
 }  // namespace fleetbench
