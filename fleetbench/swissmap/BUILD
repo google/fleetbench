@@ -49,6 +49,7 @@ create_fleetbench_benchmark(
     deps = [
         ":swissmap_benchmark",
         "//fleetbench/common",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/container:node_hash_set",
         "@com_google_absl//absl/random",

@@ -13,7 +13,11 @@
 // limitations under the License.
 
 #include <cstdint>
+#include <memory>
+#include <string>
+#include <utility>
 
+#include "absl/base/attributes.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/container/node_hash_set.h"
 #include "benchmark/benchmark.h"
@@ -469,5 +473,103 @@ BENCHMARK_TEMPLATE(BM_InsertManyUnordered_Hot, ::absl::node_hash_set, 64)
         {static_cast<int64_t>(Density::kMin),
          static_cast<int64_t>(Density::kMax)},
     });
+
+using IntTable = absl::flat_hash_set<int64_t>;
+using StrTable = absl::flat_hash_set<std::string>;
+
+void BM_EmptyConstructor(benchmark::State& state) {
+  for (auto unused : state) {
+    IntTable t;
+    benchmark::DoNotOptimize(t);
+  }
+}
+BENCHMARK(BM_EmptyConstructor);
+
+void BM_SizedConstructor(benchmark::State& state) {
+  constexpr int kElements = 64;
+  for (auto unused : state) {
+    IntTable t(kElements);
+    benchmark::DoNotOptimize(t);
+  }
+}
+BENCHMARK(BM_SizedConstructor);
+
+void BM_MoveConstructor(benchmark::State& state) {
+  // For now just measure a small cheap hash table since we
+  // are mostly interested in the overhead of type-erasure
+  // in resize(). We also use a custom allocator to disble
+  // leaking hashtable entries into /hashtablez since we
+  // do not destroy hash tables.
+  constexpr int kElements = 64;
+  class CustomAlloc : public std::allocator<int64_t> {
+   public:
+    bool unused_ = true;  // Force it to not look like std::allocator.
+  };
+  using CheapTable =
+      absl::flat_hash_set<int64_t, typename IntTable::hasher,
+                          typename IntTable::key_equal, CustomAlloc>;
+
+  // We swap back and forth between two slots, exactly one of which
+  // holds an CheapTable at any point.
+  union Space {
+    bool not_used;
+    CheapTable t;
+
+    Space() { not_used = true; }
+    ~Space() {}
+  };
+  Space space[2];
+  int current = 0;
+  new (&space[current].t) CheapTable();
+  for (int i = 0; i < kElements; i++) {
+    space[current].t.insert(i);
+  }
+
+  for (auto unused : state) {
+    // Move from current to the other slot.
+    const int other = 1 - current;
+    new (&space[other].t) CheapTable(std::move(space[current].t));
+    current = other;
+  }
+
+  space[current].t.CheapTable::~CheapTable();
+}
+BENCHMARK(BM_MoveConstructor);
+
+ABSL_ATTRIBUTE_NOINLINE void FillInts(IntTable* t, int n) {
+  for (int i = 0; i < n; i++) {
+    t->insert(i);
+  }
+}
+
+void BM_IntDestructor(benchmark::State& state) {
+  constexpr int kElements = 1;
+  for (auto unused : state) {
+    IntTable t;
+    FillInts(&t, kElements);
+    benchmark::DoNotOptimize(t);
+  }
+}
+BENCHMARK(BM_IntDestructor);
+
+ABSL_ATTRIBUTE_NOINLINE void FillStrings(StrTable* t, int n) {
+  assert(n < 256);
+  std::string s;
+  for (int i = 0; i < n; i++) {
+    s.clear();
+    s.push_back(static_cast<char>(i));
+    t->insert(s);
+  }
+}
+
+void BM_StrDestructor(benchmark::State& state) {
+  constexpr int kElements = 1;
+  for (auto unused : state) {
+    StrTable t;
+    FillStrings(&t, kElements);
+    benchmark::DoNotOptimize(t);
+  }
+}
+BENCHMARK(BM_StrDestructor);
 
 }  // namespace fleetbench
