@@ -1,0 +1,39 @@
+load("//fleetbench:variants.bzl", "create_fleetbench_benchmark")
+
+cc_library(
+    name = "utils",
+    srcs = ["utils.cc"],
+    hdrs = ["utils.h"],
+    deps = [
+        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/random",
+    ],
+)
+
+cc_library(
+    name = "memory_size_distributions",
+    hdrs = ["memory_size_distributions.h"],
+    textual_hdrs = [
+        "distributions/MemcpyGoogleA.csv",
+        "distributions/MemcpyGoogleB.csv",
+    ],
+    deps = [
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+    ],
+)
+
+create_fleetbench_benchmark(
+    name = "mem_benchmark",
+    srcs = ["mem_benchmark.cc"],
+    deps = [
+        ":memory_size_distributions",
+        ":utils",
+        "//fleetbench/common",
+        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/random:distributions",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+        "@com_google_benchmark//:benchmark",
+    ],
+)

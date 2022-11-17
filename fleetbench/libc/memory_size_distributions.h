@@ -15,7 +15,6 @@
 #ifndef THIRD_PARTY_FLEETBENCH_MEM_MEMORY_SIZE_DISTRIBUTIONS_H_
 #define THIRD_PARTY_FLEETBENCH_MEM_MEMORY_SIZE_DISTRIBUTIONS_H_
 
-#include "base/logging.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
