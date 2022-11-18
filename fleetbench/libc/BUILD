@@ -16,6 +16,13 @@ cc_library(
     textual_hdrs = [
         "distributions/MemcpyGoogleA.csv",
         "distributions/MemcpyGoogleB.csv",
+        "distributions/MemcpyGoogleD.csv",
+        "distributions/MemcpyGoogleL.csv",
+        "distributions/MemcpyGoogleM.csv",
+        "distributions/MemcpyGoogleQ.csv",
+        "distributions/MemcpyGoogleS.csv",
+        "distributions/MemcpyGoogleU.csv",
+        "distributions/MemcpyGoogleW.csv",
     ],
     deps = [
         "@com_google_absl//absl/strings",

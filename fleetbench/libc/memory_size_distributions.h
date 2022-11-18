@@ -29,6 +29,34 @@ static constexpr double MemcpyGoogleB[] = {
 #include "distributions/MemcpyGoogleB.csv"
 };
 
+static constexpr double MemcpyGoogleD[] = {
+#include "distributions/MemcpyGoogleD.csv"
+};
+
+static constexpr double MemcpyGoogleQ[] = {
+#include "distributions/MemcpyGoogleQ.csv"
+};
+
+static constexpr double MemcpyGoogleL[] = {
+#include "distributions/MemcpyGoogleL.csv"
+};
+
+static constexpr double MemcpyGoogleM[] = {
+#include "distributions/MemcpyGoogleM.csv"
+};
+
+static constexpr double MemcpyGoogleS[] = {
+#include "distributions/MemcpyGoogleS.csv"
+};
+
+static constexpr double MemcpyGoogleW[] = {
+#include "distributions/MemcpyGoogleW.csv"
+};
+
+static constexpr double MemcpyGoogleU[] = {
+#include "distributions/MemcpyGoogleU.csv"
+};
+
 // Represents a probability distribution for the size argument of a memory
 // operation.
 struct SizeDistribution {
