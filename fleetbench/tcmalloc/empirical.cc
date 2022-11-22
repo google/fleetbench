@@ -325,7 +325,8 @@ void EmpiricalData::BuildDeathObjectPointers() {
       continue;
     }
     SizeState& s = state_[birth_or_death_sizes_[i]];
-    death_object_pointers_.push_back(&s.objs[death_objects_[death_index++]]);
+    death_object_pointers_.push_back(s.objs.data() +
+                                     death_objects_[death_index++]);
   }
   std::rotate(death_object_pointers_.begin(),
               death_object_pointers_.begin() + kPrefetchDistance,
