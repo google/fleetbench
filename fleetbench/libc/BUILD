@@ -12,6 +12,7 @@ cc_library(
 
 cc_library(
     name = "memory_size_distributions",
+    srcs = ["memory_size_distributions.cc"],
     hdrs = ["memory_size_distributions.h"],
     textual_hdrs = [
         "distributions/MemcpyGoogleA.csv",

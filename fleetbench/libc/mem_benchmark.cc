@@ -62,16 +62,6 @@ struct BM_Memcpy_Parameters {
 } __attribute__((__packed__));
 static_assert(sizeof(BM_Memcpy_Parameters) == sizeof(uint32_t));
 
-absl::Span<const SizeDistribution> GetMemcpySizeDistributions() {
-  static constexpr SizeDistribution kDistributions[] = {
-      {"memcpy Google A", MemcpyGoogleA}, {"memcpy Google B", MemcpyGoogleB},
-      {"memcpy Google D", MemcpyGoogleD}, {"memcpy Google L", MemcpyGoogleL},
-      {"memcpy Google M", MemcpyGoogleM}, {"memcpy Google Q", MemcpyGoogleQ},
-      {"memcpy Google S", MemcpyGoogleS}, {"memcpy Google U", MemcpyGoogleU},
-      {"memcpy Google W", MemcpyGoogleW},
-  };
-  return kDistributions;
-}
 
 // Checks if the platform that runs this benchmark has enough L1 cache memory.
 bool isValidL1Cache() {
