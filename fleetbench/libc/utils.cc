@@ -30,17 +30,17 @@ MemoryBuffers::MemoryBuffers(const size_t size, const size_t alignment)
 }
 
 const char* MemoryBuffers::src(size_t offset) const {
-  CHECK_LT(offset, size_);
+  DCHECK_LT(offset, size_);
   return src_ + offset;
 }
 
 char* MemoryBuffers::dst(size_t offset) {
-  CHECK_LT(offset, size_);
+  DCHECK_LT(offset, size_);
   return dst_ + offset;
 }
 
 const char* MemoryBuffers::dst(size_t offset) const {
-  CHECK_LT(offset, size_);
+  DCHECK_LT(offset, size_);
   return dst_ + offset;
 }
 
