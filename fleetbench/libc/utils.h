@@ -33,7 +33,6 @@ class MemoryBuffers {
   ~MemoryBuffers();
 
   // A pointer in the source buffer at the specified offset.
-  char *src(size_t offset);
   const char *src(size_t offset) const;
 
   // A pointer in the destination buffer at the specified offset.

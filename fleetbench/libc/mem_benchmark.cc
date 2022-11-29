@@ -135,7 +135,8 @@ static void BM_Memcpy(benchmark::State &state) {
   // Run benchmark and call memcpy function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      memcpy(buffers.src(p.offset), buffers.dst(p.offset), p.size_bytes);
+      benchmark::DoNotOptimize(
+          memcpy(buffers.dst(p.offset), buffers.src(p.offset), p.size_bytes));
     }
   }
 
