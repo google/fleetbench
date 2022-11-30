@@ -62,7 +62,6 @@ struct BM_Memcpy_Parameters {
 } __attribute__((__packed__));
 static_assert(sizeof(BM_Memcpy_Parameters) == sizeof(uint32_t));
 
-
 // Checks if the platform that runs this benchmark has enough L1 cache memory.
 bool isValidL1Cache() {
   const std::vector<CacheInfo> &CacheInfos = benchmark::CPUInfo::Get().caches;
@@ -130,8 +129,20 @@ static void BM_Memcpy(benchmark::State &state) {
     }
   }
 
+  // Computes the total_types throughput.
+  size_t batch_bytes = 0;
+  for (auto &P : parameters) {
+    batch_bytes += P.size_bytes;
+  }
+
+  const size_t total_bytes = (state.iterations() * batch_bytes) / batch_size;
   state.SetLabel(absl::StrCat(distribution_name));
-  // TODO(liyuying): add counters
+
+  state.SetBytesProcessed(total_bytes);
+  state.counters["bytes_per_cycle"] = benchmark::Counter(
+      total_bytes / benchmark::CPUInfo::Get().cycles_per_second,
+      benchmark::Counter::kIsRate);
+
   // TODO(liyuying): add reset if necessary
 }
 
