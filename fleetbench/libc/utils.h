@@ -29,7 +29,8 @@ namespace libc {
 // -- memset requires 1 dst buffer.
 class MemoryBuffers {
  public:
-  explicit MemoryBuffers(const size_t size, const size_t alignment = 1024);
+  // Sanitizer can't handle Alignment > 512.
+  explicit MemoryBuffers(const size_t size, const size_t alignment = 512);
   ~MemoryBuffers();
 
   // A pointer in the source buffer at the specified offset.
