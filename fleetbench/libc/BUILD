@@ -45,3 +45,11 @@ create_fleetbench_benchmark(
         "@com_google_benchmark//:benchmark",
     ],
 )
+
+sh_test(
+    name = "sanitizer_test",
+    size = "medium",
+    srcs = ["sanitizer_test.sh"],
+    data = [":mem_benchmark"],
+    deps = [],
+)
