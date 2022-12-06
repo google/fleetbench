@@ -29,6 +29,11 @@ MemoryBuffers::MemoryBuffers(const size_t size, const size_t alignment)
   memset(dst_, 'X', size);
 }
 
+char* MemoryBuffers::src(size_t offset) {
+  DCHECK_LT(offset, size_);
+  return src_ + offset;
+}
+
 const char* MemoryBuffers::src(size_t offset) const {
   DCHECK_LT(offset, size_);
   return src_ + offset;

@@ -27,5 +27,20 @@ absl::Span<const SizeDistribution> GetMemcpySizeDistributions() {
   return kDistributions;
 }
 
+absl::Span<const SizeDistribution> GetMemmoveSizeDistributions() {
+  static constexpr SizeDistribution kDistributions[] = {
+      {"memmove Google A", MemmoveGoogleA},
+      {"memmove Google B", MemmoveGoogleB},
+      {"memmove Google D", MemmoveGoogleD},
+      {"memmove Google L", MemmoveGoogleL},
+      {"memmove Google M", MemmoveGoogleM},
+      {"memmove Google Q", MemmoveGoogleQ},
+      {"memmove Google S", MemmoveGoogleS},
+      {"memmove Google U", MemmoveGoogleU},
+      {"memmove Google W", MemmoveGoogleW},
+  };
+  return kDistributions;
+}
+
 }  // namespace libc
 }  // namespace fleetbench

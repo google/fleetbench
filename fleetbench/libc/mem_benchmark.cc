@@ -34,6 +34,7 @@ namespace fleetbench {
 namespace libc {
 // Number of needed buffer of memcpy().
 static constexpr size_t kMemcpyBufferCount = 2;
+static constexpr size_t kMemmoveBufferCount = 3;
 
 // KibiByte. 1kKiB = 1024 bytes
 static constexpr int64_t kKiB = 1024;
@@ -55,12 +56,57 @@ using CacheInfo = benchmark::CPUInfo::CacheInfo;
 // will require at least 6B, which is not great as unaligned loads may become
 // expensive on some plateforms. Therefore, we encode the memory operation
 // arguments into 32 bits here.
-
-struct BM_Memcpy_Parameters {
+struct BM_Mem_Parameters {
   unsigned offset : 16;      // max: 16 KiB - 1
   unsigned size_bytes : 16;  // max: 16 KiB - 1
 } __attribute__((__packed__));
-static_assert(sizeof(BM_Memcpy_Parameters) == sizeof(uint32_t));
+static_assert(sizeof(BM_Mem_Parameters) == sizeof(uint32_t));
+
+void MemcpyFunction(benchmark::State &state,
+                    std::vector<BM_Mem_Parameters> &parameters,
+                    const size_t buffer_size) {
+  MemoryBuffers buffers(buffer_size);
+  size_t batch_size = parameters.size();
+  // Run benchmark and call memcpy function
+  while (state.KeepRunningBatch(batch_size)) {
+    for (auto &p : parameters) {
+      benchmark::DoNotOptimize(
+          memcpy(buffers.dst(p.offset), buffers.src(p.offset), p.size_bytes));
+    }
+  }
+}
+
+void MemmoveFunction(benchmark::State &state,
+                     std::vector<BM_Mem_Parameters> &parameters,
+                     const size_t buffer_size) {
+  // |----------|----------|----------|
+  // |<--src1-->|<--src2-->|<--src3-->|
+  //            ↑
+  //           dst
+  // The memmove function allows the src and dst buffers to overlap. To
+  // reproduce this behavior we will use only one of the two buffers allocated
+  // by MemoryBuffers below. Both src and dst pointers will be selected from the
+  // dst() member.
+  // We want to exercise three configurations :
+  //    1. src and dst overlap, src is before dst
+  //    2. src and dst overlap, src is after dst
+  //    3. src and dst do not overlap
+  // To do so, we allocate a memory region of size '3 * buffer_size' and we pin
+  // the dst pointer to a third of the buffer. Then we allow src to be anywhere
+  // in the buffer as long as it doesn't read past allocated memory. This way
+  // src will fall into one of the three regions: src1 corresponds to case 1
+  // above, src2 to case 2, src3 to case 3. The number of bytes to be moved is
+  // always smaller than buffer_size.
+  MemoryBuffers buffers(buffer_size * 3);
+  size_t batch_size = parameters.size();
+  // Run benchmark and call memmove function
+  while (state.KeepRunningBatch(batch_size)) {
+    for (auto &p : parameters) {
+      benchmark::DoNotOptimize(memmove(buffers.dst(buffers.size() / 3),
+                                       buffers.dst(p.offset), p.size_bytes));
+    }
+  }
+}
 
 // Checks if the platform that runs this benchmark has enough L1 cache memory.
 bool isValidL1Cache() {
@@ -74,32 +120,39 @@ bool isValidL1Cache() {
   return false;
 }
 
-static void BM_Memcpy(benchmark::State &state) {
+template <class... Args>
+static void BM_Memory(benchmark::State &state, Args &&...args) {
   // TODO(liyuying): extract this function from benchmark iterations.
   CHECK(isValidL1Cache()) << "Not enough L1 cache memory";
+
+  auto args_tuple = std::make_tuple(std::move(args)...);
+
+  auto distributions = std::get<0>(args_tuple);
+  auto buffer_count = std::get<1>(args_tuple);
+  auto memory_call = std::get<2>(args_tuple);
 
   // Remaining available memory size in L1 for needed parameters to run
   // benchmark.
   const size_t available_bytes =
       kL1MemorySizeBytes - kPrecomputeParametersBytes - kReservedBenchmarkBytes;
 
+  // Number of parameters that allows all can resident in L1.
+  const size_t batch_size =
+      kPrecomputeParametersBytes / sizeof(BM_Mem_Parameters);
+
+  // Pre-calculates parameter values.
+  std::vector<BM_Mem_Parameters> parameters(batch_size);
+
   // Gets prod memcpy distribution and the name.
   const auto &[distribution_name, memory_size_distribution] =
-      GetMemcpySizeDistributions()[state.range(0)];
+      distributions[state.range(0)];
 
   // Convert prod size distribution to a discrete distribution.
   std::discrete_distribution<unsigned> size_bytes_sampler(
       memory_size_distribution.begin(), memory_size_distribution.end());
 
   // Max buffer size can be stored in L1 cache.
-  const size_t buffer_size = available_bytes / kMemcpyBufferCount;
-
-  // Number of parameters that allows all can resident in L1.
-  const size_t batch_size =
-      kPrecomputeParametersBytes / sizeof(BM_Memcpy_Parameters);
-
-  // Pre-calculates parameter values.
-  std::vector<BM_Memcpy_Parameters> parameters(batch_size);
+  const size_t buffer_size = available_bytes / buffer_count;
 
   for (auto &p : parameters) {
     // Size_bytes is sampled from collected prod distribution.
@@ -119,15 +172,7 @@ static void BM_Memcpy(benchmark::State &state) {
         << "May result in src buffer overflow";
   }
 
-  MemoryBuffers buffers(buffer_size);
-
-  // Run benchmark and call memcpy function
-  while (state.KeepRunningBatch(batch_size)) {
-    for (auto &p : parameters) {
-      benchmark::DoNotOptimize(
-          memcpy(buffers.dst(p.offset), buffers.src(p.offset), p.size_bytes));
-    }
-  }
+  memory_call(state, parameters, buffer_size);
 
   // Computes the total_types throughput.
   size_t batch_bytes = 0;
@@ -146,6 +191,13 @@ static void BM_Memcpy(benchmark::State &state) {
   // TODO(liyuying): add reset if necessary
 }
 
-BENCHMARK(BM_Memcpy)->DenseRange(0, GetMemcpySizeDistributions().size() - 1, 1);
+BENCHMARK_CAPTURE(BM_Memory, memcpy, GetMemcpySizeDistributions(),
+                  kMemcpyBufferCount, &MemcpyFunction)
+    ->DenseRange(0, GetMemcpySizeDistributions().size() - 1, 1);
+
+BENCHMARK_CAPTURE(BM_Memory, memmove, GetMemmoveSizeDistributions(),
+                  kMemmoveBufferCount, &MemmoveFunction)
+    ->DenseRange(0, GetMemmoveSizeDistributions().size() - 1, 1);
+
 }  // namespace libc
 }  // namespace fleetbench

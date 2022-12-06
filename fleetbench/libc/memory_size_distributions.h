@@ -57,6 +57,42 @@ static constexpr double MemcpyGoogleU[] = {
 #include "distributions/MemcpyGoogleU.csv"
 };
 
+static constexpr double MemmoveGoogleA[] = {
+#include "distributions/MemmoveGoogleA.csv"
+};
+
+static constexpr double MemmoveGoogleB[] = {
+#include "distributions/MemmoveGoogleB.csv"
+};
+
+static constexpr double MemmoveGoogleD[] = {
+#include "distributions/MemmoveGoogleD.csv"
+};
+
+static constexpr double MemmoveGoogleQ[] = {
+#include "distributions/MemmoveGoogleQ.csv"
+};
+
+static constexpr double MemmoveGoogleL[] = {
+#include "distributions/MemmoveGoogleL.csv"
+};
+
+static constexpr double MemmoveGoogleM[] = {
+#include "distributions/MemmoveGoogleM.csv"
+};
+
+static constexpr double MemmoveGoogleS[] = {
+#include "distributions/MemmoveGoogleS.csv"
+};
+
+static constexpr double MemmoveGoogleW[] = {
+#include "distributions/MemmoveGoogleW.csv"
+};
+
+static constexpr double MemmoveGoogleU[] = {
+#include "distributions/MemmoveGoogleU.csv"
+};
+
 // Represents a probability distribution for the size argument of a memory
 // operation.
 struct SizeDistribution {
@@ -67,6 +103,8 @@ struct SizeDistribution {
 
 // Returns a list of SizeDistribution for each memory operation.
 absl::Span<const SizeDistribution> GetMemcpySizeDistributions();
+absl::Span<const SizeDistribution> GetMemmoveSizeDistributions();
+
 }  // namespace libc
 }  // namespace fleetbench
 
