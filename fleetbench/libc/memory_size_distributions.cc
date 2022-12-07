@@ -42,5 +42,38 @@ absl::Span<const SizeDistribution> GetMemmoveSizeDistributions() {
   return kDistributions;
 }
 
+absl::Span<const SizeDistribution> GetMemsetSizeDistributions() {
+  static constexpr SizeDistribution kDistributions[] = {
+      {"memset Google A", MemsetGoogleA}, {"memset Google B", MemsetGoogleB},
+      {"memset Google D", MemsetGoogleD}, {"memset Google L", MemsetGoogleL},
+      {"memset Google M", MemsetGoogleM}, {"memset Google Q", MemsetGoogleQ},
+      {"memset Google S", MemsetGoogleS}, {"memset Google U", MemsetGoogleU},
+      {"memset Google W", MemsetGoogleW},
+  };
+  return kDistributions;
+}
+
+absl::Span<const SizeDistribution> GetMemcmpSizeDistributions() {
+  static constexpr SizeDistribution kDistributions[] = {
+      {"Memcmp Google A", MemcmpGoogleA}, {"Memcmp Google B", MemcmpGoogleB},
+      {"Memcmp Google D", MemcmpGoogleD}, {"Memcmp Google L", MemcmpGoogleL},
+      {"Memcmp Google M", MemcmpGoogleM}, {"Memcmp Google Q", MemcmpGoogleQ},
+      {"Memcmp Google S", MemcmpGoogleS}, {"Memcmp Google U", MemcmpGoogleU},
+      {"Memcmp Google W", MemcmpGoogleW},
+  };
+  return kDistributions;
+}
+
+absl::Span<const SizeDistribution> GetBcmpSizeDistributions() {
+  static constexpr SizeDistribution kDistributions[] = {
+      {"Bcmp Google A", BcmpGoogleA}, {"Bcmp Google B", BcmpGoogleB},
+      {"Bcmp Google D", BcmpGoogleD}, {"Bcmp Google L", BcmpGoogleL},
+      {"Bcmp Google M", BcmpGoogleM}, {"Bcmp Google Q", BcmpGoogleQ},
+      {"Bcmp Google S", BcmpGoogleS}, {"Bcmp Google U", BcmpGoogleU},
+      {"Bcmp Google W", BcmpGoogleW},
+  };
+  return kDistributions;
+}
+
 }  // namespace libc
 }  // namespace fleetbench

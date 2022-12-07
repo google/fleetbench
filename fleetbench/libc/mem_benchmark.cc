@@ -35,6 +35,9 @@ namespace libc {
 // Number of needed buffer of memcpy().
 static constexpr size_t kMemcpyBufferCount = 2;
 static constexpr size_t kMemmoveBufferCount = 3;
+static constexpr size_t kMemsetBufferCount = 1;
+static constexpr size_t kMemcmpBufferCount = 2;
+static constexpr size_t kBcmpBufferCount = 2;
 
 // KibiByte. 1kKiB = 1024 bytes
 static constexpr int64_t kKiB = 1024;
@@ -104,6 +107,48 @@ void MemmoveFunction(benchmark::State &state,
     for (auto &p : parameters) {
       benchmark::DoNotOptimize(memmove(buffers.dst(buffers.size() / 3),
                                        buffers.dst(p.offset), p.size_bytes));
+    }
+  }
+}
+
+void MemcmpFunction(benchmark::State &state,
+                    std::vector<BM_Mem_Parameters> &parameters,
+                    const size_t buffer_size) {
+  MemoryBuffers buffers(buffer_size);
+  size_t batch_size = parameters.size();
+  // Run benchmark and call memcmp function
+  while (state.KeepRunningBatch(batch_size)) {
+    for (auto &p : parameters) {
+      benchmark::DoNotOptimize(
+          memcmp(buffers.dst(p.offset), buffers.src(p.offset), p.size_bytes));
+    }
+  }
+}
+
+void BcmpFunction(benchmark::State &state,
+                  std::vector<BM_Mem_Parameters> &parameters,
+                  const size_t buffer_size) {
+  MemoryBuffers buffers(buffer_size);
+  size_t batch_size = parameters.size();
+  // Run benchmark and call bcmp function
+  while (state.KeepRunningBatch(batch_size)) {
+    for (auto &p : parameters) {
+      benchmark::DoNotOptimize(
+          bcmp(buffers.dst(p.offset), buffers.src(p.offset), p.size_bytes));
+    }
+  }
+}
+
+void MemsetFunction(benchmark::State &state,
+                    std::vector<BM_Mem_Parameters> &parameters,
+                    const size_t buffer_size) {
+  MemoryBuffers buffers(buffer_size);
+  size_t batch_size = parameters.size();
+  // Run benchmark and call memset function
+  while (state.KeepRunningBatch(batch_size)) {
+    for (auto &p : parameters) {
+      benchmark::DoNotOptimize(
+          memset(buffers.dst(p.offset), p.offset % 0xFF, p.size_bytes));
     }
   }
 }
@@ -198,6 +243,18 @@ BENCHMARK_CAPTURE(BM_Memory, memcpy, GetMemcpySizeDistributions(),
 BENCHMARK_CAPTURE(BM_Memory, memmove, GetMemmoveSizeDistributions(),
                   kMemmoveBufferCount, &MemmoveFunction)
     ->DenseRange(0, GetMemmoveSizeDistributions().size() - 1, 1);
+
+BENCHMARK_CAPTURE(BM_Memory, memcmp, GetMemcmpSizeDistributions(),
+                  kMemcmpBufferCount, &MemcmpFunction)
+    ->DenseRange(0, GetMemcmpSizeDistributions().size() - 1, 1);
+
+BENCHMARK_CAPTURE(BM_Memory, bcmp, GetBcmpSizeDistributions(), kBcmpBufferCount,
+                  &BcmpFunction)
+    ->DenseRange(0, GetBcmpSizeDistributions().size() - 1, 1);
+
+BENCHMARK_CAPTURE(BM_Memory, memset, GetMemsetSizeDistributions(),
+                  kMemsetBufferCount, &MemsetFunction)
+    ->DenseRange(0, GetMemsetSizeDistributions().size() - 1, 1);
 
 }  // namespace libc
 }  // namespace fleetbench

@@ -93,6 +93,114 @@ static constexpr double MemmoveGoogleU[] = {
 #include "distributions/MemmoveGoogleU.csv"
 };
 
+static constexpr double MemsetGoogleA[] = {
+#include "distributions/MemsetGoogleA.csv"
+};
+
+static constexpr double MemsetGoogleB[] = {
+#include "distributions/MemsetGoogleB.csv"
+};
+
+static constexpr double MemsetGoogleD[] = {
+#include "distributions/MemsetGoogleD.csv"
+};
+
+static constexpr double MemsetGoogleQ[] = {
+#include "distributions/MemsetGoogleQ.csv"
+};
+
+static constexpr double MemsetGoogleL[] = {
+#include "distributions/MemsetGoogleL.csv"
+};
+
+static constexpr double MemsetGoogleM[] = {
+#include "distributions/MemsetGoogleM.csv"
+};
+
+static constexpr double MemsetGoogleS[] = {
+#include "distributions/MemsetGoogleS.csv"
+};
+
+static constexpr double MemsetGoogleW[] = {
+#include "distributions/MemsetGoogleW.csv"
+};
+
+static constexpr double MemsetGoogleU[] = {
+#include "distributions/MemsetGoogleU.csv"
+};
+
+static constexpr double MemcmpGoogleA[] = {
+#include "distributions/MemcmpGoogleA.csv"
+};
+
+static constexpr double MemcmpGoogleB[] = {
+#include "distributions/MemcmpGoogleB.csv"
+};
+
+static constexpr double MemcmpGoogleD[] = {
+#include "distributions/MemcmpGoogleD.csv"
+};
+
+static constexpr double MemcmpGoogleQ[] = {
+#include "distributions/MemcmpGoogleQ.csv"
+};
+
+static constexpr double MemcmpGoogleL[] = {
+#include "distributions/MemcmpGoogleL.csv"
+};
+
+static constexpr double MemcmpGoogleM[] = {
+#include "distributions/MemcmpGoogleM.csv"
+};
+
+static constexpr double MemcmpGoogleS[] = {
+#include "distributions/MemcmpGoogleS.csv"
+};
+
+static constexpr double MemcmpGoogleW[] = {
+#include "distributions/MemcmpGoogleW.csv"
+};
+
+static constexpr double MemcmpGoogleU[] = {
+#include "distributions/MemcmpGoogleU.csv"
+};
+
+static constexpr double BcmpGoogleA[] = {
+#include "distributions/BcmpGoogleA.csv"
+};
+
+static constexpr double BcmpGoogleB[] = {
+#include "distributions/BcmpGoogleB.csv"
+};
+
+static constexpr double BcmpGoogleD[] = {
+#include "distributions/BcmpGoogleD.csv"
+};
+
+static constexpr double BcmpGoogleQ[] = {
+#include "distributions/BcmpGoogleQ.csv"
+};
+
+static constexpr double BcmpGoogleL[] = {
+#include "distributions/BcmpGoogleL.csv"
+};
+
+static constexpr double BcmpGoogleM[] = {
+#include "distributions/BcmpGoogleM.csv"
+};
+
+static constexpr double BcmpGoogleS[] = {
+#include "distributions/BcmpGoogleS.csv"
+};
+
+static constexpr double BcmpGoogleW[] = {
+#include "distributions/BcmpGoogleW.csv"
+};
+
+static constexpr double BcmpGoogleU[] = {
+#include "distributions/BcmpGoogleU.csv"
+};
+
 // Represents a probability distribution for the size argument of a memory
 // operation.
 struct SizeDistribution {
@@ -104,7 +212,9 @@ struct SizeDistribution {
 // Returns a list of SizeDistribution for each memory operation.
 absl::Span<const SizeDistribution> GetMemcpySizeDistributions();
 absl::Span<const SizeDistribution> GetMemmoveSizeDistributions();
-
+absl::Span<const SizeDistribution> GetMemsetSizeDistributions();
+absl::Span<const SizeDistribution> GetMemcmpSizeDistributions();
+absl::Span<const SizeDistribution> GetBcmpSizeDistributions();
 }  // namespace libc
 }  // namespace fleetbench
 
