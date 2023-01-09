@@ -32,7 +32,7 @@
 
 namespace fleetbench {
 namespace libc {
-// Number of needed buffer of memcpy().
+// Number of needed buffer of memory operators.
 static constexpr size_t kMemcpyBufferCount = 2;
 static constexpr size_t kMemmoveBufferCount = 3;
 static constexpr size_t kMemsetBufferCount = 1;
