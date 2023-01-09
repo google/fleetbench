@@ -42,7 +42,7 @@ http_archive(
 
 # TCMalloc
 http_archive(
-    name = "com_google_tcmalloc",
+    name = "com_google_tcmalloc", # 2022-09-21
     urls = ["https://github.com/google/tcmalloc/archive/48808681a9f38e974b49619a126f6f949ff59520.zip"],
     strip_prefix = "tcmalloc-48808681a9f38e974b49619a126f6f949ff59520",
     sha256 = "18bde75174866059a8db37dc42a921192b9182f57e7900a66d9f26cdd72599af",
