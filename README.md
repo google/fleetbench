@@ -168,6 +168,19 @@ Potential areas of future work include:
     [Bazel FDO GH issue](https://github.com/bazelbuild/bazel/pull/13620) for
     details.
 
+1.  Q: Does Fleetbench run on _ OS?
+
+    A: The supported platforms are same as TCMalloc's, see
+    [link](https://github.com/google/tcmalloc/blob/master/docs/platforms.md) for
+    more details.
+
+1.  Q: Can I run Fleetbench without TCMalloc?
+
+    A: Fleetbench is built with Bazel, which supports --custom_malloc option
+    ([bazel docs](https://bazel.build/docs/user-manual#custom-malloc)). This
+    should allow you to override the malloc attributed configured to take
+    tcmalloc as the default.
+
 1.  Q: My question isn't addressed here. How do I contact the development team?
 
     A: Please see
