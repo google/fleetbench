@@ -16,6 +16,17 @@ workspace(name = "com_google_fleetbench")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# Support for building foreign build system dependencies. Needed for libpfm.
+http_archive(
+    name = "rules_foreign_cc", # 2023-01-12
+    sha256 = "2a4d07cd64b0719b39a7c12218a3e507672b82a97b98c6a89d38565894cf7c51",
+    strip_prefix = "rules_foreign_cc-0.9.0",
+    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/refs/tags/0.9.0.tar.gz",
+)
+load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
+
+rules_foreign_cc_dependencies()
+
 # Abseil
 http_archive(
     name = "com_google_absl", # 2022-10-05
@@ -39,6 +50,37 @@ http_archive(
     strip_prefix = "googletest-aa9b44a18678dfdf57089a5ac22c1edb69f35da5",
     sha256 = "8cf4eaab3a13b27a95b7e74c58fb4c0788ad94d1f7ec65b20665c4caf1d245e8",
 )
+
+# libpfm4, for perf counters
+http_archive(
+    name = "libpfm", # 2023-01-12
+    # use our own build file, based from google/benchmark/tools, but modified to
+    # disable use-after-free, which is emitted when building libpfm.
+    build_file_content = """
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "make")
+
+filegroup(
+    name = "pfm_srcs",
+    srcs = glob(["**"]),
+)
+
+make(
+    name = "libpfm",
+    lib_source = ":pfm_srcs",
+    lib_name = "libpfm",
+    # this disables debug mode. In particular, this makes sure certain
+    # warning-as-error of libpfm aren't surfaced, which would break the build.
+    args = ["DBG="],
+    visibility = [
+        "//visibility:public",
+    ],
+)
+    """,
+    sha256 = "5da5f8872bde14b3634c9688d980f68bda28b510268723cc12973eedbab9fecc",
+    type = "tar.gz",
+    strip_prefix = "libpfm-4.11.0",
+    urls = ["https://sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz/download"],
+ )
 
 # TCMalloc
 http_archive(
