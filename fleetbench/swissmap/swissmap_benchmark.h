@@ -61,22 +61,26 @@ Set GenerateSet(size_t min_size, Density density) {
   }
 
   size_t bucket_count = output.bucket_count();
+  // Add more random elements until bucket count increases. That means we are at
+  // kMin density. For kMax density, reconstruct the set as it was just before
+  // the bucket count increased.
   while (true) {
     uint32_t elem = RandomExistent();
     if (!output.insert(elem).second) continue;
-    unique_random_elements.push_back(elem);
     if (output.bucket_count() > bucket_count) {
+      // bucket count change because of resizing. We use the before and after
+      // states for the max and min density, respectively.
       if (density == Density::kMax) {
-        // To create a dense set, we first recorded all unique random elements.
-        // Reset the output set, then re-populate it with all unique elements to
-        // maximize its density.
         Set empty;
         output.swap(empty);
-        output.insert(unique_random_elements.begin(),
-                      unique_random_elements.end());
+        // Insert element one by one without reserve for faithful reconstruct.
+        for (auto& elem : unique_random_elements) {
+          output.insert(elem);
+        }
       }
       return output;
     }
+    unique_random_elements.push_back(elem);
   }
 }
 

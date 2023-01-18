@@ -21,6 +21,16 @@
 
 namespace fleetbench {
 
+TEST(SwissmapBenchmarkTest, Density) {
+  auto set1 = GenerateSet<absl::flat_hash_set<Value<4>, Hash, Eq>>(
+      1 << 10, Density::kMin);
+  EXPECT_NEAR(set1.load_factor(), 0.4375, 0.01);
+
+  auto set2 = GenerateSet<absl::flat_hash_set<Value<4>, Hash, Eq>>(
+      1 << 10, Density::kMax);
+  EXPECT_NEAR(set2.load_factor(), 0.875, 0.01);
+}
+
 TEST(SwissmapBenchmarkTest, GenerateSets) {
   auto sets = GenerateSets<absl::flat_hash_set<Value<4>, Hash, Eq>>(
       1, 3, Density::kMin);
