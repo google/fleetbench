@@ -480,42 +480,52 @@ BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta,
 // --benchmark_filter=all.
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta,
                    kBaseHeapSize)
+    ->ArgName("CPU_nums")
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBravo,
                    kBaseHeapSize)
+    ->ArgName("CPU_nums")
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(2);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kCharlie,
                    kBaseHeapSize)
+    ->ArgName("CPU_nums")
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kDelta,
                    kBaseHeapSize)
+    ->ArgName("CPU_nums")
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kEcho,
                    kBaseHeapSize)
+    ->ArgName("CPU_nums")
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kFoxtrot,
                    kBaseHeapSize)
+    ->ArgName("CPU_nums")
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kMerced,
                    kBaseHeapSize)
+    ->ArgName("CPU_nums")
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kSierra,
                    kBaseHeapSize)
+    ->ArgName("CPU_nums")
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kSigma,
                    kBaseHeapSize)
+    ->ArgName("CPU_nums")
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kUniform,
                    kBaseHeapSize)
+    ->ArgName("CPU_nums")
     ->Range(1, absl::base_internal::NumCPUs())
     ->MinWarmUpTime(0.5);
 #endif
