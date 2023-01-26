@@ -27,10 +27,10 @@ http_archive(
 
 # Support for building foreign build system dependencies. Needed for libpfm.
 http_archive(
-    name = "rules_foreign_cc", # 2023-01-12
-    sha256 = "2a4d07cd64b0719b39a7c12218a3e507672b82a97b98c6a89d38565894cf7c51",
-    strip_prefix = "rules_foreign_cc-0.9.0",
-    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/refs/tags/0.9.0.tar.gz",
+   name = "rules_foreign_cc", # 2023-01-25
+   sha256 = "040ab3cc71356c186230e8c6c8d147dc533a83c72e3e9b4244a36cd9cf18179d",
+   strip_prefix = "rules_foreign_cc-1e66c02ea867d91312a1e14c1d3f78ccbe0d8bc8",
+   url = "https://github.com/bazelbuild/rules_foreign_cc/archive/1e66c02ea867d91312a1e14c1d3f78ccbe0d8bc8.zip",
 )
 load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
 
