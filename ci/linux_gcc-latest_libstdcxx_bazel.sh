@@ -73,6 +73,7 @@ for std in ${STD}; do
           --test_env="GTEST_INSTALL_FAILURE_SIGNAL_HANDLER=1" \
           --test_output=errors \
           --test_tag_filters=-benchmark \
+          --test_size_filters=-enormous \
           ${BAZEL_EXTRA_ARGS:-}
     done
   done
