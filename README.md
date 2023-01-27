@@ -162,11 +162,24 @@ Potential areas of future work include:
 
 1.  Q: How do I build the benchmark with FDO?
 
-    A: This is currently blocked on
-    [Bazel 6.0.0](https://github.com/bazelbuild/bazel/issues/16159) becoming
-    available. See
-    [Bazel FDO GH issue](https://github.com/bazelbuild/bazel/pull/13620) for
-    details.
+    A: Note that Clang and the LLVM tools are required for FDO builds. These
+    instructions assume they are in the PATH. See https://releases.llvm.org to
+    obtain these if not present on your system. These instructions are tested
+    with bazel version 6 and LLVM 14.
+
+    Take fleetbench/swissmap/hot_swissmap_benchmark as an example.
+
+```
+# Instrument.
+bazel build --config=clang -c opt --fdo_instrument=.fdo fleetbench/swissmap:hot_swissmap_benchmark
+# Run to generate instrumentation.
+bazel-bin/fleetbench/swissmap/hot_swissmap_benchmark --benchmark_filter=all
+# There should be a file with a .profraw extension in $PWD/.fdo/.
+# Build an optimized binary.
+bazel build --config=clang -c opt --fdo_optimize=.fdo/<filename>.profraw fleetbench/swissmap:hot_swissmap_benchmark
+# Run the FDO-optimized binary.
+bazel-bin/fleetbench/swissmap/hot_swissmap_benchmark --benchmark_filter=all
+```
 
 1.  Q: Does Fleetbench run on _ OS?
 

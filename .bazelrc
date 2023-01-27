@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Same as TCMalloc .bazelrc
 build --cxxopt='-std=c++17'
 build --define=pfm=1
 
@@ -22,3 +21,12 @@ test --test_timeout=1500
 build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:libfuzzer
 build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer
 build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan
+
+# Define --config=clang. clang must be in the PATH.
+build:clang --repo_env=CC=clang --repo_env=CXX=clang++
+# Prevent warnings about gcc-specific arguments from --fdo_optimize.
+build:clang --copt='-Wno-ignored-optimization-argument'
+# Allow instrprof_error::hash_mismatch profiles.
+build:clang --copt='-Wno-error=backend-plugin'
+# Cache clang artifacts in a different directory.
+build:clang --platform_suffix=clang
