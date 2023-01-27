@@ -194,6 +194,12 @@ bazel-bin/fleetbench/swissmap/hot_swissmap_benchmark --benchmark_filter=all
     should allow you to override the malloc attributed configured to take
     tcmalloc as the default.
 
+1.  Q: Are the benchmarks fixed in nature?
+
+    A: No. It is our expectation that the code under benchmark, the hardware,
+    the compiler, and compiler flags used may all change in concert as to
+    identify optimization opportunities.
+
 1.  Q: My question isn't addressed here. How do I contact the development team?
 
     A: Please see
