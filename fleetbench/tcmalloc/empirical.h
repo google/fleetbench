@@ -198,8 +198,6 @@ class EmpiricalData {
   // Note that these *DO* include startup allocations.
   size_t total_num_allocated() const { return total_num_allocated_; }
   size_t total_bytes_allocated() const { return total_bytes_allocated_; }
-  // Allocate or deallocate the next object
-  void Next();
 
   // Records information on which allocation or deallocation *would have* been
   // performed had we called Next() instead.  For questions about the internal

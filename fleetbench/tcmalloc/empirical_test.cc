@@ -86,30 +86,6 @@ MATCHER_P(DoubleRelEq, err,
   return (std::max(a / b, b / a) - 1) < err;
 }
 
-TEST(Empirical, Basic) {
-  size_t kSize = 128 * 1024 * 1024;
-  auto const& expected = dummy();
-  absl::BitGen rng;
-  EmpiricalData data(absl::Uniform<uint32_t>(rng), expected, kSize, alloc,
-                     sized_delete);
-
-  for (int i = 0; i < 100; ++i) {
-    for (int j = 0; j < 100 * 1000; ++j) {
-      data.Next();
-    }
-
-    SCOPED_TRACE(absl::StrCat("Rep ", i));
-    EXPECT_THAT(std::make_tuple(data.usage(), kSize), DoubleRelEq(0.2));
-    auto actual = data.Actual();
-    // check basic form of return
-    ASSERT_THAT(actual, Pointwise(EntrySizeEq(), expected));
-    ASSERT_THAT(Normalize(GetRates(actual)),
-                Pointwise(DoubleRelEq(0.35), Normalize(GetRates(expected))));
-
-    ASSERT_THAT(Normalize(GetCounts(actual)),
-                Pointwise(DoubleRelEq(0.2), Normalize(GetCounts(expected))));
-  }
-}
 
 TEST(EmpiricalRecordAndReplay, Basic) {
   constexpr uint32_t kBufferSize = 100000;

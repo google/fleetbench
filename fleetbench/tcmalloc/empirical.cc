@@ -201,45 +201,6 @@ void EmpiricalData::ReplayDeath(const size_t i, uint64_t index) {
   dealloc_(p, s.size);
 }
 
-void EmpiricalData::Next() {
-  // The code here is very simple, but the logic is complicated. We rely on
-  // three key facts about independent distributions Exp(A) and Exp(B) (that is,
-  // exponential distributions with rate parameters A and B.)
-  // (1) Memorylessness: p(Exp(A) = T + t | Exp(A) > T) ~ Exp(A) (in t)
-  // (2) min(Exp(A), Exp(B)) ~ Exp(A + B) = Exp(C)
-  // (3) p(Exp(C) = Exp(A)  | Exp(C) = t) = A / C = A / (A + B)
-  // (These generalize obviously to multiple exponentials.)
-  //
-  // Objects of size i are being born at rate b_i; that means
-  // births arrive at rate B = Sum(b_i).
-  const double B = total_birth_rate_;
-  // *right now* we have n_i objects of size i, each dying at rate d_i; so
-  // objects of size i are dying (overall) at rate t_i, and
-  // total deaths arrive at rate T = Sum(t_i).
-  const double T = death_sampler_.TotalWeight();
-  // So (2) tells us with probability B/(B + T), the next action is a birth.
-  // Otherwise it is a death. (3) lets us handle each independently.
-  const double Both = B + T;
-  // TODO(ahh): make absl::bernoulli distribution support ratio probabilities
-  // efficiently (no divide).
-  absl::uniform_real_distribution<double> which(0, Both);
-  if (which(rng_) < B) {
-    // Birth :)
-    // (3) says that our birth came from size i with probability prop. to b_i.
-    size_t i = birth_sampler_(rng_);
-    void* allocated = DoBirth(i);
-    TouchAllocated(allocated);
-  } else {
-    // Death :(
-    // We maintain death_sampler_.weight(i) = t_i = n_i * d_i.
-    // (3) says that the death comes from size i with probability prop. to t_i,
-    // and furthmore that we can pick the dead object uniformly.
-    size_t i = death_sampler_(rng_);
-    DoDeath(i);
-  }
-  // (1) says we are now done and can re-sample the next event independently.
-}
-
 void EmpiricalData::RecordNext() {
   const double B = total_birth_rate_;
   const double T = death_sampler_.TotalWeight();
