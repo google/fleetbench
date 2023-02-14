@@ -58,15 +58,28 @@ The suite can be built and run with Bazel. For example, to run swissmap
 benchmark for hot setup, do:
 
 ```
-bazel run -c opt fleetbench/swissmap:hot_swissmap_benchmark
+bazel run --config=opt fleetbench/swissmap:hot_swissmap_benchmark
 ```
+
+Important: Always run benchmarks with `--config=opt` to apply essential compiler
+optimizations.
+
+For more consistency with Google's build configuration, we suggest using the
+Clang / LLVM tools. See https://releases.llvm.org to obtain these if not present
+on your system. These instructions have been tested with bazel version 6 and
+LLVM 14. We assume clang is in the PATH.
+
+Once installed, specify `--config=clang` to bazel to use the clang compiler.
+
+Note: to make this setting the default, add `build --config=clang` to your
+.bazelrc.
 
 Swissmap benchmark for cold access setup takes much longer to run to completion,
 so by default it has a `--benchmark_filter` flag set to narrow down to smaller
 set sizes of `16` and `64` elements:
 
 ```
-bazel run -c opt fleetbench/swissmap:cold_swissmap_benchmark
+bazel run --config=opt fleetbench/swissmap:cold_swissmap_benchmark
 ```
 
 To change this filter, you can specify a regex in `--benchmark_filter` flag
@@ -74,36 +87,35 @@ To change this filter, you can specify a regex in `--benchmark_filter` flag
 Example to run for only sets of `16` and `512` elements:
 
 ```
-bazel run -c opt fleetbench/swissmap:cold_swissmap_benchmark -- --benchmark_filter=".*set_size:(16|512).*"
+bazel run --config=opt fleetbench/swissmap:cold_swissmap_benchmark -- --benchmark_filter=".*set_size:(16|512).*"
 ```
 
 The protocol buffer benchmark is set to run for at least 3s by default:
 
 ```
-bazel run -c opt fleetbench/proto:proto_benchmark
+bazel run --config=opt fleetbench/proto:proto_benchmark
 ```
 
 To change the duration to 30s, run the following:
 
 ```
-bazel run -c opt fleetbench/proto:proto_benchmark -- --benchmark_min_time=30
+bazel run --config=opt fleetbench/proto:proto_benchmark -- --benchmark_min_time=30
 ```
 
-The TCMalloc's Empirical Driver benchmark can take ~1hr to run all benchmarks:
+The TCMalloc Empirical Driver benchmark can take ~1hr to run all benchmarks:
 
 ```
-bazel run -c opt fleetbench/tcmalloc:empirical_driver -- --benchmark_counters_tabular=true
+bazel run --config=opt fleetbench/tcmalloc:empirical_driver -- --benchmark_counters_tabular=true
 ```
 
-To do build and execution of the benchmark in separate steps, run the commands
-below.
+To build and execute the benchmark in separate steps, run the commands below.
 
 NOTE: you'll need to specify the flags `--benchmark_filter` and
 `--benchmark_min_time` explicitly when build and execution are split into two
 separate steps.
 
 ```
-bazel build -c opt fleetbench/swissmap:hot_swissmap_benchmark
+bazel build --config=opt fleetbench/swissmap:hot_swissmap_benchmark
 bazel-bin/fleetbench/swissmap/hot_swissmap_benchmark --benchmark_filter=all
 ```
 
@@ -156,27 +168,24 @@ Potential areas of future work include:
     contender vs baseline?
 
     A: Fleetbench is using the
-    micro[benchmark framework](https://github.com/google/benchmark). Please
-    reference its documentation for comparing results across benchmark runs:
+    [benchmark framework](https://github.com/google/benchmark). Please reference
+    its documentation for comparing results across benchmark runs:
     [link](https://github.com/google/benchmark/blob/main/docs/tools.md).
 
 1.  Q: How do I build the benchmark with FDO?
 
-    A: Note that Clang and the LLVM tools are required for FDO builds. These
-    instructions assume they are in the PATH. See https://releases.llvm.org to
-    obtain these if not present on your system. These instructions are tested
-    with bazel version 6 and LLVM 14.
+    A: Note that Clang and the LLVM tools are required for FDO builds.
 
     Take fleetbench/swissmap/hot_swissmap_benchmark as an example.
 
 ```
 # Instrument.
-bazel build --config=clang -c opt --fdo_instrument=.fdo fleetbench/swissmap:hot_swissmap_benchmark
+bazel build --config=clang --config=opt --fdo_instrument=.fdo fleetbench/swissmap:hot_swissmap_benchmark
 # Run to generate instrumentation.
 bazel-bin/fleetbench/swissmap/hot_swissmap_benchmark --benchmark_filter=all
 # There should be a file with a .profraw extension in $PWD/.fdo/.
 # Build an optimized binary.
-bazel build --config=clang -c opt --fdo_optimize=.fdo/<filename>.profraw fleetbench/swissmap:hot_swissmap_benchmark
+bazel build --config=clang --config=opt --fdo_optimize=.fdo/<filename>.profraw fleetbench/swissmap:hot_swissmap_benchmark
 # Run the FDO-optimized binary.
 bazel-bin/fleetbench/swissmap/hot_swissmap_benchmark --benchmark_filter=all
 ```

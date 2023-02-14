@@ -28,8 +28,8 @@ if [ -z ${STD:-} ]; then
   STD="c++17"
 fi
 
-if [ -z ${COMPILATION_MODE:-} ]; then
-  COMPILATION_MODE="fastbuild opt"
+if [ -z ${BUILD_CONFIG:-} ]; then
+  BUILD_CONFIG=("" "--config=opt")
 fi
 
 if [ -z ${EXCEPTIONS_MODE:-} ]; then
@@ -51,7 +51,7 @@ if [[ ${USE_BAZEL_CACHE:-0} -ne 0 ]]; then
 fi
 
 for std in ${STD}; do
-  for compilation_mode in ${COMPILATION_MODE}; do
+  for build_config in "${BUILD_CONFIG[@]}"; do
     for exceptions_mode in ${EXCEPTIONS_MODE}; do
       echo "--------------------------------------------------------------------"
       time docker run \
@@ -64,7 +64,7 @@ for std in ${STD}; do
         ${DOCKER_EXTRA_ARGS:-} \
         ${DOCKER_CONTAINER} \
         /usr/local/bin/bazel test ... \
-          --compilation_mode="${compilation_mode}" \
+          ${build_config} \
           --copt="${exceptions_mode}" \
           --define="absl=1" \
           --distdir="/bazel-distdir" \

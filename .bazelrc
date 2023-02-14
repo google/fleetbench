@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Require c++17 for c++ files.
 build --cxxopt='-std=c++17'
+
+# Enable libpfm (performance counters) by default.
 build --define=pfm=1
 
 test --test_timeout=1500
@@ -22,11 +25,28 @@ build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing
 build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer
 build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan
 
+# Common compiler flags.
+build --copt='-funsigned-char'
+build --copt='-fno-strict-aliasing'
+build --copt='-fno-omit-frame-pointer'
+
+# Optimized build. Prefer this for benchmarking.
+build:opt --compilation_mode=opt
+build:opt --copt='-O3'
+build:opt --copt='-momit-leaf-frame-pointer'
+
+# TODO(rjogrady)- enable PIE in opt mode. This doesn't work with libpfm.
+# build:opt --force_pic
+
+# Clang-specific flags and settings.
 # Define --config=clang. clang must be in the PATH.
 build:clang --repo_env=CC=clang --repo_env=CXX=clang++
 # Prevent warnings about gcc-specific arguments from --fdo_optimize.
 build:clang --copt='-Wno-ignored-optimization-argument'
 # Allow instrprof_error::hash_mismatch profiles.
 build:clang --copt='-Wno-error=backend-plugin'
+build:clang --copt='-faligned-allocation'
+build:clang --copt='-fnew-alignment=8'
+
 # Cache clang artifacts in a different directory.
 build:clang --platform_suffix=clang
