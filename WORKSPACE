@@ -38,10 +38,10 @@ rules_foreign_cc_dependencies()
 
 # Abseil
 http_archive(
-    name = "com_google_absl", # 2022-10-05
-    urls = ["https://github.com/abseil/abseil-cpp/archive/b3162b1da62711c663d0025e2eabeb83fd1f2728.zip"],
-    strip_prefix = "abseil-cpp-b3162b1da62711c663d0025e2eabeb83fd1f2728",
-    sha256 = "d5c91248c33269fcc7ab35897315a45cfa2c37abb4c6d4ed36cb5c82f366367a",
+    name = "com_google_absl", # 2023-02-14
+    urls = ["https://github.com/abseil/abseil-cpp/archive/8aa88cd11caa8dbfd5966e5e2f391b892cfd1c35.zip"],
+    strip_prefix = "abseil-cpp-8aa88cd11caa8dbfd5966e5e2f391b892cfd1c35",
+    sha256 = "22b9561f4ed324dba5a9c3b45b988df1ca57c018de608da5de9b4b6eab68dca9",
 )
 
 # Google benchmark.
