@@ -54,8 +54,9 @@ HEAD only.
 
 [Bazel](https://bazel.build) is the official build system for Fleetbench.
 
-The suite can be built and run with Bazel. For example, to run swissmap
-benchmark for hot setup, do:
+Bazel 6 is our supported version.
+
+As an example, to run the 'hot' Swissmap benchmark:
 
 ```
 bazel run --config=opt fleetbench/swissmap:hot_swissmap_benchmark
@@ -64,15 +65,27 @@ bazel run --config=opt fleetbench/swissmap:hot_swissmap_benchmark
 Important: Always run benchmarks with `--config=opt` to apply essential compiler
 optimizations.
 
-For more consistency with Google's build configuration, we suggest using the
-Clang / LLVM tools. See https://releases.llvm.org to obtain these if not present
-on your system. These instructions have been tested with bazel version 6 and
-LLVM 14. We assume clang is in the PATH.
+### Clang Toolchain
 
-Once installed, specify `--config=clang` to bazel to use the clang compiler.
+For more consistency with Google's build configuration, we suggest using the
+Clang / LLVM tools. These instructions have been tested with LLVM 14.
+
+These can be installed with the system's package manager, e.g. on Debian:
+
+```
+sudo apt-get install clang llvm lld
+```
+
+Otherwise, see https://releases.llvm.org to obtain these if not present on your
+system or to find the newest version.
+
+Once installed, specify `--config=clang` on the bazel command line to use the
+clang compiler. We assume `clang` and `lld` are in the PATH.
 
 Note: to make this setting the default, add `build --config=clang` to your
 .bazelrc.
+
+### Running Benchmarks
 
 Swissmap benchmark for cold access setup takes much longer to run to completion,
 so by default it has a `--benchmark_filter` flag set to narrow down to smaller
@@ -188,6 +201,15 @@ bazel-bin/fleetbench/swissmap/hot_swissmap_benchmark --benchmark_filter=all
 bazel build --config=clang --config=opt --fdo_optimize=.fdo/<filename>.profraw fleetbench/swissmap:hot_swissmap_benchmark
 # Run the FDO-optimized binary.
 bazel-bin/fleetbench/swissmap/hot_swissmap_benchmark --benchmark_filter=all
+```
+
+1.  Q: How do I build the benchmark with ThinLTO?
+
+    A: Note that Clang and the LLVM tools are required for ThinLTO builds.
+    Specify `--features=thin_lto` on the bazel command line. E.g.
+
+```
+bazel run --config=clang --config=opt --features=thin_lto fleetbench/proto:proto_benchmark
 ```
 
 1.  Q: Does Fleetbench run on _ OS?
