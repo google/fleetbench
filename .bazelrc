@@ -50,3 +50,17 @@ build:clang --copt='-fnew-alignment=8'
 
 # Cache clang artifacts in a different directory.
 build:clang --platform_suffix=clang
+
+# Architecture-specific optimizations.
+build:haswell --copt='-march=haswell'
+build:haswell --copt='-m64'
+build:haswell --copt='-maes'
+build:haswell --copt='-mprefer-vector-width=128'
+
+build:westmere --copt='-march=westmere'
+build:westmere --copt='-m64'
+build:westmere --copt='-maes'
+build:westmere --copt='-mcx16'
+build:westmere --copt='-mpclmul'
+build:westmere --copt='-mprefer-vector-width=128'
+build:westmere --copt='-msse4.2'

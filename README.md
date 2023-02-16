@@ -85,6 +85,13 @@ clang compiler. We assume `clang` and `lld` are in the PATH.
 Note: to make this setting the default, add `build --config=clang` to your
 .bazelrc.
 
+### Architecture-Specific Flags
+
+If running on an x86 Haswell or above machine, we suggest adding
+`--config=haswell` for consistency with our compiler flags.
+
+Use `--config=westmere` for Westmere-era processors.
+
 ### Running Benchmarks
 
 Swissmap benchmark for cold access setup takes much longer to run to completion,
@@ -205,8 +212,9 @@ bazel-bin/fleetbench/swissmap/hot_swissmap_benchmark --benchmark_filter=all
 
 1.  Q: How do I build the benchmark with ThinLTO?
 
-    A: Note that Clang and the LLVM tools are required for ThinLTO builds.
-    Specify `--features=thin_lto` on the bazel command line. E.g.
+    A: Note that Clang and the LLVM tools are required for ThinLTO builds. In
+    particular, the `lld` linker must be in the PATH. Specify
+    `--features=thin_lto` on the bazel command line. E.g.
 
 ```
 bazel run --config=clang --config=opt --features=thin_lto fleetbench/proto:proto_benchmark
