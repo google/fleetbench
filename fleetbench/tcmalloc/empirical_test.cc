@@ -31,8 +31,6 @@ namespace {
 
 void* alloc(size_t s) { return ::operator new(s); }
 
-using testing::Pointwise;
-
 const std::vector<EmpiricalData::Entry>& dummy() {
   static std::vector<EmpiricalData::Entry> e = {{8, 1000, 100 * 1000},
                                                 {16, 1000, 1000},
