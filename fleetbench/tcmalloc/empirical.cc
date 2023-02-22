@@ -29,15 +29,28 @@ namespace tcmalloc {
 
 namespace {
 
+// Simulate using the memory by issuing a store and a load to the address.  This
+// is consistent with using the actually malloc'd/new'd memory.  If the memory
+// were never written to or read, we could simply never make the allocation.
+//
+// This is an artifical access pattern, but it produces results that show that
+// the prefetch in TCMalloc's allocation path
+// (https://storage.googleapis.com/pub-tools-public-publication-data/pdf/cebd5a9f6e300184fd762f190ffd8978b724e0c8.pdf)
+// is worth having, which is consistent with experience from performance
+// sensitive macrobenchmarks.
+//
+// If this memory is never accessed at all, this microbenchmark would be
+// "improved" by removing the prefetch, even though doing so would regress
+// application performance in more realistic contexts.
 inline void TouchAllocated(void* allocated) {
   uint8_t* access_ptr = static_cast<uint8_t*>(allocated);
-    *access_ptr = 0;
-    // Prevent the compiler from register optimizing the load by telling it that
-    // access_ptr might change
-    benchmark::DoNotOptimize(access_ptr);
-    auto byte = *(access_ptr);
-    // Prevent the compiler from removing the load since the result is unused
-    benchmark::DoNotOptimize(byte);
+  *access_ptr = 0;
+  // Prevent the compiler from register optimizing the load by telling it that
+  // access_ptr might change
+  benchmark::DoNotOptimize(access_ptr);
+  auto byte = *(access_ptr);
+  // Prevent the compiler from removing the load since the result is unused
+  benchmark::DoNotOptimize(byte);
 }
 
 }  // namespace
