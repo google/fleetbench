@@ -19,7 +19,7 @@ def create_fleetbench_benchmark(name, srcs, **kwargs):
     deps = kwargs.pop("deps")
     malloc = kwargs.pop("malloc", "@com_google_tcmalloc//tcmalloc:tcmalloc")
     benchmark_filter = kwargs.pop("benchmark_filter", "all")
-    benchmark_min_time = kwargs.pop("benchmark_min_time", "0.5")  # same as default in benchmark framework
+    benchmark_min_time = kwargs.pop("benchmark_min_time", "0.5s")  # same as default in benchmark framework
     native.cc_binary(
         name = name,
         srcs = srcs,

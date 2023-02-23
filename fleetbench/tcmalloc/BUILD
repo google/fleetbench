@@ -62,7 +62,7 @@ create_fleetbench_benchmark(
     name = "empirical_driver",
     srcs = ["empirical_driver.cc"],
     benchmark_filter = ".*DistributionProfile::(kBravo|kSierra).*",
-    benchmark_min_time = "5",
+    benchmark_min_time = "5s",
     deps = [
         ":empirical",
         ":empirical_distributions",
@@ -92,7 +92,7 @@ cc_test(
 create_fleetbench_benchmark(
     name = "empirical_driver_sanitizer_only",
     srcs = ["empirical_driver.cc"],
-    benchmark_min_time = "0.1",
+    benchmark_min_time = "0.1s",
     defines = ["SAN"],
     deps = [
         ":empirical",

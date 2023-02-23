@@ -119,7 +119,7 @@ bazel run --config=opt fleetbench/proto:proto_benchmark
 To change the duration to 30s, run the following:
 
 ```
-bazel run --config=opt fleetbench/proto:proto_benchmark -- --benchmark_min_time=30
+bazel run --config=opt fleetbench/proto:proto_benchmark -- --benchmark_min_time=30s
 ```
 
 The TCMalloc Empirical Driver benchmark can take ~1hr to run all benchmarks:

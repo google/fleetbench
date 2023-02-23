@@ -166,7 +166,7 @@ create_fleetbench_benchmark(
     srcs = [
         "benchmark.cc",
     ],
-    benchmark_min_time = "3",
+    benchmark_min_time = "3s",
     deps = [
         ":benchmark_lib",
         "//fleetbench/common",
