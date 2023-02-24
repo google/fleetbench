@@ -14,8 +14,14 @@
 
 """ Helper functions to simplify Fleetbench BUILD files """
 
-# Declare a single benchmark binary.
 def create_fleetbench_benchmark(name, srcs, **kwargs):
+    """Declare a single benchmark binary. Wraps cc_binary() rule.
+
+    Args:
+      name: binary target name
+      srcs: source targets
+      **kwargs: Additional variables to be passed to cc_binary.
+    """
     deps = kwargs.pop("deps")
     malloc = kwargs.pop("malloc", "@com_google_tcmalloc//tcmalloc:tcmalloc")
     benchmark_filter = kwargs.pop("benchmark_filter", "all")
