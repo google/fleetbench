@@ -28,7 +28,6 @@
 #include "absl/base/internal/sysinfo.h"
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
-#include "absl/synchronization/barrier.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "benchmark/benchmark.h"
@@ -57,7 +56,7 @@ static constexpr uint64_t kTransientHeapSize = kBaseHeapSize * 0.0001;
 static constexpr int64_t kSimulatedBytesPerSec = 0;
 // The total number of allocs / deallocs to precalculate for later replay.
 // Memory required to store replay buffers scales with the number of threads.
-static constexpr size_t kRecordAndReplayBufferSize = 100000000;
+static constexpr size_t kRecordAndReplayBufferSize = 100'000'000;
 // Number of bytes to try to release from the page heap per second.
 static constexpr int64_t kEmpiricalMallocReleaseBytesPerSec = 0;
 // Constants for spikes.
@@ -198,20 +197,18 @@ absl::Time SpikeTime(uint64_t num_threads) {
 
 class SimThread {
  public:
-  SimThread(int n, absl::Barrier* startup,
-            absl::Barrier* record_and_replay_barrier,
-            absl::Span<const std::unique_ptr<SimThread>> siblings, size_t bytes,
-            size_t transient, DistributionProfile profile)
+  SimThread(int n, absl::Span<const std::unique_ptr<SimThread>> siblings,
+            size_t bytes, size_t transient, DistributionProfile profile)
       : n_(n),
         thread_is_done_(false),
-        startup_(startup),
-        record_and_replay_barrier_(record_and_replay_barrier),
         siblings_(siblings),
         bytes_(bytes),
         transient_(transient),
         spike_is_local_(kSpikeLocality),
         nthreads_(siblings.size()),
-        profile_(profile) {
+        profile_(profile),
+        load_(n_, Profile(profile_), bytes_, alloc, sized_delete),
+        done_recording_(false) {
     if (n == 0) {
       run_release_each_bytes_ =
           (kSimulatedBytesPerSec + nthreads_ - 1) / nthreads_;
@@ -244,51 +241,46 @@ class SimThread {
     load->BuildDeathObjectPointers();
   }
 
-  void Run() {
-    EmpiricalData load(n_, Profile(profile_), bytes_, alloc, sized_delete);
+  void RecordTraceIfNeeded() {
+    if (done_recording_) {
+      return;
+    }
 
     CHECK_GT(transient_, 0);
     auto transient = std::make_unique<EmpiricalData>(
         n_, TransientProfile(profile_), transient_, alloc, sized_delete);
-    startup_->Block();
     transient.reset(nullptr);
     {
       absl::base_internal::SpinLockHolder h(&lock_);
       next_spike_ = FirstSpike();
     }
 
-    RecordBirthsAndDeaths(&load);
-    // Block until all threads have finished building their traces.  It is
-    // possible that some threads will complete this process before others.
-    record_and_replay_barrier_->Block();
+    RecordBirthsAndDeaths(&load_);
+    done_recording_ = true;
+  }
 
-    // Phase 2: Loop through this thread's trace over and over.
-    while (!thread_is_done_.load(std::memory_order_acquire)) {
-      // Every so often we need to do something else (i.e. spawn a spike) but I
-      // don't want to go through the overhead of computing times every
-      // iteration.  100 reps means something like 150usec, which is still
-      // plenty good resolution, but very low overhead.
-      for (int i = 0; i < kBatch; i++) {
-        load.ReplayNext();
-      }
-      load.RestartTraceIfNecessary();
-      absl::Time t = absl::Now();
-      reps.Add(kBatch);
-      auto allocated = load.total_bytes_allocated();
-      load_bytes_allocated_.store(allocated, std::memory_order_relaxed);
-      auto total_num_allocated = load.total_num_allocated();
-      load_allocations_.store(total_num_allocated, std::memory_order_relaxed);
+  void ReplayTrace() {
+    DCHECK(done_recording_);
+    for (int i = 0; i < kBatch; i++) {
+      load_.ReplayNext();
+    }
+    load_.RestartTraceIfNecessary();
+    absl::Time t = absl::Now();
+    reps.Add(kBatch);
+    auto allocated = load_.total_bytes_allocated();
+    load_bytes_allocated_.store(allocated, std::memory_order_relaxed);
+    auto total_num_allocated = load_.total_num_allocated();
+    load_allocations_.store(total_num_allocated, std::memory_order_relaxed);
 
-      if (run_release_each_bytes_ != 0 && allocated >= next_release_boundary_) {
-        next_release_boundary_ += run_release_each_bytes_;
-        ::tcmalloc::MallocExtension::ReleaseMemoryToSystem(
-            kEmpiricalMallocReleaseBytesPerSec);
-      }
+    if (run_release_each_bytes_ != 0 && allocated >= next_release_boundary_) {
+      next_release_boundary_ += run_release_each_bytes_;
+      ::tcmalloc::MallocExtension::ReleaseMemoryToSystem(
+          kEmpiricalMallocReleaseBytesPerSec);
+    }
 
-      load_usage_.store(load.usage(), std::memory_order_relaxed);
-      if (KillSpikesCheckNew(t)) {
-        MakeSpike(t, load.rng());
-      }
+    load_usage_.store(load_.usage(), std::memory_order_relaxed);
+    if (KillSpikesCheckNew(t)) {
+      MakeSpike(t, load_.rng());
     }
   }
 
@@ -349,8 +341,6 @@ class SimThread {
   size_t n_;
   std::atomic<bool> thread_is_done_;
   absl::Time next_spike_ ABSL_GUARDED_BY(lock_);
-  absl::Barrier* startup_;
-  absl::Barrier* record_and_replay_barrier_;
   const absl::Span<const std::unique_ptr<SimThread>> siblings_;
   size_t bytes_, transient_;
   absl::bernoulli_distribution spike_is_local_;
@@ -364,6 +354,8 @@ class SimThread {
   std::map<absl::Time, std::vector<Spike*>> to_kill_ ABSL_GUARDED_BY(lock_);
   size_t run_release_each_bytes_{};
   size_t next_release_boundary_{};
+  EmpiricalData load_;
+  bool done_recording_;
 };
 
 size_t GetProp(absl::string_view name) {
@@ -382,58 +374,53 @@ size_t GetProp(absl::string_view name) {
 
 }  // namespace
 
-template <DistributionProfile kProfile, uint64_t kHeapSize>
-static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
-  //  Initialize the profile now before startup so we get early errors.
-  Profile(kProfile);
+std::vector<std::unique_ptr<SimThread>>& GetSimThreads() {
+  static auto* sim_threads = new std::vector<std::unique_ptr<SimThread>>();
+  return *sim_threads;
+}
 
-  const size_t nthreads = state.range(0);
+void RecordBirthsAndDeaths(EmpiricalData* load) {
+  // Round number of births / deaths to record down to a multiple of kBatch.
+  const int buffer_size = (kRecordAndReplayBufferSize / kBatch) * kBatch;
+  for (int i = 0; i < buffer_size; ++i) {
+    load->RecordNext();
+  }
+
+  load->RestoreSnapshot();
+  load->BuildDeathObjectPointers();
+}
+
+template <DistributionProfile kProfile, uint64_t kHeapSize>
+void BM_TCMalloc_Empirical_Driver_Setup(const benchmark::State& state) {
+  const size_t nthreads = state.threads();
+  GetSimThreads().resize(nthreads);
   const size_t per_thread_size = kHeapSize / nthreads;
   const size_t per_thread_transient =
       std::max(kTransientHeapSize / nthreads, 1ul);
 
-  absl::Barrier b(nthreads + 1);
-  absl::Barrier record_and_replay_barrier(nthreads + 1);
-  std::vector<std::unique_ptr<SimThread>> sim_threads(nthreads);
-  std::vector<std::thread> threads;
-  threads.reserve(nthreads);
-  for (size_t i = 0; i < nthreads; ++i) {
+  for (int i = 0; i < nthreads; ++i) {
+    auto& sim_threads = GetSimThreads();
     sim_threads[i] = std::make_unique<SimThread>(
-        i, &b, &record_and_replay_barrier, sim_threads, per_thread_size,
-        per_thread_transient, kProfile);
-    threads.push_back(std::thread(&SimThread::Run, sim_threads[i].get()));
+        i, sim_threads, per_thread_size, per_thread_transient, kProfile);
   }
+}
 
-  // Initialize the counters.
-  size_t bytes = 0;
-  size_t allocations = 0;
-  size_t in_use = 0;
-  size_t local = 0;
-  size_t pageheap = 0;
-  size_t released = 0;
-  size_t waste = 0;
-  size_t central = 0;
+void BM_TCMalloc_Empirical_Driver_Teardown(const benchmark::State& state) {
+  GetSimThreads().clear();
+}
 
-  b.Block();
-  // Block until all threads have precalculated the birth / death sequence.
-  record_and_replay_barrier.Block();
+template <DistributionProfile kProfile, uint64_t kHeapSize>
+static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
+  const size_t thread_idx = state.thread_index();
+  auto& sim_threads = GetSimThreads();
+  sim_threads[thread_idx]->RecordTraceIfNeeded();
 
   for (auto _ : state) {
-    in_use = GetProp("generic.current_allocated_bytes");
-    local = GetProp("tcmalloc.local_bytes");
-    pageheap = GetProp("tcmalloc.pageheap_free_bytes");
-    released = GetProp("tcmalloc.pageheap_unmapped_bytes");
-    waste = GetProp("tcmalloc.external_fragmentation_bytes");
-    central = waste - local - pageheap;
+    sim_threads[thread_idx]->ReplayTrace();
   }
-  for (const auto& st : sim_threads) {
-    st->mark_thread_done();
-    bytes += st->total_bytes_allocated();
-    allocations += st->load_allocations();
-  }
-  for (auto& t : threads) {
-    t.join();
-  }
+
+  size_t bytes = sim_threads[thread_idx]->total_bytes_allocated();
+  size_t allocations = sim_threads[thread_idx]->load_allocations();
 
   // Counters of total for the entire execution of the benchmark.
   state.counters["SpikesBytes"] =
@@ -446,11 +433,16 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
   state.counters["RateAllocations"] =
       benchmark::Counter(allocations, benchmark::Counter::kIsRate,
                          benchmark::Counter::OneK::kIs1000);
-  state.counters["SpikesRate"] =
-      benchmark::Counter(dead_spikes.value(), benchmark::Counter::kIsRate,
-                         benchmark::Counter::OneK::kIs1000);
 
-  // All other counters are per-iteration.
+  // Collects interested counters
+  // NOTE: All counters below are estimations of per-iteration and per-thread.
+  size_t in_use = GetProp("generic.current_allocated_bytes");
+  size_t local = GetProp("tcmalloc.local_bytes");
+  size_t pageheap = GetProp("tcmalloc.pageheap_free_bytes");
+  size_t released = GetProp("tcmalloc.pageheap_unmapped_bytes");
+  size_t waste = GetProp("tcmalloc.external_fragmentation_bytes");
+  size_t central = waste - local - pageheap;
+
   state.counters["AllocatedBytes"] = benchmark::Counter(
       in_use, benchmark::Counter::kDefaults, benchmark::Counter::OneK::kIs1024);
   state.counters["WasteTotal"] = benchmark::Counter(
@@ -472,62 +464,97 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
 // This benchmark is only useful for sanitizer tests.
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta,
                    16ul << 10)
-    ->Arg(4);
+    ->Threads(4);
 #else
 // If it's necessary to benchmark with a multiplier of NumCPUs(), e.g. 2x, use:
-// ->RangeMultiplier(2)->Range(1, 2 * absl::base_internal::NumCPUs())
+// ->RangeMultiplier(2)->Range(1, 2 * std::thread::hardware_concurrency())
 // NOTE: this will result in ~2 hour runtime for the benchmark with
 // --benchmark_filter=all.
+// We apply UseRealTime() here to correctly present `RateBytes` and
+// `RateAllocation`. The rate values will increase as thread number grows,
+// otherwise, we will see flat rate, and even decreased values when more threads
+// introduce contention.
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta,
                    kBaseHeapSize)
-    ->ArgName("CPU_nums")
-    ->Range(1, absl::base_internal::NumCPUs())
-    ->MinWarmUpTime(0.5);
+    ->MinWarmUpTime(0.5)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kBeta,
+                                               kBaseHeapSize>)
+    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
+    ->ThreadRange(1, std::thread::hardware_concurrency())
+    ->UseRealTime();
+
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBravo,
                    kBaseHeapSize)
-    ->ArgName("CPU_nums")
-    ->Range(1, absl::base_internal::NumCPUs())
-    ->MinWarmUpTime(2);
+    ->MinWarmUpTime(2)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kBravo,
+                                               kBaseHeapSize>)
+    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
+    ->ThreadRange(1, std::thread::hardware_concurrency())
+    ->UseRealTime();
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kCharlie,
                    kBaseHeapSize)
-    ->ArgName("CPU_nums")
-    ->Range(1, absl::base_internal::NumCPUs())
-    ->MinWarmUpTime(0.5);
+    ->MinWarmUpTime(0.5)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kCharlie,
+                                               kBaseHeapSize>)
+    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
+    ->ThreadRange(1, std::thread::hardware_concurrency())
+    ->UseRealTime();
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kDelta,
                    kBaseHeapSize)
-    ->ArgName("CPU_nums")
-    ->Range(1, absl::base_internal::NumCPUs())
-    ->MinWarmUpTime(0.5);
+    ->MinWarmUpTime(0.5)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kDelta,
+                                               kBaseHeapSize>)
+    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
+    ->ThreadRange(1, std::thread::hardware_concurrency())
+    ->UseRealTime();
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kEcho,
                    kBaseHeapSize)
-    ->ArgName("CPU_nums")
-    ->Range(1, absl::base_internal::NumCPUs())
-    ->MinWarmUpTime(0.5);
+    ->MinWarmUpTime(0.5)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kEcho,
+                                               kBaseHeapSize>)
+    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
+    ->ThreadRange(1, std::thread::hardware_concurrency())
+    ->UseRealTime();
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kFoxtrot,
                    kBaseHeapSize)
-    ->ArgName("CPU_nums")
-    ->Range(1, absl::base_internal::NumCPUs())
-    ->MinWarmUpTime(0.5);
+    ->MinWarmUpTime(0.5)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kFoxtrot,
+                                               kBaseHeapSize>)
+    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
+    ->ThreadRange(1, std::thread::hardware_concurrency())
+    ->UseRealTime();
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kMerced,
                    kBaseHeapSize)
-    ->ArgName("CPU_nums")
-    ->Range(1, absl::base_internal::NumCPUs())
-    ->MinWarmUpTime(0.5);
+    ->MinWarmUpTime(0.5)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kMerced,
+                                               kBaseHeapSize>)
+    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
+    ->ThreadRange(1, std::thread::hardware_concurrency())
+    ->UseRealTime();
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kSierra,
                    kBaseHeapSize)
-    ->ArgName("CPU_nums")
-    ->Range(1, absl::base_internal::NumCPUs())
-    ->MinWarmUpTime(0.5);
+    ->MinWarmUpTime(0.5)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kSierra,
+                                               kBaseHeapSize>)
+    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
+    ->ThreadRange(1, std::thread::hardware_concurrency())
+    ->UseRealTime();
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kSigma,
                    kBaseHeapSize)
-    ->ArgName("CPU_nums")
-    ->Range(1, absl::base_internal::NumCPUs())
-    ->MinWarmUpTime(0.5);
+    ->MinWarmUpTime(0.5)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kSigma,
+                                               kBaseHeapSize>)
+    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
+    ->ThreadRange(1, std::thread::hardware_concurrency())
+    ->UseRealTime();
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kUniform,
                    kBaseHeapSize)
-    ->ArgName("CPU_nums")
-    ->Range(1, absl::base_internal::NumCPUs())
-    ->MinWarmUpTime(0.5);
+    ->MinWarmUpTime(0.5)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kUniform,
+                                               kBaseHeapSize>)
+    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
+    ->ThreadRange(1, std::thread::hardware_concurrency())
+    ->UseRealTime();
 #endif
 
 }  // namespace tcmalloc
