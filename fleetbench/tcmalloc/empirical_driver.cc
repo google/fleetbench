@@ -56,7 +56,7 @@ static constexpr uint64_t kTransientHeapSize = kBaseHeapSize * 0.0001;
 static constexpr int64_t kSimulatedBytesPerSec = 0;
 // The total number of allocs / deallocs to precalculate for later replay.
 // Memory required to store replay buffers scales with the number of threads.
-static constexpr size_t kRecordAndReplayBufferSize = 100'000'000;
+static constexpr size_t kRecordAndReplayBufferSize = 1'000'000;
 // Number of bytes to try to release from the page heap per second.
 static constexpr int64_t kEmpiricalMallocReleaseBytesPerSec = 0;
 // Constants for spikes.
