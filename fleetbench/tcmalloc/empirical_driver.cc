@@ -46,11 +46,6 @@ void* alloc(size_t s) { return ::operator new(s); }
 // parameters.
 
 static constexpr int64_t kBatch = 100;
-// Total size of base heap.
-static constexpr uint64_t kBaseHeapSize = 16ul << 30;
-// Additional size of data allocated at program start, then freed before running
-// main benchmark.
-static constexpr uint64_t kTransientHeapSize = kBaseHeapSize * 0.0001;
 // When non-zero, empirical driver will simulate tick of ReleaseMemoryToOS
 // iteration, given number of bytes allocated.
 static constexpr int64_t kSimulatedBytesPerSec = 0;
@@ -103,6 +98,26 @@ const EmpiricalProfile& Profile(DistributionProfile profile) {
 
   auto i = choices->find(profile);
   CHECK(i != choices->end());
+  return i->second;
+}
+
+// Total size of base heap.
+uint64_t ProfileConstant(DistributionProfile profile) {
+  static const auto* base_heap_consts = []() {
+    return new std::map<DistributionProfile, uint64_t>{
+        {DistributionProfile::kBeta, 93ul << 20},
+        {DistributionProfile::kBravo, 29615ul << 20},
+        {DistributionProfile::kCharlie, 11967ul << 20},
+        {DistributionProfile::kDelta, 3536ul << 20},
+        {DistributionProfile::kEcho, 1150ul << 20},
+        {DistributionProfile::kFoxtrot, 6161ul << 20},
+        {DistributionProfile::kMerced, 6811ul << 20},
+        {DistributionProfile::kSierra, 63015ul << 20},
+        {DistributionProfile::kSigma, 8797ul << 20},
+        {DistributionProfile::kUniform, 15472ul << 20}};
+  }();
+  auto i = base_heap_consts->find(profile);
+  CHECK(i != base_heap_consts->end());
   return i->second;
 }
 
@@ -390,13 +405,19 @@ void RecordBirthsAndDeaths(EmpiricalData* load) {
   load->BuildDeathObjectPointers();
 }
 
-template <DistributionProfile kProfile, uint64_t kHeapSize>
+template <DistributionProfile kProfile>
 void BM_TCMalloc_Empirical_Driver_Setup(const benchmark::State& state) {
   const size_t nthreads = state.threads();
   GetSimThreads().resize(nthreads);
-  const size_t per_thread_size = kHeapSize / nthreads;
+  // Total size of base heap
+  uint64_t base_heap_size = ProfileConstant(kProfile);
+  const size_t per_thread_size = base_heap_size / nthreads;
+
+  // Additional size of data allocated at program start, then freed before
+  // running main benchmark.
+  size_t transient_heap_size = base_heap_size * 0.0001;
   const size_t per_thread_transient =
-      std::max(kTransientHeapSize / nthreads, 1ul);
+      std::max(transient_heap_size / nthreads, 1ul);
 
   for (int i = 0; i < nthreads; ++i) {
     auto& sim_threads = GetSimThreads();
@@ -409,7 +430,7 @@ void BM_TCMalloc_Empirical_Driver_Teardown(const benchmark::State& state) {
   GetSimThreads().clear();
 }
 
-template <DistributionProfile kProfile, uint64_t kHeapSize>
+template <DistributionProfile kProfile>
 static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
   const size_t thread_idx = state.thread_index();
   auto& sim_threads = GetSimThreads();
@@ -462,8 +483,7 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
 
 #ifdef SAN
 // This benchmark is only useful for sanitizer tests.
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta,
-                   16ul << 10)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta)
     ->Threads(4);
 #else
 // If it's necessary to benchmark with a multiplier of NumCPUs(), e.g. 2x, use:
@@ -474,84 +494,64 @@ BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta,
 // `RateAllocation`. The rate values will increase as thread number grows,
 // otherwise, we will see flat rate, and even decreased values when more threads
 // introduce contention.
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta,
-                   kBaseHeapSize)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta)
     ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kBeta,
-                                               kBaseHeapSize>)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kBeta>)
     ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
     ->ThreadRange(1, std::thread::hardware_concurrency())
     ->UseRealTime();
 
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBravo,
-                   kBaseHeapSize)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBravo)
     ->MinWarmUpTime(2)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kBravo,
-                                               kBaseHeapSize>)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kBravo>)
     ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
     ->ThreadRange(1, std::thread::hardware_concurrency())
     ->UseRealTime();
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kCharlie,
-                   kBaseHeapSize)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kCharlie)
     ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kCharlie,
-                                               kBaseHeapSize>)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kCharlie>)
     ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
     ->ThreadRange(1, std::thread::hardware_concurrency())
     ->UseRealTime();
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kDelta,
-                   kBaseHeapSize)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kDelta)
     ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kDelta,
-                                               kBaseHeapSize>)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kDelta>)
     ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
     ->ThreadRange(1, std::thread::hardware_concurrency())
     ->UseRealTime();
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kEcho,
-                   kBaseHeapSize)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kEcho)
     ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kEcho,
-                                               kBaseHeapSize>)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kEcho>)
     ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
     ->ThreadRange(1, std::thread::hardware_concurrency())
     ->UseRealTime();
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kFoxtrot,
-                   kBaseHeapSize)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kFoxtrot)
     ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kFoxtrot,
-                                               kBaseHeapSize>)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kFoxtrot>)
     ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
     ->ThreadRange(1, std::thread::hardware_concurrency())
     ->UseRealTime();
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kMerced,
-                   kBaseHeapSize)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kMerced)
     ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kMerced,
-                                               kBaseHeapSize>)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kMerced>)
     ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
     ->ThreadRange(1, std::thread::hardware_concurrency())
     ->UseRealTime();
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kSierra,
-                   kBaseHeapSize)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kSierra)
     ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kSierra,
-                                               kBaseHeapSize>)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kSierra>)
     ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
     ->ThreadRange(1, std::thread::hardware_concurrency())
     ->UseRealTime();
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kSigma,
-                   kBaseHeapSize)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kSigma)
     ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kSigma,
-                                               kBaseHeapSize>)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kSigma>)
     ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
     ->ThreadRange(1, std::thread::hardware_concurrency())
     ->UseRealTime();
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kUniform,
-                   kBaseHeapSize)
+BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kUniform)
     ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kUniform,
-                                               kBaseHeapSize>)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kUniform>)
     ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
     ->ThreadRange(1, std::thread::hardware_concurrency())
     ->UseRealTime();
