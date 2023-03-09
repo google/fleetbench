@@ -25,7 +25,6 @@
 #include <vector>
 
 #include "absl/base/internal/spinlock.h"
-#include "absl/base/internal/sysinfo.h"
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
@@ -419,7 +418,7 @@ void BM_TCMalloc_Empirical_Driver_Setup(const benchmark::State& state) {
   const size_t per_thread_transient =
       std::max(transient_heap_size / nthreads, 1ul);
 
-  for (int i = 0; i < nthreads; ++i) {
+  for (size_t i = 0; i < nthreads; ++i) {
     auto& sim_threads = GetSimThreads();
     sim_threads[i] = std::make_unique<SimThread>(
         i, sim_threads, per_thread_size, per_thread_transient, kProfile);
