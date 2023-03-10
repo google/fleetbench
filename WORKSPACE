@@ -147,3 +147,20 @@ rules_fuzzing_dependencies()
 load("@rules_fuzzing//fuzzing:init.bzl", "rules_fuzzing_init")
 
 rules_fuzzing_init()
+
+http_archive(
+    name = "llvm", # 2023-03-07
+    build_file = "@//fleetbench:llvmlibc.BUILD.bazel",
+    sha256 = "ee98a255becf4b8d2667cea777a497e0fea87a294abfc5c01ee28897dbfc7c3f",
+    strip_prefix = "llvm-project-e002a38b20e3ac40aecbbfa0774f8ba7b9690b0c",
+    urls = ["https://github.com/llvm/llvm-project/archive/e002a38b20e3ac40aecbbfa0774f8ba7b9690b0c.tar.gz"],
+)
+
+load("@llvm//utils/bazel:configure.bzl", "llvm_configure", "llvm_disable_optional_support_deps")
+
+llvm_configure(name = "llvm-project")
+
+# Disables optional dependencies for Support like zlib and terminfo. You may
+# instead want to configure them using the macros in the corresponding bzl
+# files.
+llvm_disable_optional_support_deps()

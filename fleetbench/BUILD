@@ -18,5 +18,8 @@ cc_library(
     visibility = ["//fleetbench:__subpackages__"],
     deps = [
         "@com_google_benchmark//:benchmark",
-    ],
+    ] + select({
+        "//fleetbench:llvm": ["@llvm-project//:llvmlibc"],
+        "//conditions:default": [],
+    }),
 )
