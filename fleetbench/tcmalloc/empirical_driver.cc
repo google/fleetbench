@@ -17,7 +17,6 @@
 #include "fleetbench/tcmalloc/empirical_driver.h"
 
 #include <algorithm>
-#include <limits>
 #include <map>
 #include <memory>
 #include <optional>
@@ -32,6 +31,7 @@
 #include "benchmark/benchmark.h"
 #include "fleetbench/tcmalloc/empirical.h"
 #include "fleetbench/tcmalloc/empirical_distributions.h"
+#include "fleetbench/tcmalloc/empirical_heap_size.h"
 #include "tcmalloc/malloc_extension.h"
 
 namespace fleetbench {
@@ -64,19 +64,6 @@ static constexpr double kSpikeLocality = 0.90;
 // diurnal variation, etc.
 static constexpr size_t kSpikeBytes = 0;
 
-enum class DistributionProfile {
-  kBeta = 0,
-  kBravo,
-  kCharlie,
-  kDelta,
-  kEcho,
-  kFoxtrot,
-  kMerced,
-  kSierra,
-  kSigma,
-  kUniform,
-};
-
 // Which source of profiled allocation to use for the base load.
 // This can be beta, bravo, charlie, delta, echo, foxtrot, merced, sierra,
 // sigma, or uniform.
@@ -99,27 +86,6 @@ const EmpiricalProfile& Profile(DistributionProfile profile) {
   CHECK(i != choices->end());
   return i->second;
 }
-
-// Total size of base heap.
-uint64_t ProfileConstant(DistributionProfile profile) {
-  static const auto* base_heap_consts = []() {
-    return new std::map<DistributionProfile, uint64_t>{
-        {DistributionProfile::kBeta, 93ul << 20},
-        {DistributionProfile::kBravo, 29615ul << 20},
-        {DistributionProfile::kCharlie, 11967ul << 20},
-        {DistributionProfile::kDelta, 3536ul << 20},
-        {DistributionProfile::kEcho, 1150ul << 20},
-        {DistributionProfile::kFoxtrot, 6161ul << 20},
-        {DistributionProfile::kMerced, 6811ul << 20},
-        {DistributionProfile::kSierra, 63015ul << 20},
-        {DistributionProfile::kSigma, 8797ul << 20},
-        {DistributionProfile::kUniform, 15472ul << 20}};
-  }();
-  auto i = base_heap_consts->find(profile);
-  CHECK(i != base_heap_consts->end());
-  return i->second;
-}
-
 const EmpiricalProfile& SpikeProfile(const DistributionProfile& spike_profile) {
   return Profile(spike_profile);
 }

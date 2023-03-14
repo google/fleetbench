@@ -58,6 +58,14 @@ cc_library(
     deps = ["@com_google_benchmark//:benchmark"],
 )
 
+cc_library(
+    name = "empirical_heap_size",
+    testonly = 1,
+    srcs = ["empirical_heap_size.cc"],
+    hdrs = ["empirical_heap_size.h"],
+    deps = ["@com_google_absl//absl/log:check"],
+)
+
 create_fleetbench_benchmark(
     name = "empirical_driver",
     srcs = ["empirical_driver.cc"],
@@ -67,10 +75,10 @@ create_fleetbench_benchmark(
         ":empirical",
         ":empirical_distributions",
         ":empirical_driver_lib",
+        ":empirical_heap_size",
         "@com_google_absl//absl/base",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings:str_format",
-        "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",
         "@com_google_benchmark//:benchmark",
         "@com_google_tcmalloc//tcmalloc:malloc_extension",
@@ -98,10 +106,10 @@ create_fleetbench_benchmark(
         ":empirical",
         ":empirical_distributions",
         ":empirical_driver_lib",
+        ":empirical_heap_size",
         "@com_google_absl//absl/base",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings:str_format",
-        "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",
         "@com_google_benchmark//:benchmark",
         "@com_google_tcmalloc//tcmalloc:malloc_extension",
