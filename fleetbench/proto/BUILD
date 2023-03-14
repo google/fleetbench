@@ -167,6 +167,8 @@ create_fleetbench_benchmark(
         "benchmark.cc",
     ],
     benchmark_min_time = "3s",
+    visibility = [
+    ],
     deps = [
         ":benchmark_lib",
         "//fleetbench/common",
