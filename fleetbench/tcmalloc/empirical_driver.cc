@@ -407,6 +407,7 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
 
   size_t bytes = sim_threads[thread_idx]->total_bytes_allocated();
   size_t allocations = sim_threads[thread_idx]->load_allocations();
+  double bytes_per_allocation = bytes / allocations;
 
   // Counters of total for the entire execution of the benchmark.
   state.counters["SpikesBytes"] =
@@ -419,6 +420,11 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
   state.counters["RateAllocations"] =
       benchmark::Counter(allocations, benchmark::Counter::kIsRate,
                          benchmark::Counter::OneK::kIs1000);
+
+  // Bytes per allocation is useful to compare with application behaviors.
+  state.counters["BytesPerAllocation"] =
+      benchmark::Counter(bytes_per_allocation, benchmark::Counter::kAvgThreads,
+                         benchmark::Counter::OneK::kIs1024);
 
   // Collects interested counters
   // NOTE: All counters below are estimations of per-iteration and per-thread.
