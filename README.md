@@ -17,7 +17,7 @@ collected in production.
 IMPORTANT: The benchmarking suite is not complete at this time. As described in
 [this paper](https://research.google/pubs/pub44271/), a significant portion of
 compute is spent in code common to many applications - the so-called ‘Data
-Center Tax’. This benchmark at `v0.1` represents subset of core libraries used
+Center Tax’. This benchmark at `v0.2` represents subset of core libraries used
 across the fleet. Future releases will continue to increase this coverage. The
 goal is to expand coverage iteratively and keep distributions up-to-date, so
 always use its version at `HEAD`.
