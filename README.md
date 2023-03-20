@@ -65,6 +65,21 @@ bazel run --config=opt fleetbench/swissmap:hot_swissmap_benchmark
 Important: Always run benchmarks with `--config=opt` to apply essential compiler
 optimizations.
 
+### TCMalloc per-CPU Mode
+
+TCMalloc is the underlying memory allocator in this benchmark suite. The
+supposed default operation mode should be
+[per-CPU mode](https://google.github.io/tcmalloc/overview.html). RSEQ is
+required for this mode, however, glibc took control of it since version 2.35,
+and TCMalloc reverts to using per-thread caching instead
+([more info](https://github.com/google/tcmalloc/issues/144)). We **strongly
+recommend** adding environment variable: `GLIBC_TUNABLES=glibc.pthread.rseq=0`
+to ensure per-CPU mode is being applied when running the benchmark. For example:
+
+```
+GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel run --config=opt fleetbench/swissmap:hot_swissmap_benchmark
+```
+
 ### Clang Toolchain
 
 For more consistency with Google's build configuration, we suggest using the
