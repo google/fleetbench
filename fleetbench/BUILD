@@ -18,6 +18,7 @@ cc_library(
     visibility = ["//fleetbench:__subpackages__"],
     deps = [
         "@com_google_benchmark//:benchmark",
+        "@com_google_tcmalloc//tcmalloc:malloc_extension",
     ] + select({
         "//fleetbench:llvm": ["@llvm-project//:llvmlibc"],
         "//conditions:default": [],

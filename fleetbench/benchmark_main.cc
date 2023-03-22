@@ -13,11 +13,18 @@
 // limitations under the License.
 
 #include <string>
+#include <thread>
 
 #include "benchmark/benchmark.h"
+#include "tcmalloc/malloc_extension.h"
 
 int main(int argc, char* argv[]) {
   benchmark::Initialize(&argc, argv);
+  static auto* background =
+    tcmalloc::MallocExtension::NeedsProcessBackgroundActions() ?
+    new std::thread([]() {
+      tcmalloc::MallocExtension::ProcessBackgroundActions();
+    }) : nullptr;
   std::string defaultFilter = "all";
   if (!benchmark::GetBenchmarkFilter().empty()) {
     // if benchmark-filter is set, then use it instead.
