@@ -44,8 +44,6 @@ create_fleetbench_benchmark(
 create_fleetbench_benchmark(
     name = "hot_swissmap_benchmark",
     srcs = ["hot_swissmap_benchmark.cc"],
-    visibility = [
-    ],
     deps = [
         ":swissmap_benchmark",
         "//fleetbench/common",
