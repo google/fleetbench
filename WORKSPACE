@@ -60,6 +60,15 @@ http_archive(
     sha256 = "8cf4eaab3a13b27a95b7e74c58fb4c0788ad94d1f7ec65b20665c4caf1d245e8",
 )
 
+# Google Snappy
+http_archive(
+    name = "snappy", # 2023-04-06
+    build_file = "//fleetbench/compression:snappy.BUILD",
+    urls = ["https://github.com/google/snappy/archive/refs/tags/1.1.10.zip"],
+    strip_prefix = "snappy-1.1.10",
+    sha256= "3c6f7b07f92120ebbba5f7742f2cc2386fd46c53f5730322b7b90d4afc126fca",
+)
+
 # libpfm4, for perf counters
 http_archive(
     name = "libpfm", # 2023-01-12

@@ -1,0 +1,26 @@
+load("//fleetbench:variants.bzl", "create_fleetbench_benchmark")
+
+filegroup(
+    name = "corpora",
+    srcs = glob(["corpora/*"]),
+)
+
+cc_library(
+    name = "algorithms",
+    hdrs = ["algorithms.h"],
+    deps = [
+        "@com_google_absl//absl/strings",
+        "@snappy",
+    ],
+)
+
+create_fleetbench_benchmark(
+    name = "compression_benchmark",
+    srcs = ["compression_benchmark.cc"],
+    data = [":corpora"],
+    deps = [
+        ":algorithms",
+        "@com_google_absl//absl/log:check",
+        "@com_google_benchmark//:benchmark",
+    ],
+)
