@@ -23,7 +23,7 @@
 #include "benchmark/benchmark.h"
 #include "fleetbench/swissmap/swissmap_benchmark.h"
 
-// All benchmarks in this file are for cold lookups.
+// All benchmarks in this file are for hot lookups.
 namespace fleetbench {
 
 using ::benchmark::DoNotOptimize;
