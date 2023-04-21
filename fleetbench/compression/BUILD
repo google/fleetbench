@@ -2,7 +2,10 @@ load("//fleetbench:variants.bzl", "create_fleetbench_benchmark")
 
 filegroup(
     name = "corpora",
-    srcs = glob(["corpora/*"]),
+    srcs = glob([
+        "corpora/Snappy-COMPRESS-A/*",
+        "corpora/Snappy-DECOMPRESS-A/*",
+    ]),
 )
 
 cc_library(
@@ -21,6 +24,7 @@ create_fleetbench_benchmark(
     deps = [
         ":algorithms",
         "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/strings",
         "@com_google_benchmark//:benchmark",
     ],
 )
