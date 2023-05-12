@@ -5,13 +5,19 @@ filegroup(
     srcs = glob([
         "corpora/Snappy-COMPRESS-A/*",
         "corpora/Snappy-DECOMPRESS-A/*",
+        "corpora/ZSTD-COMPRESS-A/*",
+        "corpora/ZSTD-DECOMPRESS-A/*",
     ]),
 )
 
 cc_library(
     name = "algorithms",
+    srcs = ["algorithms.cc"],
     hdrs = ["algorithms.h"],
     deps = [
+        "@ZSTD//:zstdlib",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings",
         "@snappy",
     ],
@@ -23,6 +29,7 @@ create_fleetbench_benchmark(
     data = [":corpora"],
     deps = [
         ":algorithms",
+        "@com_google_absl//absl/log",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings",
         "@com_google_benchmark//:benchmark",

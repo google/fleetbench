@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "benchmark/benchmark.h"
@@ -55,17 +56,37 @@ std::vector<std::string> GetCorpora(const absl::string_view file_path) {
   return corpora;
 }
 
+namespace CompressorFactory {
+
+std::unique_ptr<Compressor> CreateCompressor(
+    const absl::string_view compressor_type) {
+  if (compressor_type == "Snappy") {
+    return std::make_unique<SnappyCompressor>();
+  } else if (compressor_type == "ZSTD") {
+    return std::make_unique<ZstdCompressor>();
+  } else {
+    LOG(FATAL) << "Unknown compressor type: " << compressor_type;
+    return nullptr;
+  }
+}
+}  // namespace CompressorFactory
+
 }  // namespace
 
 static constexpr absl::string_view kCorporaPath =
     "fleetbench/compression/corpora/";
 
 template <class... Args>
-static void BM_Compress_Snappy(benchmark::State& state, Args&&... args) {
+static void BM_Compress(benchmark::State& state, Args&&... args) {
   auto args_tuple = std::make_tuple(std::move(args)...);
 
-  std::string binary_directory = std::get<0>(args_tuple);
+  std::string compressor_type = std::get<0>(args_tuple);
+  auto compressor = CompressorFactory::CreateCompressor(compressor_type);
+
+  std::string binary_directory = std::get<1>(args_tuple);
   std::string file_path = absl::StrCat(kCorporaPath, binary_directory);
+
+  int compression_level = state.range(0);
 
   // Read in benchmark corpus
   auto corpora = GetCorpora(file_path);
@@ -73,29 +94,32 @@ static void BM_Compress_Snappy(benchmark::State& state, Args&&... args) {
   // Reserve space to store string after compression and decompression.
   std::vector<std::string> compressed(corpora.size()),
       decompressed(corpora.size());
-
-  auto snappy_compressor = std::make_unique<SnappyCompressor>();
 
   for (auto _ : state) {
     //  Compress file
     for (size_t i = 0; i < corpora.size(); i++) {
       benchmark::DoNotOptimize(
-          snappy_compressor->Compress(corpora[i], &compressed[i]));
+          compressor->Compress(corpora[i], &compressed[i], compression_level));
     }
   }
-  // Decompress file and check corretness
+  // Decompress file and check correctness
   for (size_t i = 0; i < compressed.size(); i++) {
-    snappy_compressor->Decompress(compressed[i], &decompressed[i]);
+    compressor->Decompress(compressed[i], &decompressed[i]);
     CHECK_EQ(corpora[i], decompressed[i]);
   }
 }
 
 template <class... Args>
-static void BM_Decompress_Snappy(benchmark::State& state, Args&&... args) {
+static void BM_Decompress(benchmark::State& state, Args&&... args) {
   auto args_tuple = std::make_tuple(std::move(args)...);
 
-  std::string binary_directory = std::get<0>(args_tuple);
+  std::string compressor_type = std::get<0>(args_tuple);
+  auto compressor = CompressorFactory::CreateCompressor(compressor_type);
+
+  std::string binary_directory = std::get<1>(args_tuple);
   std::string file_path = absl::StrCat(kCorporaPath, binary_directory);
+
+  int compression_level = state.range(0);
 
   // Read in benchmark corpus
   auto corpora = GetCorpora(file_path);
@@ -104,16 +128,14 @@ static void BM_Decompress_Snappy(benchmark::State& state, Args&&... args) {
   std::vector<std::string> compressed(corpora.size()),
       decompressed(corpora.size());
 
-  auto snappy_compressor = std::make_unique<SnappyCompressor>();
-
   for (size_t i = 0; i < corpora.size(); i++) {
-    snappy_compressor->Compress(corpora[i], &compressed[i]);
+    compressor->Compress(corpora[i], &compressed[i], compression_level);
   }
 
   for (auto _ : state) {
     for (size_t i = 0; i < compressed.size(); i++) {
       benchmark::DoNotOptimize(
-          snappy_compressor->Decompress(compressed[i], &decompressed[i]));
+          compressor->Decompress(compressed[i], &decompressed[i]));
     }
   }
   for (size_t i = 0; i < decompressed.size(); i++) {
@@ -121,8 +143,14 @@ static void BM_Decompress_Snappy(benchmark::State& state, Args&&... args) {
   }
 }
 
-BENCHMARK_CAPTURE(BM_Compress_Snappy, A, "Snappy-COMPRESS-A");
-BENCHMARK_CAPTURE(BM_Decompress_Snappy, A, "Snappy-DECOMPRESS-A");
+BENCHMARK_CAPTURE(BM_Compress, A - Snappy, "Snappy", "Snappy-COMPRESS-A")
+    ->Range(0, 0);
+BENCHMARK_CAPTURE(BM_Decompress, A - Snappy, "Snappy", "Snappy-DECOMPRESS-A")
+    ->Range(0, 0);
+BENCHMARK_CAPTURE(BM_Compress, A - ZSTD, "ZSTD", "ZSTD-DECOMPRESS-A")
+    ->DenseRange(1, 10);
+BENCHMARK_CAPTURE(BM_Decompress, A - ZSTD, "ZSTD", "ZSTD-DECOMPRESS-A")
+    ->DenseRange(1, 10);
 
 }  // namespace compression
 }  // namespace fleetbench

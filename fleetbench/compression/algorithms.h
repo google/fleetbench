@@ -17,25 +17,40 @@
 
 #include <stddef.h>
 
+#include <cstddef>
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "snappy.h"
 
 namespace fleetbench {
 namespace compression {
 
-class SnappyCompressor {
+class Compressor {
  public:
-  inline size_t Compress(const absl::string_view input, std::string* output) {
-    return snappy::Compress(input.data(), input.size(), output);
-  }
-  inline bool Decompress(const absl::string_view input, std::string* output) {
-    return snappy::Uncompress(input.data(), input.size(), output);
-  }
+  virtual ~Compressor() = default;
+  virtual size_t Compress(absl::string_view input, std::string* output,
+                          int compression_level) = 0;
+  virtual bool Decompress(absl::string_view input, std::string* output) = 0;
+};
+
+class ZstdCompressor : public Compressor {
+ public:
+  size_t Compress(absl::string_view input, std::string* output,
+                  int compression_level) override;
+  bool Decompress(absl::string_view input, std::string* output) override;
+
+ private:
+  size_t MaxCompressedSize(size_t input_size) const;
+};
+
+class SnappyCompressor : public Compressor {
+ public:
+  size_t Compress(absl::string_view input, std::string* output,
+                  int compression_level) override;
+  bool Decompress(absl::string_view input, std::string* output) override;
 };
 
 }  // namespace compression
 }  // namespace fleetbench
 
-#endif  // THIRD_PARTY_FLEETBENCH_COMPRESSION_ALGORITHMS_H_
+#endif

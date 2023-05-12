@@ -68,6 +68,15 @@ http_archive(
     sha256 = "c7b207562584bb7272921c176c6bd5c54cfae833129a5d7451bccd7f97b831b5",
 )
 
+# ZSTD
+http_archive(
+    name = "ZSTD", # 2020-05-22
+    build_file = "//fleetbench/compression:zstd.BUILD",
+    sha256 = "b6c537b53356a3af3ca3e621457751fa9a6ba96daf3aebb3526ae0f610863532",
+    strip_prefix = "zstd-1.4.5/lib",
+    urls = ["https://github.com/facebook/zstd/archive/v1.4.5.zip"],
+)
+
 # libpfm4, for perf counters
 http_archive(
     name = "libpfm", # 2023-01-12
