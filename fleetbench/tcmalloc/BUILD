@@ -97,16 +97,18 @@ cc_test(
     ],
 )
 
-create_fleetbench_benchmark(
-    name = "empirical_driver_sanitizer_only",
+# Run a minimal version of empirical_driver to exercise the code paths.
+cc_test(
+    name = "empirical_driver_test",
     srcs = ["empirical_driver.cc"],
-    benchmark_min_time = "0.1s",
-    defines = ["SAN"],
+    local_defines = ["EMPIRICAL_DRIVER_SMOKETEST"],
+    malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
         ":empirical",
         ":empirical_distributions",
         ":empirical_driver_lib",
         ":empirical_heap_size",
+        "//fleetbench:benchmark_main",
         "@com_google_absl//absl/base",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings:str_format",
@@ -114,12 +116,4 @@ create_fleetbench_benchmark(
         "@com_google_benchmark//:benchmark",
         "@com_google_tcmalloc//tcmalloc:malloc_extension",
     ],
-)
-
-sh_test(
-    name = "sanitizer_test",
-    size = "enormous",
-    srcs = ["sanitizer_test.sh"],
-    data = [":empirical_driver_sanitizer_only"],
-    deps = [],
 )

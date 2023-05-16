@@ -452,9 +452,10 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
                          benchmark::Counter::OneK::kIs1024);
 }
 
-#ifdef SAN
-// This benchmark is only useful for sanitizer tests.
+#ifdef EMPIRICAL_DRIVER_SMOKETEST
 BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta)
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kBeta>)
+    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
     ->Threads(4);
 #else
 // If it's necessary to benchmark with a multiplier of NumCPUs(), e.g. 2x, use:
