@@ -1,5 +1,4 @@
 load("//fleetbench:tcmalloc_copts.bzl", "TCMALLOC_DEFAULT_COPTS")
-load("//fleetbench:variants.bzl", "create_fleetbench_benchmark")
 
 package(
     default_visibility = ["//visibility:private"],
@@ -66,16 +65,17 @@ cc_library(
     deps = ["@com_google_absl//absl/log:check"],
 )
 
-create_fleetbench_benchmark(
+cc_test(
     name = "empirical_driver",
     srcs = ["empirical_driver.cc"],
-    benchmark_filter = ".*DistributionProfile::(kBravo|kSierra).*",
-    benchmark_min_time = "5s",
+    malloc = "@com_google_tcmalloc//tcmalloc",
+    tags = ["manual"],
     deps = [
         ":empirical",
         ":empirical_distributions",
         ":empirical_driver_lib",
         ":empirical_heap_size",
+        "//fleetbench:benchmark_main",
         "@com_google_absl//absl/base",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings:str_format",

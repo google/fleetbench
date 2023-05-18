@@ -1,10 +1,10 @@
-load("//fleetbench:variants.bzl", "create_fleetbench_benchmark")
-
-create_fleetbench_benchmark(
+cc_test(
     name = "hashing_benchmark",
     srcs = ["hashing_benchmark.cc"],
+    malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
         ":hashing_size_distributions",
+        "//fleetbench:benchmark_main",
         "//fleetbench/common",
         "@com_google_absl//absl/crc:crc32c",
         "@com_google_absl//absl/log:check",
@@ -24,12 +24,4 @@ cc_library(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:span",
     ],
-)
-
-sh_test(
-    name = "sanitizer_test",
-    size = "medium",
-    srcs = ["sanitizer_test.sh"],
-    data = [":hashing_benchmark"],
-    deps = [],
 )

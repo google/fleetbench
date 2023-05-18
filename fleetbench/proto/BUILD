@@ -1,6 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("//fleetbench:variants.bzl", "create_fleetbench_benchmark")
 
 package(
     default_visibility = ["//visibility:private"],
@@ -161,25 +160,18 @@ cc_test(
     ],
 )
 
-create_fleetbench_benchmark(
+cc_test(
     name = "proto_benchmark",
     srcs = [
         "benchmark.cc",
     ],
-    benchmark_min_time = "3s",
+    malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
         ":benchmark_lib",
+        "//fleetbench:benchmark_main",
         "//fleetbench/common",
         "@com_google_absl//absl/random",
         "@com_google_benchmark//:benchmark",
         "@com_google_protobuf//:protobuf_lite",
     ],
-)
-
-sh_test(
-    name = "sanitizer_test",
-    size = "medium",
-    srcs = ["sanitizer_test.sh"],
-    data = [":proto_benchmark"],
-    deps = [],
 )

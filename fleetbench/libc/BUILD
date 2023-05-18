@@ -1,5 +1,3 @@
-load("//fleetbench:variants.bzl", "create_fleetbench_benchmark")
-
 cc_library(
     name = "utils",
     srcs = ["utils.cc"],
@@ -67,12 +65,14 @@ cc_library(
     ],
 )
 
-create_fleetbench_benchmark(
+cc_test(
     name = "mem_benchmark",
     srcs = ["mem_benchmark.cc"],
+    malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
         ":memory_size_distributions",
         ":utils",
+        "//fleetbench:benchmark_main",
         "//fleetbench/common",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/random:distributions",
@@ -80,12 +80,4 @@ create_fleetbench_benchmark(
         "@com_google_absl//absl/types:span",
         "@com_google_benchmark//:benchmark",
     ],
-)
-
-sh_test(
-    name = "sanitizer_test",
-    size = "medium",
-    srcs = ["sanitizer_test.sh"],
-    data = [":mem_benchmark"],
-    deps = [],
 )

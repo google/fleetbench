@@ -1,5 +1,3 @@
-load("//fleetbench:variants.bzl", "create_fleetbench_benchmark")
-
 filegroup(
     name = "corpora",
     srcs = glob([
@@ -23,12 +21,14 @@ cc_library(
     ],
 )
 
-create_fleetbench_benchmark(
+cc_test(
     name = "compression_benchmark",
     srcs = ["compression_benchmark.cc"],
     data = [":corpora"],
+    malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
         ":algorithms",
+        "//fleetbench:benchmark_main",
         "@com_google_absl//absl/log",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings",

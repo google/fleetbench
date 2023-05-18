@@ -1,5 +1,3 @@
-load("//fleetbench:variants.bzl", "create_fleetbench_benchmark")
-
 package(
     default_visibility = ["//visibility:private"],
 )
@@ -27,12 +25,14 @@ cc_test(
     ],
 )
 
-create_fleetbench_benchmark(
+cc_test(
     name = "cold_swissmap_benchmark",
     srcs = ["cold_swissmap_benchmark.cc"],
-    benchmark_filter = ".*set_size:(16|64).*",
+    malloc = "@com_google_tcmalloc//tcmalloc",
+    tags = ["manual"],
     deps = [
         ":swissmap_benchmark",
+        "//fleetbench:benchmark_main",
         "//fleetbench/common",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/container:node_hash_set",
@@ -41,11 +41,31 @@ create_fleetbench_benchmark(
     ],
 )
 
-create_fleetbench_benchmark(
-    name = "hot_swissmap_benchmark",
-    srcs = ["hot_swissmap_benchmark.cc"],
+cc_test(
+    name = "cold_swissmap_smoketest",
+    srcs = ["cold_swissmap_benchmark.cc"],
+    # Just run a single benchmark to reduce the test runtime.
+    args = ["--benchmark_filter=BM_.*::absl::flat_hash_set.*64.*set_size:64.*density:0"],
+    malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
         ":swissmap_benchmark",
+        "//fleetbench:benchmark_main",
+        "//fleetbench/common",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/container:node_hash_set",
+        "@com_google_absl//absl/random",
+        "@com_google_benchmark//:benchmark",
+    ],
+)
+
+cc_test(
+    name = "hot_swissmap_benchmark",
+    srcs = ["hot_swissmap_benchmark.cc"],
+    malloc = "@com_google_tcmalloc//tcmalloc",
+    tags = ["manual"],
+    deps = [
+        ":swissmap_benchmark",
+        "//fleetbench:benchmark_main",
         "//fleetbench/common",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/container:flat_hash_set",
@@ -55,18 +75,20 @@ create_fleetbench_benchmark(
     ],
 )
 
-sh_test(
-    name = "hot_sanitizer_test",
-    size = "medium",
-    srcs = ["hot_sanitizer_test.sh"],
-    data = [":hot_swissmap_benchmark"],
-    deps = [],
-)
-
-sh_test(
-    name = "cold_sanitizer_test",
-    size = "medium",
-    srcs = ["cold_sanitizer_test.sh"],
-    data = [":cold_swissmap_benchmark"],
-    deps = [],
+cc_test(
+    name = "hot_swissmap_smoketest",
+    srcs = ["hot_swissmap_benchmark.cc"],
+    # Just run a single benchmark to reduce the test runtime.
+    args = ["--benchmark_filter=BM_.*::absl::flat_hash_set.*64.*set_size:64.*density:0"],
+    malloc = "@com_google_tcmalloc//tcmalloc",
+    deps = [
+        ":swissmap_benchmark",
+        "//fleetbench:benchmark_main",
+        "//fleetbench/common",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/container:node_hash_set",
+        "@com_google_absl//absl/random",
+        "@com_google_benchmark//:benchmark",
+    ],
 )
