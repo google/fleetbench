@@ -68,6 +68,7 @@ cc_library(
 cc_test(
     name = "empirical_driver",
     srcs = ["empirical_driver.cc"],
+    linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
     tags = ["manual"],
     deps = [

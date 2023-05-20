@@ -28,6 +28,7 @@ cc_test(
 cc_test(
     name = "cold_swissmap_benchmark",
     srcs = ["cold_swissmap_benchmark.cc"],
+    linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
     tags = ["manual"],
     deps = [
@@ -61,6 +62,7 @@ cc_test(
 cc_test(
     name = "hot_swissmap_benchmark",
     srcs = ["hot_swissmap_benchmark.cc"],
+    linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
     tags = ["manual"],
     deps = [

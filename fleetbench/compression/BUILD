@@ -25,6 +25,7 @@ cc_test(
     name = "compression_benchmark",
     srcs = ["compression_benchmark.cc"],
     data = [":corpora"],
+    linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
         ":algorithms",

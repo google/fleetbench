@@ -165,6 +165,7 @@ cc_test(
     srcs = [
         "benchmark.cc",
     ],
+    linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
         ":benchmark_lib",

@@ -68,6 +68,7 @@ cc_library(
 cc_test(
     name = "mem_benchmark",
     srcs = ["mem_benchmark.cc"],
+    linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
         ":memory_size_distributions",

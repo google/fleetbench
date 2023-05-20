@@ -1,6 +1,7 @@
 cc_test(
     name = "hashing_benchmark",
     srcs = ["hashing_benchmark.cc"],
+    linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
         ":hashing_size_distributions",
