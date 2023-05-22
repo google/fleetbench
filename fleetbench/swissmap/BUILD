@@ -1,6 +1,4 @@
-package(
-    default_visibility = ["//visibility:private"],
-)
+package(default_visibility = ["//visibility:private"])
 
 cc_library(
     name = "swissmap_benchmark",

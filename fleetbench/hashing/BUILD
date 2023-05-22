@@ -1,3 +1,5 @@
+package(default_visibility = ["//visibility:private"])
+
 cc_test(
     name = "hashing_benchmark",
     srcs = ["hashing_benchmark.cc"],

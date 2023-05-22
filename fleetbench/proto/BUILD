@@ -1,9 +1,7 @@
 load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 
-package(
-    default_visibility = ["//visibility:private"],
-)
+package(default_visibility = ["//visibility:private"])
 
 proto_library(
     name = "representative1_proto",

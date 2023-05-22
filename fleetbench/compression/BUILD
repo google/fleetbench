@@ -1,3 +1,5 @@
+package(default_visibility = ["//visibility:private"])
+
 filegroup(
     name = "corpora",
     srcs = glob([

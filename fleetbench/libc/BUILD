@@ -1,3 +1,5 @@
+package(default_visibility = ["//visibility:private"])
+
 cc_library(
     name = "utils",
     srcs = ["utils.cc"],

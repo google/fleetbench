@@ -1,8 +1,6 @@
 load("//fleetbench:tcmalloc_copts.bzl", "TCMALLOC_DEFAULT_COPTS")
 
-package(
-    default_visibility = ["//visibility:private"],
-)
+package(default_visibility = ["//visibility:private"])
 
 cc_library(
     name = "empirical",

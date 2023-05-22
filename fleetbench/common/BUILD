@@ -1,6 +1,4 @@
-package(
-    default_visibility = ["//fleetbench:__subpackages__"],
-)
+package(default_visibility = ["//fleetbench:__subpackages__"])
 
 cc_library(
     name = "common",
