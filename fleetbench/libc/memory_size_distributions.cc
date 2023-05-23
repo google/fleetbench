@@ -55,22 +55,22 @@ absl::Span<const SizeDistribution> GetMemsetSizeDistributions() {
 
 absl::Span<const SizeDistribution> GetMemcmpSizeDistributions() {
   static constexpr SizeDistribution kDistributions[] = {
-      {"Memcmp Google A", MemcmpGoogleA}, {"Memcmp Google B", MemcmpGoogleB},
-      {"Memcmp Google D", MemcmpGoogleD}, {"Memcmp Google L", MemcmpGoogleL},
-      {"Memcmp Google M", MemcmpGoogleM}, {"Memcmp Google Q", MemcmpGoogleQ},
-      {"Memcmp Google S", MemcmpGoogleS}, {"Memcmp Google U", MemcmpGoogleU},
-      {"Memcmp Google W", MemcmpGoogleW},
+      {"memcmp Google A", MemcmpGoogleA}, {"memcmp Google B", MemcmpGoogleB},
+      {"memcmp Google D", MemcmpGoogleD}, {"memcmp Google L", MemcmpGoogleL},
+      {"memcmp Google M", MemcmpGoogleM}, {"memcmp Google Q", MemcmpGoogleQ},
+      {"memcmp Google S", MemcmpGoogleS}, {"memcmp Google U", MemcmpGoogleU},
+      {"memcmp Google W", MemcmpGoogleW},
   };
   return kDistributions;
 }
 
 absl::Span<const SizeDistribution> GetBcmpSizeDistributions() {
   static constexpr SizeDistribution kDistributions[] = {
-      {"Bcmp Google A", BcmpGoogleA}, {"Bcmp Google B", BcmpGoogleB},
-      {"Bcmp Google D", BcmpGoogleD}, {"Bcmp Google L", BcmpGoogleL},
-      {"Bcmp Google M", BcmpGoogleM}, {"Bcmp Google Q", BcmpGoogleQ},
-      {"Bcmp Google S", BcmpGoogleS}, {"Bcmp Google U", BcmpGoogleU},
-      {"Bcmp Google W", BcmpGoogleW},
+      {"bcmp Google A", BcmpGoogleA}, {"bcmp Google B", BcmpGoogleB},
+      {"bcmp Google D", BcmpGoogleD}, {"bcmp Google L", BcmpGoogleL},
+      {"bcmp Google M", BcmpGoogleM}, {"bcmp Google Q", BcmpGoogleQ},
+      {"bcmp Google S", BcmpGoogleS}, {"bcmp Google U", BcmpGoogleU},
+      {"bcmp Google W", BcmpGoogleW},
   };
   return kDistributions;
 }

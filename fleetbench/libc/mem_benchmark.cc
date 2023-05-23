@@ -16,14 +16,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <optional>
 #include <random>
 #include <vector>
 
 #include "absl/log/check.h"
 #include "absl/random/distributions.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/common/common.h"
@@ -57,7 +55,7 @@ using CacheInfo = benchmark::CPUInfo::CacheInfo;
 // Parameters to store memcpy operations data and it consumes 4B.
 // NOTE: Ideally we would store 2 offsets, one for src, and one dst. However, it
 // will require at least 6B, which is not great as unaligned loads may become
-// expensive on some plateforms. Therefore, we encode the memory operation
+// expensive on some platforms. Therefore, we encode the memory operation
 // arguments into 32 bits here.
 struct BM_Mem_Parameters {
   unsigned offset : 16;      // max: 16 KiB - 1
@@ -204,7 +202,7 @@ static void BM_Memory(benchmark::State &state, Args &&...args) {
     p.size_bytes = size_bytes_sampler(GetRNG());
 
     // Once we have size_bytes, we can sample the offsets from a discrete
-    // uniform distribution in interval [0,offset_upper_bound), where
+    // uniform distribution in interval [0, offset_upper_bound), where
     // 'offset_upper_bound' is calculated by subtracting size_bytes from
     // maximum buffer size to avoid accessing past the end of the buffer.
     size_t offset_upper_bound = buffer_size - p.size_bytes;
