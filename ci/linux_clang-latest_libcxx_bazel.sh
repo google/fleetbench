@@ -50,22 +50,42 @@ if [[ ${USE_BAZEL_CACHE:-0} -ne 0 ]]; then
   BAZEL_EXTRA_ARGS="--remote_http_cache=https://storage.googleapis.com/absl-bazel-remote-cache/${container_key} --google_credentials=/keystore/73103_absl-bazel-remote-cache ${BAZEL_EXTRA_ARGS:-}"
 fi
 
+# Create and start the docker container.
+docker run --name fleetbench --volume="${FLEETBENCH_ROOT}:/fleetbench:ro" \
+        --workdir=/fleetbench \
+        --cap-add=SYS_PTRACE \
+        --detach=true \
+        --interactive=true \
+        --tty=true \
+        --rm \
+        ${DOCKER_EXTRA_ARGS:-} \
+        ${DOCKER_CONTAINER} \
+        /bin/bash
+
+stop_docker() {
+  docker stop fleetbench
+}
+trap stop_docker EXIT
+
+# Install additional dependencies
+docker exec fleetbench  apt-get install pip python3-numpy -y
+docker exec fleetbench pip install zstandard
+
+# Sanity check our setup
+docker exec fleetbench /usr/local/bin/bazel test fleetbench:distro_test
+
+# Run bazel tests.
 for std in ${STD}; do
   for build_config in "${BUILD_CONFIG[@]}"; do
     for exceptions_mode in ${EXCEPTIONS_MODE}; do
       echo "--------------------------------------------------------------------"
-      time docker run \
-        --volume="${FLEETBENCH_ROOT}:/fleetbench:ro" \
-        --workdir=/fleetbench \
-        --cap-add=SYS_PTRACE \
-        --rm \
-        -e PATH=${PATH}:"/opt/llvm/clang/bin" \
-        -e BAZEL_CXXOPTS="-std=${std}:-nostdinc++" \
-        -e BAZEL_LINKOPTS="-L/opt/llvm/libcxx/lib/x86_64-unknown-linux-gnu:-lc++:-lc++abi:-lm:-Wl,-rpath=/opt/llvm/libcxx/lib/x86_64-unknown-linux-gnu" \
-        -e CPLUS_INCLUDE_PATH="/opt/llvm/libcxx/include/x86_64-unknown-linux-gnu/c++/v1:/opt/llvm/libcxx/include/c++/v1" \
-        ${DOCKER_EXTRA_ARGS:-} \
-        ${DOCKER_CONTAINER} \
-        /usr/local/bin/bazel test ... \
+      time docker exec \
+      -e PATH=${PATH}:"/opt/llvm/clang/bin" \
+      -e BAZEL_CXXOPTS="-std=${std}:-nostdinc++" \
+      -e BAZEL_LINKOPTS="-L/opt/llvm/libcxx/lib/x86_64-unknown-linux-gnu:-lc++:-lc++abi:-lm:-Wl,-rpath=/opt/llvm/libcxx/lib/x86_64-unknown-linux-gnu" \
+      -e CPLUS_INCLUDE_PATH="/opt/llvm/libcxx/include/x86_64-unknown-linux-gnu/c++/v1:/opt/llvm/libcxx/include/c++/v1" \
+      fleetbench \
+      /usr/local/bin/bazel test ... \
           --config=clang \
           ${build_config} \
           --copt="${exceptions_mode}" \

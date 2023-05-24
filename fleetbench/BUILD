@@ -24,3 +24,11 @@ cc_library(
         "//conditions:default": [],
     }),
 )
+
+py_test(
+    name = "distro_test",
+    srcs = [":distro_test.py"],
+    deps = [
+        "@com_google_absl_py//absl/testing:absltest",
+    ],
+)

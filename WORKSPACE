@@ -44,6 +44,14 @@ http_archive(
     sha256 = "22b9561f4ed324dba5a9c3b45b988df1ca57c018de608da5de9b4b6eab68dca9",
 )
 
+http_archive(
+    name = "com_google_absl_py", # 2023-05-24
+    urls = ["https://github.com/abseil/abseil-py/archive/c5c609cf04ea3f46eb620eb1b948ee2294645c4a.zip"],
+    strip_prefix = "abseil-py-c5c609cf04ea3f46eb620eb1b948ee2294645c4a",
+    sha256 = "a96b4fae80ccb6d393f1344dc47452dc4b557cc8f2e70483c3908d74999290f1",
+)
+
+
 # Google benchmark.
 http_archive(
     name = "com_google_benchmark", # 2023-02-22
