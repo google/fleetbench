@@ -16,17 +16,19 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <random>
 #include <string>
 #include <vector>
 
 #include "absl/crc/crc32c.h"
-#include "absl/strings/str_cat.h"
+#include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/common/common.h"
-#include "fleetbench/hashing/hashing_size_distributions.h"
 
 namespace fleetbench {
 namespace hashing {
@@ -67,9 +69,48 @@ void ComputeCrc32cFunction(benchmark::State &state,
   }
 }
 
-template <class... Args>
+// Returns a sorted list of the files in directory 'dir' whose filenames start
+// with 'prefix'.
+static std::vector<std::filesystem::path> GetMatchingFiles(
+    std::filesystem::path &dir, absl::string_view prefix) {
+  std::vector<std::filesystem::path> files;
+  for (const auto &entry : std::filesystem::directory_iterator(dir)) {
+    if (absl::StartsWith(entry.path().filename().string(), prefix)) {
+      files.push_back(entry.path());
+    }
+  }
+  std::sort(files.begin(), files.end());
+  return files;
+}
+
+// Returns a sorted list of the files for the distributions whose filenames
+// start with 'prefix'.
+static std::vector<std::filesystem::path> GetDistributionFiles(
+    absl::string_view prefix) {
+  auto p = std::filesystem::path(__FILE__).replace_filename("distributions");
+  return GetMatchingFiles(p, prefix);
+}
+
+// Reads a CSV file that contains a distribution. Such a file has a single line;
+// the columns represent the relative frequency with which the corresponding
+// input occurs. The function returns a vector whose entries correspond to the
+// columns in the CSV file.
+static std::vector<double> ReadDistributionFile(std::filesystem::path file) {
+  std::vector<double> distribution;
+  std::string column;
+  std::fstream f(file, std::ios_base::in);
+  while (std::getline(f, column, ',')) {
+    double d = 0.0;
+    if (!absl::SimpleAtod(column, &d)) {
+      std::cerr << "Invalid column: " << column << "\n";
+    }
+    distribution.push_back(d);
+  }
+  return distribution;
+}
+
 static void BM_Hashing(benchmark::State &state,
-                       absl::Span<const SizeDistribution> distributions,
+                       absl::string_view distribution_file_prefix,
                        void (*hashing_call)(benchmark::State &,
                                             std::vector<absl::string_view> &)) {
   // Number of parameters that allows all can be resident in L1.
@@ -80,8 +121,11 @@ static void BM_Hashing(benchmark::State &state,
   std::vector<absl::string_view> parameters(batch_size);
 
   // Gets prod hashing size distribution and the name.
-  const auto &[distribution_name, hashing_size_distribution] =
-      distributions[state.range(0)];
+  const auto &files = GetDistributionFiles(distribution_file_prefix);
+  const auto &file = files[state.range(0)];
+  const auto &distribution_name = file.filename().string();
+  const std::vector<double> hashing_size_distribution =
+      ReadDistributionFile(file);
 
   // Convert prod size distribution to a discrete distribution.
   std::discrete_distribution<> size_bytes_sampler(
@@ -107,7 +151,7 @@ static void BM_Hashing(benchmark::State &state,
   }
 
   const size_t total_bytes = (state.iterations() * batch_bytes) / batch_size;
-  state.SetLabel(absl::StrCat(distribution_name));
+  state.SetLabel(distribution_name);
 
   state.SetBytesProcessed(total_bytes);
   state.counters["bytes_per_cycle"] = benchmark::Counter(
@@ -115,14 +159,13 @@ static void BM_Hashing(benchmark::State &state,
       benchmark::Counter::kIsRate);
 }
 
-BENCHMARK_CAPTURE(BM_Hashing, ExtendCrc32c,
-                  GetExtendCrc32cInternalSizeDistributions(),
+BENCHMARK_CAPTURE(BM_Hashing, ExtendCrc32c, "Extendcrc32cinternal",
                   &ExtendCrc32cFunction)
-    ->DenseRange(0, GetExtendCrc32cInternalSizeDistributions().size() - 1, 1);
+    ->DenseRange(0, GetDistributionFiles("Extendcrc32cinternal").size() - 1, 1);
 
-BENCHMARK_CAPTURE(BM_Hashing, ComputeCrc32c,
-                  GetComputeCrc32cSizeDistributions(), &ComputeCrc32cFunction)
-    ->DenseRange(0, GetComputeCrc32cSizeDistributions().size() - 1, 1);
+BENCHMARK_CAPTURE(BM_Hashing, ComputeCrc32c, "Computecrc32c",
+                  &ComputeCrc32cFunction)
+    ->DenseRange(0, GetDistributionFiles("Computecrc32c").size() - 1, 1);
 
 }  // namespace hashing
 }  // namespace fleetbench
