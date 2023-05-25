@@ -70,6 +70,7 @@ trap stop_docker EXIT
 # Install additional dependencies
 docker exec fleetbench  apt-get install pip python3-numpy -y
 docker exec fleetbench pip install zstandard
+docker exec fleetbench pip install python-snappy
 
 # Sanity check our setup
 docker exec fleetbench /usr/local/bin/bazel test fleetbench:distro_test

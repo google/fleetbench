@@ -13,9 +13,10 @@
 # limitations under the License.
 
 from absl.testing import absltest
-
 import numpy as np
 import zstandard
+
+import snappy
 
 
 class DistroTest(absltest.TestCase):
@@ -27,6 +28,10 @@ class DistroTest(absltest.TestCase):
   def testZstd(self):
     compressed_bytes = zstandard.compress(b"12345678", level=0)
     self.assertEqual(zstandard.decompress(compressed_bytes), b"12345678")
+
+  def testSnappy(self):
+    compressed_bytes = snappy.compress(b"12345678")
+    self.assertEqual(snappy.uncompress(compressed_bytes), b"12345678")
 
 
 if __name__ == "__main__":
