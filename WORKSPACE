@@ -36,6 +36,18 @@ load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_depende
 
 rules_foreign_cc_dependencies()
 
+
+# External Python package
+http_archive(
+    name = "rules_python",  # 2023-05-22
+    sha256 = "94750828b18044533e98a129003b6a68001204038dc4749f40b195b24c38f49f",
+    strip_prefix = "rules_python-0.21.0",
+    url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.21.0.tar.gz",
+)
+load("@rules_python//python:repositories.bzl", "py_repositories")
+
+py_repositories()
+
 # Abseil
 http_archive(
     name = "com_google_absl", # 2023-02-14
@@ -43,7 +55,7 @@ http_archive(
     strip_prefix = "abseil-cpp-8aa88cd11caa8dbfd5966e5e2f391b892cfd1c35",
     sha256 = "22b9561f4ed324dba5a9c3b45b988df1ca57c018de608da5de9b4b6eab68dca9",
 )
-
+# Abseil-Python
 http_archive(
     name = "com_google_absl_py", # 2023-05-24
     urls = ["https://github.com/abseil/abseil-py/archive/c5c609cf04ea3f46eb620eb1b948ee2294645c4a.zip"],
