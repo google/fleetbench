@@ -15,9 +15,7 @@
 #include "fleetbench/tcmalloc/empirical.h"
 
 #include <algorithm>
-#include <new>
-#include <string>
-#include <tuple>
+#include <vector>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

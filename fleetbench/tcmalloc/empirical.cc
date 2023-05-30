@@ -14,14 +14,14 @@
 
 #include "fleetbench/tcmalloc/empirical.h"
 
-#include <memory>
+#include <algorithm>
 #include <vector>
 
 #include "absl/log/check.h"
-#include "benchmark/benchmark.h"
 #include "absl/random/discrete_distribution.h"
 #include "absl/random/seed_sequences.h"
 #include "absl/random/uniform_int_distribution.h"
+#include "benchmark/benchmark.h"
 
 // Implementations of functions.
 namespace fleetbench {
@@ -33,11 +33,11 @@ namespace {
 // is consistent with using the actually malloc'd/new'd memory.  If the memory
 // were never written to or read, we could simply never make the allocation.
 //
-// This is an artifical access pattern, but it produces results that show that
+// This is an artificial access pattern, but it produces results that show that
 // the prefetch in TCMalloc's allocation path
 // (https://storage.googleapis.com/pub-tools-public-publication-data/pdf/cebd5a9f6e300184fd762f190ffd8978b724e0c8.pdf)
 // is worth having, which is consistent with experience from performance
-// sensitive macrobenchmarks.
+// sensitive macro benchmarks.
 //
 // If this memory is never accessed at all, this microbenchmark would be
 // "improved" by removing the prefetch, even though doing so would regress
