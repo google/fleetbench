@@ -53,7 +53,8 @@ void ExtendCrc32cFunction(benchmark::State &state,
       // ExtendCrc32cInternal. ExtendCrc32c is also currently the only function
       // in the codebase that calls ExtendCrc32cInternal; thus, the callregz
       // data for ExtendCrc32cInternal does not contain inputs with size <= 64.
-      benchmark::DoNotOptimize(absl::ExtendCrc32c(v0, p));
+      auto res = absl::ExtendCrc32c(v0, p);
+      benchmark::DoNotOptimize(res);
     }
   }
 }
@@ -64,7 +65,8 @@ void ComputeCrc32cFunction(benchmark::State &state,
   // Run benchmark and call ComputeCrc32c
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      benchmark::DoNotOptimize(absl::ComputeCrc32c(p));
+      auto res = absl::ComputeCrc32c(p);
+      benchmark::DoNotOptimize(res);
     }
   }
 }

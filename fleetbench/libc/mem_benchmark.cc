@@ -71,8 +71,9 @@ void MemcpyFunction(benchmark::State &state,
   // Run benchmark and call memcpy function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      benchmark::DoNotOptimize(
-          memcpy(buffers.dst(p.offset), buffers.src(p.offset), p.size_bytes));
+      auto res =
+          memcpy(buffers.dst(p.offset), buffers.src(p.offset), p.size_bytes);
+      benchmark::DoNotOptimize(res);
     }
   }
 }
@@ -103,8 +104,9 @@ void MemmoveFunction(benchmark::State &state,
   // Run benchmark and call memmove function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      benchmark::DoNotOptimize(memmove(buffers.dst(buffers.size() / 3),
-                                       buffers.dst(p.offset), p.size_bytes));
+      auto res = memmove(buffers.dst(buffers.size() / 3), buffers.dst(p.offset),
+                         p.size_bytes);
+      benchmark::DoNotOptimize(res);
     }
   }
 }
@@ -117,8 +119,9 @@ void MemcmpFunction(benchmark::State &state,
   // Run benchmark and call memcmp function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      benchmark::DoNotOptimize(
-          memcmp(buffers.dst(p.offset), buffers.src(p.offset), p.size_bytes));
+      auto res =
+          memcmp(buffers.dst(p.offset), buffers.src(p.offset), p.size_bytes);
+      benchmark::DoNotOptimize(res);
     }
   }
 }
@@ -131,8 +134,9 @@ void BcmpFunction(benchmark::State &state,
   // Run benchmark and call bcmp function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      benchmark::DoNotOptimize(
-          bcmp(buffers.dst(p.offset), buffers.src(p.offset), p.size_bytes));
+      auto res =
+          bcmp(buffers.dst(p.offset), buffers.src(p.offset), p.size_bytes);
+      benchmark::DoNotOptimize(res);
     }
   }
 }
@@ -145,8 +149,8 @@ void MemsetFunction(benchmark::State &state,
   // Run benchmark and call memset function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      benchmark::DoNotOptimize(
-          memset(buffers.dst(p.offset), p.offset % 0xFF, p.size_bytes));
+      auto res = memset(buffers.dst(p.offset), p.offset % 0xFF, p.size_bytes);
+      benchmark::DoNotOptimize(res);
     }
   }
 }

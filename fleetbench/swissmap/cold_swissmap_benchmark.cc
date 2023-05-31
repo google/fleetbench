@@ -43,10 +43,11 @@ static void BM_FindMiss_Cold(benchmark::State& state) {
 
   while (state.KeepRunningBatch(keys.size() * sets.size())) {
     for (uint32_t key : keys) {
-      for (const Set& set : sets) {
+      for (Set& set : sets) {
         DoNotOptimize(set);
         DoNotOptimize(key);
-        DoNotOptimize(set.find(key));
+        auto res = set.find(key);
+        DoNotOptimize(res);
       }
     }
   }
@@ -118,7 +119,8 @@ static void BM_FindHit_Cold(benchmark::State& state) {
   return LookupHit_Cold<SetT, kValueSizeT>(state, [](Set* set, uint32_t key) {
     DoNotOptimize(set);
     DoNotOptimize(key);
-    DoNotOptimize(set->find(key));
+    auto res = set->find(key);
+    DoNotOptimize(res);
   });
 }
 
@@ -160,7 +162,8 @@ static void BM_InsertHit_Cold(benchmark::State& state) {
   return LookupHit_Cold<SetT, kValueSizeT>(state, [](Set* set, uint32_t key) {
     DoNotOptimize(set);
     DoNotOptimize(key);
-    DoNotOptimize(set->insert(key));
+    auto res = set->insert(key);
+    DoNotOptimize(res);
   });
 }
 
@@ -245,7 +248,8 @@ static void BM_Iterate_Cold(benchmark::State& state) {
           // skip over out-of-bounds access for smaller sets
           if (j >= curr_set_iterators.size()) continue;
           auto& iter = curr_set_iterators[j];
-          DoNotOptimize(iter == sets[k].end());
+          auto res = (iter == sets[k].end());
+          DoNotOptimize(res);
           memcpy(data, &*iter, kValueSizeT);
           DoNotOptimize(data);
           ++iter;
@@ -336,8 +340,10 @@ static void BM_EraseInsert_Cold(benchmark::State& state) {
         Set curr_set = sets[j];
         // skip over out-of-bounds access for smaller sets
         if (i >= curr_set.size()) continue;
-        DoNotOptimize(curr_set.erase(keys[j][i]));
-        DoNotOptimize(curr_set.insert(keys[j][i + curr_set.size()]));
+        auto erase_result = curr_set.erase(keys[j][i]);
+        DoNotOptimize(erase_result);
+        auto insert_result = curr_set.insert(keys[j][i + curr_set.size()]);
+        DoNotOptimize(insert_result);
       }
     }
   }
@@ -398,7 +404,8 @@ static void BM_InsertManyOrdered_Cold(benchmark::State& state) {
     }
     for (size_t i = 0; i != largest_set_size; ++i) {
       for (size_t j = 0; j != sets.size() && i != sets[j].size(); ++j) {
-        DoNotOptimize(sets[j].insert(keys[i * sets.size() + j]));
+        auto insert_result = sets[j].insert(keys[i * sets.size() + j]);
+        DoNotOptimize(insert_result);
       }
     }
   }
@@ -464,7 +471,8 @@ static void BM_InsertManyUnordered_Cold(benchmark::State& state) {
     }
     for (size_t i = 0; i != largest_set_size; ++i) {
       for (size_t j = 0; j != sets.size() && i != sets[j].size(); ++j) {
-        DoNotOptimize(sets[j].insert(keys[i * sets.size() + j]));
+        auto insert_result = sets[j].insert(keys[i * sets.size() + j]);
+        DoNotOptimize(insert_result);
       }
     }
   }

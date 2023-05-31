@@ -47,13 +47,14 @@ static void BM_FindMiss_Hot(benchmark::State& state) {
   const size_t keys_per_set = kMinTotalKeyCount / sets.size();
 
   while (state.KeepRunningBatch(sets.size() * keys_per_set * kOpsPerKey)) {
-    for (const auto& set : sets) {
+    for (auto& set : sets) {
       for (size_t i = 0; i != keys_per_set; ++i) {
-        const uint32_t key = RandomNonexistent();
+        uint32_t key = RandomNonexistent();
         for (size_t j = 0; j != kOpsPerKey; ++j) {
           DoNotOptimize(set);
           DoNotOptimize(key);
-          DoNotOptimize(set.find(key));
+          auto res = set.find(key);
+          DoNotOptimize(res);
         }
       }
     }
@@ -132,7 +133,8 @@ static void BM_FindHit_Hot(benchmark::State& state) {
   return LookupHit_Hot<SetT, kValueSizeT>(state, [](Set* set, uint32_t key) {
     DoNotOptimize(set);
     DoNotOptimize(key);
-    DoNotOptimize(set->find(key));
+    auto res = set->find(key);
+    DoNotOptimize(res);
   });
 }
 
@@ -174,7 +176,8 @@ static void BM_InsertHit_Hot(benchmark::State& state) {
   return LookupHit_Hot<SetT, kValueSizeT>(state, [](Set* set, uint32_t key) {
     DoNotOptimize(set);
     DoNotOptimize(key);
-    DoNotOptimize(set->insert(key));
+    auto res = set->insert(key);
+    DoNotOptimize(res);
   });
 }
 
@@ -310,8 +313,10 @@ static void BM_EraseInsert_Hot(benchmark::State& state) {
   while (state.KeepRunningBatch(keys.size())) {
     for (size_t i = 0; i != set_size; ++i) {
       DoNotOptimize(s);
-      DoNotOptimize(s.erase(keys[i]));
-      DoNotOptimize(s.insert(keys[i + set_size]));
+      auto erase_result = s.erase(keys[i]);
+      DoNotOptimize(erase_result);
+      auto insert_result = s.insert(keys[i + set_size]);
+      DoNotOptimize(insert_result);
     }
   }
 }
@@ -369,7 +374,10 @@ static void BM_InsertManyOrdered_Hot(benchmark::State& state) {
     for (size_t i = 0; i != sets.size(); ++i) {
       for (size_t j = 0; j != kRepetitions; ++j) {
         sets[i].erase(sets[i].begin(), sets[i].end());
-        for (uint32_t key : keys[i]) DoNotOptimize(sets[i].insert(key));
+        for (uint32_t key : keys[i]) {
+          auto res = sets[i].insert(key);
+          DoNotOptimize(res);
+        }
       }
     }
   }
@@ -439,7 +447,10 @@ static void BM_InsertManyUnordered_Hot(benchmark::State& state) {
       std::shuffle(keys.begin(), keys.end(), GetRNG());
       for (size_t j = 0; j != kRepetitions; ++j) {
         s.erase(s.begin(), s.end());
-        for (uint32_t key : keys) DoNotOptimize(s.insert(key));
+        for (uint32_t key : keys) {
+          auto res = s.insert(key);
+          DoNotOptimize(res);
+        }
       }
     }
   }
