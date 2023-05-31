@@ -140,7 +140,6 @@ class CorpusChunkManager:
     # Iterate all corpus and collect compression parameters for each chunk
     chunk_id = 0
     for file in self.dataset:
-      print(f"Processing file: {file}")
       file_path = runfiles.Create().Rlocation(
           os.path.join(self.dataset_dir, file)
       )

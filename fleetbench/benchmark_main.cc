@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdlib.h>
+
 #include <string>
 #include <thread>
 
@@ -25,6 +27,7 @@ int main(int argc, char* argv[]) {
     new std::thread([]() {
       tcmalloc::MallocExtension::ProcessBackgroundActions();
     }) : nullptr;
+  setenv("FLEETBENCH_PROGRAM_PATH", argv[0], 1);
   std::string defaultFilter = "all";
   if (!benchmark::GetBenchmarkFilter().empty()) {
     // if benchmark-filter is set, then use it instead.
