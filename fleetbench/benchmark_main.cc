@@ -18,6 +18,7 @@
 #include <thread>
 
 #include "benchmark/benchmark.h"
+#include "fleetbench/dynamic_registrar.h"
 #include "tcmalloc/malloc_extension.h"
 
 int main(int argc, char* argv[]) {
@@ -33,6 +34,8 @@ int main(int argc, char* argv[]) {
     // if benchmark-filter is set, then use it instead.
     defaultFilter = benchmark::GetBenchmarkFilter();
   }
+
+  fleetbench::DynamicRegistrar::Get()->Run();
 
   benchmark::RunSpecifiedBenchmarks(defaultFilter);
   return 0;

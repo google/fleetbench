@@ -17,12 +17,29 @@ cc_library(
     srcs = ["benchmark_main.cc"],
     visibility = ["//fleetbench:__subpackages__"],
     deps = [
+        ":dynamic_registrar",
         "@com_google_benchmark//:benchmark",
         "@com_google_tcmalloc//tcmalloc:malloc_extension",
     ] + select({
         "//fleetbench:llvm": ["@llvm-project//:llvmlibc"],
         "//conditions:default": [],
     }),
+)
+
+cc_library(
+    name = "dynamic_registrar",
+    srcs = ["dynamic_registrar.cc"],
+    hdrs = ["dynamic_registrar.h"],
+    visibility = ["//fleetbench:__subpackages__"],
+)
+
+cc_test(
+    name = "dynamic_registrar_test",
+    srcs = ["dynamic_registrar_test.cc"],
+    deps = [
+        ":dynamic_registrar",
+        "@com_google_googletest//:gtest_main",
+    ],
 )
 
 py_test(
