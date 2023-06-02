@@ -13,17 +13,23 @@ config_setting(
 )
 
 cc_library(
+    name = "maybe_llvmlibc",
+    deps = select({
+        "//fleetbench:llvm": ["@llvm-project//:llvmlibc"],
+        "//conditions:default": [],
+    }),
+)
+
+cc_library(
     name = "benchmark_main",
     srcs = ["benchmark_main.cc"],
     visibility = ["//fleetbench:__subpackages__"],
     deps = [
         ":dynamic_registrar",
+        ":maybe_llvmlibc",
         "@com_google_benchmark//:benchmark",
         "@com_google_tcmalloc//tcmalloc:malloc_extension",
-    ] + select({
-        "//fleetbench:llvm": ["@llvm-project//:llvmlibc"],
-        "//conditions:default": [],
-    }),
+    ],
 )
 
 cc_library(
