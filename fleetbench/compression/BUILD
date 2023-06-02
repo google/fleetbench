@@ -72,6 +72,7 @@ cc_test(
     deps = [
         ":algorithms",
         "//fleetbench:benchmark_main",
+        "//fleetbench:dynamic_registrar",
         "@bazel_tools//tools/cpp/runfiles",
         "@com_google_absl//absl/log",
         "@com_google_absl//absl/log:check",
