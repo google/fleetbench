@@ -14,6 +14,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/container/node_hash_set.h"
@@ -38,11 +39,12 @@ static void BM_FindMiss_Cold(benchmark::State& state) {
   std::vector<Set> sets =
       GenerateSets<Set>(state.range(0), kMinTotalBytes / kValueSizeT,
                         static_cast<Density>(state.range(1)));
-  std::vector<uint32_t> keys(sets.front().size());
+  std::vector<uint32_t> keys(GetLargestSetSize(sets));
   for (uint32_t& key : keys) key = RandomNonexistent();
 
-  while (state.KeepRunningBatch(keys.size() * sets.size())) {
+  while (true) {
     for (uint32_t key : keys) {
+      if (!state.KeepRunningBatch(sets.size())) return;
       for (Set& set : sets) {
         DoNotOptimize(set);
         DoNotOptimize(key);
@@ -97,13 +99,16 @@ void LookupHit_Cold(benchmark::State& state, Lookup lookup) {
 
   std::vector<std::vector<uint32_t>> set_elements_randomized =
       ToVectorRandomized(sets);
-  const size_t total_num_elements = GetTotalSize(set_elements_randomized);
+
   // Transpose to ensure access is cold.
   std::vector<uint32_t> keys = Transpose(std::move(set_elements_randomized));
 
-  while (state.KeepRunningBatch(total_num_elements)) {
-    for (size_t i = 0; i != sets.front().size(); ++i) {
-      for (size_t j = 0; j != sets.size() && i != sets[j].size(); ++j) {
+  auto n_sets_of_size = GetNumSetsOfSize(sets);
+
+  while (true) {
+    for (size_t i = 0; i != GetLargestSetSize(sets); ++i) {
+      if (!state.KeepRunningBatch(n_sets_of_size[i + 1])) return;
+      for (size_t j = 0; j < n_sets_of_size[i + 1]; ++j) {
         lookup(&sets[j], keys[i * sets.size() + j]);
       }
     }
@@ -234,12 +239,12 @@ static void BM_Iterate_Cold(benchmark::State& state) {
     }
     set_iterators.push_back(std::move(iters));
   }
-  const size_t total_size = GetTotalSize(set_iterators);
   alignas(Value<kValueSizeT>) char data[kValueSizeT];
 
-  while (state.KeepRunningBatch(total_size * kStride)) {
+  while (true) {
     for (size_t i = 0; i != kStride; ++i) {
       for (size_t j = 0; j != num_strides; ++j) {
+        if (!state.KeepRunningBatch(total_num_sets)) return;
         // Iterate over sets in the inner loop to reduce caching and ensure cold
         // environment.
         for (size_t k = 0; k != total_num_sets; ++k) {
@@ -332,10 +337,11 @@ static void BM_EraseInsert_Cold(benchmark::State& state) {
     }
   }
 
-  while (state.KeepRunningBatch(num_keys * sets.size())) {
+  while (true) {
     for (size_t i = 0; i != largest_set_size; ++i) {
       // Iterate over sets in the inner loop to reduce caching and ensure cold
       // environment.
+      if (!state.KeepRunningBatch(sets.size())) return;
       for (size_t j = 0; j != sets.size(); ++j) {
         Set curr_set = sets[j];
         // skip over out-of-bounds access for smaller sets
@@ -394,16 +400,18 @@ static void BM_InsertManyOrdered_Cold(benchmark::State& state) {
   for (size_t i = 0; i != sets.size(); ++i) {
     set_elements[i] = ToVector(sets[i]);
   }
-
-  const size_t num_keys = GetTotalSize(set_elements);
   std::vector<uint32_t> keys = Transpose(std::move(set_elements));
-  size_t largest_set_size = sets.front().size();
-  while (state.KeepRunningBatch(num_keys)) {
+
+  auto n_sets_of_size = GetNumSetsOfSize(sets);
+  size_t largest_set_size = GetLargestSetSize(sets);
+
+  while (true) {
     for (Set& set : sets) {
       set.erase(set.begin(), set.end());
     }
     for (size_t i = 0; i != largest_set_size; ++i) {
-      for (size_t j = 0; j != sets.size() && i != sets[j].size(); ++j) {
+      if (!state.KeepRunningBatch(n_sets_of_size[i + 1])) return;
+      for (size_t j = 0; j < n_sets_of_size[i + 1]; ++j) {
         auto insert_result = sets[j].insert(keys[i * sets.size() + j]);
         DoNotOptimize(insert_result);
       }
@@ -461,16 +469,18 @@ static void BM_InsertManyUnordered_Cold(benchmark::State& state) {
                         static_cast<Density>(state.range(1)));
 
   std::vector<std::vector<uint32_t>> set_elements = ToVectorRandomized(sets);
-
-  const size_t num_keys = GetTotalSize(set_elements);
   std::vector<uint32_t> keys = Transpose(std::move(set_elements));
-  size_t largest_set_size = sets.front().size();
-  while (state.KeepRunningBatch(num_keys)) {
+
+  auto n_sets_of_size = GetNumSetsOfSize(sets);
+  size_t largest_set_size = GetLargestSetSize(sets);
+
+  while (true) {
     for (Set& set : sets) {
       set.erase(set.begin(), set.end());
     }
     for (size_t i = 0; i != largest_set_size; ++i) {
-      for (size_t j = 0; j != sets.size() && i != sets[j].size(); ++j) {
+      if (!state.KeepRunningBatch(n_sets_of_size[i + 1])) return;
+      for (size_t j = 0; j < n_sets_of_size[i + 1]; ++j) {
         auto insert_result = sets[j].insert(keys[i * sets.size() + j]);
         DoNotOptimize(insert_result);
       }

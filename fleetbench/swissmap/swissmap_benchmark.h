@@ -125,15 +125,26 @@ std::vector<std::vector<uint32_t>> ToVectorRandomized(std::vector<Set> sets) {
   return output;
 }
 
-// Returns the sum of the sizes of elements of `m`.
-template <class T>
-size_t GetTotalSize(const std::vector<std::vector<T>>& m) {
-  assert(!m.empty());
-  size_t size = 0;
-  for (size_t i = 0; i != m.size(); ++i) {
-    size += m[i].size();
+// Returns a vector v, such that v[i] contains the number of sets in the input
+// that have at least i elements. The input must be sorted by size in
+// descending order.
+template <class Set>
+std::vector<size_t> GetNumSetsOfSize(const std::vector<Set>& sets) {
+  std::vector<size_t> n_sets_of_size(sets.front().size() + 1);
+  for (size_t i = 0; i < sets.front().size() + 1; ++i) {
+    size_t j = 0;
+    for (; j < sets.size() && i <= sets[j].size(); ++j) {
+    }
+    n_sets_of_size[i] = j;
   }
-  return size;
+  return n_sets_of_size;
+}
+
+// Returns the size of the largest set in the input. The input must be sorted by
+// size in descending order.
+template <class Set>
+size_t GetLargestSetSize(const std::vector<Set>& sets) {
+  return sets.front().size();
 }
 
 // Transposes the input 2D vector and concatenates the resulting elements. The

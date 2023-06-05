@@ -45,7 +45,6 @@ TEST(SwissmapBenchmarkTest, GenerateSets) {
 
   auto v = ToVectorRandomized(sets);
   EXPECT_EQ(v.size(), sets.size());
-  EXPECT_EQ(GetTotalSize(v), num_elements);
   EXPECT_EQ(Transpose(v).size(), num_elements);
 }
 }  // namespace fleetbench
