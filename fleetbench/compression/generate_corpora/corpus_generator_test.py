@@ -13,11 +13,11 @@
 # limitations under the License.
 
 import os
+
 from absl.testing import absltest
 import numpy as np
 
 from rules_python.python.runfiles import runfiles
-
 from fleetbench.compression.generate_corpora import corpus_generator
 
 DATASETS_TEST_SIMPLE = [
@@ -225,18 +225,8 @@ class CorpusGeneratorTest(absltest.TestCase):
         output_list = corpus_chunk_manager.create_chunk_array(
             sampled_call_size, sampled_compression_ratio, parameters
         )
-
         if output_list is None:
-          print(
-              f"Not success, call size is {sampled_call_size}, compression"
-              f" ratio is {sampled_compression_ratio}"
-          )
           continue
-
-        print(
-            f"Success, call size is {sampled_call_size}, compression ratio is"
-            f" {sampled_compression_ratio}"
-        )
 
         # Ensures compression ratio is close.
         achieved_ratio = corpus_chunk_manager.compute_compression_ratio(
@@ -250,7 +240,6 @@ class CorpusGeneratorTest(absltest.TestCase):
         for chunk in output_list:
           result += chunk.data
 
-        print(sampled_call_size)
         self.assertLen(result, sampled_call_size)
 
 

@@ -3,6 +3,7 @@ package(default_visibility = ["//fleetbench:__subpackages__"])
 py_library(
     name = "distribution_tracker",
     srcs = ["distribution_tracker.py"],
+    deps = ["@com_google_absl_py//absl/logging"],
 )
 
 py_test(
@@ -18,7 +19,10 @@ py_library(
     name = "corpus_generator",
     srcs = ["corpus_generator.py"],
     data = glob(["corpora/**"]),
-    deps = ["@rules_python//python/runfiles"],
+    deps = [
+        "@com_google_absl_py//absl/logging",
+        "@rules_python//python/runfiles",
+    ],
 )
 
 py_test(

@@ -14,6 +14,7 @@
 
 """Statistical distributions for modeling compression parameters."""
 
+from absl import logging
 import numpy as np
 
 
@@ -110,7 +111,7 @@ class DistributionTracker:
 
 def process_distribution(input_distribution, name, algorithm, operation):
   """Converts .json to distribution_tracker instance."""
-  print(f"Processing distribution of {name}")
+  logging.debug("Processing distribution of %s", name)
   distribution_tracker = DistributionTracker("call_size", input_distribution)
   for call_size_bucket in input_distribution:
     if algorithm == "Snappy" or (
@@ -131,8 +132,9 @@ def process_distribution(input_distribution, name, algorithm, operation):
           "compression_level"
       )
       if not compression_level_distribution:
-        print(f"call_size {call_size_bucket} does not have compression_level")
-        continue
+        raise RuntimeError(
+            f"call_size {call_size_bucket} does not have compression_level"
+        )
 
       compression_level_distribution_tracker = DistributionTracker(
           "compression_level",
@@ -143,11 +145,10 @@ def process_distribution(input_distribution, name, algorithm, operation):
             compression_level_bucket
         ].get("compression_ratio")
         if not compression_ratio_distribution:
-          print(
-              f"compression leve {compression_level_bucket} does not have"
+          raise RuntimeError(
+              f"compression level {compression_level_bucket} does not have"
               " compression_ratio"
           )
-          continue
         compression_ratio_distribution_tracker = DistributionTracker(
             "compression_ratio",
             compression_ratio_distribution,

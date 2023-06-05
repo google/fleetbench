@@ -228,24 +228,24 @@ class ProcessDistributionTest(absltest.TestCase):
             "bytes": 5,
         },
     }
+    # missing `compression_level`
+    with self.assertRaises(RuntimeError):
+      distribution_tracker.process_distribution(
+          call_size, "", "ZSTD", "COMPRESS"
+      )
 
-    call_size_distribution = distribution_tracker.process_distribution(
-        call_size, "", "ZSTD", "COMPRESS"
-    )
-    # call size has no child compression level
-    self.assertEmpty(call_size_distribution.child_distribs_for_buckets)
-
-    compression_level = {"3": {"count": 0, "bytes": 1}}
+    compression_level = {
+        "3": {
+            "count": 0,
+            "bytes": 1,
+        }
+    }
     call_size["10"]["compression_level"] = compression_level
-    call_size_distribution = distribution_tracker.process_distribution(
-        call_size, "", "ZSTD", "COMPRESS"
-    )
-    self.assertLen(call_size_distribution.child_distribs_for_buckets, 1)
-    compression_level_tracker = (
-        call_size_distribution.child_distribs_for_buckets[10.0]
-    )
-    # compression level has no child window size
-    self.assertEmpty(compression_level_tracker.child_distribs_for_buckets)
+    # missing compression ratio
+    with self.assertRaises(RuntimeError):
+      distribution_tracker.process_distribution(
+          call_size, "", "ZSTD", "COMPRESS"
+      )
 
 
 if __name__ == "__main__":

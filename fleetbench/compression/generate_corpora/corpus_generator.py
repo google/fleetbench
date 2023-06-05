@@ -19,6 +19,7 @@ import dataclasses
 import os
 import random
 
+from absl import logging
 import zstandard as zstd
 
 from rules_python.python.runfiles import runfiles
@@ -275,7 +276,7 @@ class CorpusChunkManager:
               parameters.compression_level,
           )
         if current_ratio < 0:
-          print("Empty chunk array")
+          logging.debug("Empty chunk array")
           return None
 
         # Compare current_ratio to target_ratio and adjust parameters
@@ -293,13 +294,15 @@ class CorpusChunkManager:
 
       while True:
         if decrease_compression_ratio and current_compression_ratio_index < 0:
-          print("Fail to generate corpus, can't decrease compression ratio")
+          logging.debug(
+              "Fail to generate corpus, can't decrease compression ratio"
+          )
           return None
         if (
             not decrease_compression_ratio
             and current_compression_ratio_index == max_compression_ratio_index
         ):
-          print("Fail to generate corpus, reach max compression ratio")
+          logging.debug("Fail to generate corpus, reach max compression ratio")
           return None
         # Based on <compression_level, window_size, compression_ratio>, find
         # corresponding chunk list
@@ -370,9 +373,11 @@ class CorpusChunkManager:
     )
     max_ratio = self.max_ratio_lookup[parameters]
     if target_compression_ratio > max_ratio:
-      print(
-          f"Bad ratio. Max ratio from dataset is {max_ratio}, but sampled ratio"
-          f" is {target_compression_ratio}"
+      logging.debug(
+          "Fail to generate corpus, reach max compression ratio. Max ratio from"
+          " dataset is %f, whereas sampled ratio is %f",
+          max_ratio,
+          target_compression_ratio,
       )
       return None
 
@@ -404,15 +409,18 @@ class CorpusChunkManager:
     self.benchmark_achieved_compression_ratios.append(
         int(achieved_compression_ratio * 10.0) / 10.0
     )
+    logging.debug(
+        "Target call size: %d, Synthesized size: %d",
+        target_call_size,
+        len(result),
+    )
 
-    print(
-        f"Target call size: {target_call_size}, Synthesized size :"
-        f" {len(result)}"
+    logging.debug(
+        "Target ratio: %f, achieved ratio: %f",
+        target_compression_ratio,
+        achieved_compression_ratio,
     )
-    print(
-        f"Target ratio: {target_compression_ratio}, achieved ratio:"
-        f" {achieved_compression_ratio}"
-    )
+
     return result
 
   def generate_benchmarks(self, distribution, benchmark_nums, name, output_dir):
