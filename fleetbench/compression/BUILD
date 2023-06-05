@@ -13,6 +13,18 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "compression_parameter",
+    srcs = ["compression_parameter.cc"],
+    hdrs = ["compression_parameter.h"],
+    data = glob(["compression_parameters/**"]),
+    deps = [
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
 sh_binary(
     name = "synthesize_data",
     srcs = [":synthesize_data.sh"],
@@ -71,6 +83,7 @@ cc_test(
     malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
         ":algorithms",
+        ":compression_parameter",
         "//fleetbench:benchmark_main",
         "//fleetbench:dynamic_registrar",
         "@bazel_tools//tools/cpp/runfiles",

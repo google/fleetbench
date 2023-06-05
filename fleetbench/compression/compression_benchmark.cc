@@ -29,9 +29,11 @@
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/compression/algorithms.h"
+#include "fleetbench/compression/compression_parameter.h"
 #include "fleetbench/dynamic_registrar.h"
 
 using bazel::tools::cpp::runfiles::Runfiles;
@@ -77,6 +79,13 @@ static std::vector<std::filesystem::path> GetMatchingDirectories(
   }
   std::sort(directories.begin(), directories.end());
   return directories;
+}
+
+// Parse the given directory_name string, which like `ZSTD-COMPRESS-A`, to get
+// the binary name, i.e, A.
+std::string GetBinary(std::string directory_name) {
+  std::vector<std::string> v = absl::StrSplit(directory_name, '-');
+  return v.back();
 }
 
 namespace CompressorFactory {
@@ -178,10 +187,13 @@ void RegisterBenchmarks() {
   std::vector<absl::string_view> algorithms = {"Snappy", "ZSTD"};
   std::vector<absl::string_view> operations = {"COMPRESS", "DECOMPRESS"};
 
+  // Get ZSTD specific parameters map
+  auto compression_levels_map = GetCompressionLevelsMap();
+
   for (const auto& algorithm : algorithms) {
     for (const auto& operation : operations) {
       auto benchmark_fn = fleetbench::compression::BM_Compress;
-      if (algorithm == "DECOMPRESS")
+      if (operation == "DECOMPRESS")
         benchmark_fn = fleetbench::compression::BM_Decompress;
 
       // Gets the a list of directory paths that stores compression corpus
@@ -191,8 +203,8 @@ void RegisterBenchmarks() {
 
       for (const auto& directory : directories) {
         // Binary names, i.e, A, B,..
-        std::string binary = directory.filename().string();
-        std::string benchmark_name = absl::StrCat("BM_", binary);
+        std::string directory_name = directory.filename().string();
+        std::string benchmark_name = absl::StrCat("BM_", directory_name);
 
         if (algorithm == "Snappy") {
           benchmark::RegisterBenchmark(benchmark_name.c_str(), benchmark_fn,
@@ -201,10 +213,13 @@ void RegisterBenchmarks() {
           auto* benchmark = benchmark::RegisterBenchmark(
               benchmark_name.c_str(), benchmark_fn, "ZSTD", directory);
 
-          if (operation == "COMPRESS")
-            benchmark->DenseRange(-1, 11, 1)->ArgName("compression_level");
-          else
+          if (operation == "COMPRESS") {
+            std::string binary = GetBinary(directory_name);
+            for (auto level : compression_levels_map[binary])
+              benchmark->Arg(level)->ArgName("compression_level");
+          } else {
             benchmark->Arg(-1)->Arg(1)->ArgName("compression_level");
+          }
         }
       }
     }
