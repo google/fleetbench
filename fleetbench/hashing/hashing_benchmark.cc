@@ -19,6 +19,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <random>
 #include <string>
 #include <vector>
@@ -33,39 +34,65 @@
 namespace fleetbench {
 namespace hashing {
 
-// KibiByte. 1kKiB = 1024 bytes
-static constexpr int64_t kKiB = 1024;
+using CacheInfo = benchmark::CPUInfo::CacheInfo;
 
-// Reserved space for precomputed parameters for hashing operations.
-static constexpr int64_t kPrecomputeParametersBytes = 4 * kKiB;
+struct BM_Crc_Parameters {
+  std::vector<int> str_lengths;
+  absl::string_view sv;
+  bool hot;
+};
 
 void ExtendCrc32cFunction(benchmark::State &state,
-                          std::vector<absl::string_view> &parameters) {
-  size_t batch_size = parameters.size();
+                          BM_Crc_Parameters &parameters) {
+  size_t batch_size = parameters.str_lengths.size();
   absl::crc32c_t v0{0};
+  size_t start = 0;
   // Run benchmark and call ExtendCrc32c
   while (state.KeepRunningBatch(batch_size)) {
-    for (auto &p : parameters) {
+    for (auto &l : parameters.str_lengths) {
       benchmark::DoNotOptimize(v0);
+      if (!parameters.hot) {
+        if (start + l >= parameters.sv.length()) {
+          start = 0;
+        }
+      }
+      absl::string_view buf = parameters.sv.substr(start, l);
+      if (!parameters.hot) {
+        // +4096 to put the next element in a different cache block, and to
+        // prevent prefetching
+        start += l + 4096;
+      }
       // The callregz data we use is actually for ExtendCrc32cInternal.
       // However, as this function is in an 'internal' namespace, we benchmark
       // ExtendCrc32c instead. ExtendCrc32c passes inputs with size > 64 to
       // ExtendCrc32cInternal. ExtendCrc32c is also currently the only function
       // in the codebase that calls ExtendCrc32cInternal; thus, the callregz
       // data for ExtendCrc32cInternal does not contain inputs with size <= 64.
-      auto res = absl::ExtendCrc32c(v0, p);
+      auto res = absl::ExtendCrc32c(v0, buf);
       benchmark::DoNotOptimize(res);
     }
   }
 }
 
 void ComputeCrc32cFunction(benchmark::State &state,
-                           std::vector<absl::string_view> &parameters) {
-  size_t batch_size = parameters.size();
+                           BM_Crc_Parameters &parameters) {
+  size_t batch_size = parameters.str_lengths.size();
+  size_t start = 0;
   // Run benchmark and call ComputeCrc32c
   while (state.KeepRunningBatch(batch_size)) {
-    for (auto &p : parameters) {
-      auto res = absl::ComputeCrc32c(p);
+    for (auto &l : parameters.str_lengths) {
+      if (!parameters.hot) {
+        if (start + l >= parameters.sv.length()) {
+          start = 0;
+        }
+      }
+      absl::string_view buf = parameters.sv.substr(start, l);
+      if (!parameters.hot) {
+        // +4096 to put the next element in a different cache block, and to
+        // prevent prefetching
+        start += l + 4096;
+      }
+      auto res = absl::ComputeCrc32c(buf);
       benchmark::DoNotOptimize(res);
     }
   }
@@ -111,16 +138,19 @@ static std::vector<double> ReadDistributionFile(std::filesystem::path file) {
   return distribution;
 }
 
-static void BM_Hashing(benchmark::State &state,
-                       absl::string_view distribution_file_prefix,
-                       void (*hashing_call)(benchmark::State &,
-                                            std::vector<absl::string_view> &)) {
-  // Number of parameters that allows all can be resident in L1.
-  const size_t batch_size =
-      kPrecomputeParametersBytes / sizeof(absl::string_view);
+static int GetL3CacheSize() {
+  for (const CacheInfo &ci : benchmark::CPUInfo::Get().caches) {
+    if (ci.level == 3) {
+      return ci.size;
+    }
+  }
+  return -1;
+}
 
-  // Pre-calculates parameter values.
-  std::vector<absl::string_view> parameters(batch_size);
+static void BM_Hashing(
+    benchmark::State &state, absl::string_view distribution_file_prefix,
+    void (*hashing_call)(benchmark::State &, BM_Crc_Parameters &), bool hot) {
+  const size_t batch_size = 1000;
 
   // Gets prod hashing size distribution and the name.
   const auto &files = GetDistributionFiles(distribution_file_prefix);
@@ -133,23 +163,33 @@ static void BM_Hashing(benchmark::State &state,
   std::discrete_distribution<> size_bytes_sampler(
       hashing_size_distribution.begin(), hashing_size_distribution.end());
 
+  // Pre-calculates parameter values.
+  std::vector<int> str_lengths(batch_size);
+  for (auto &l : str_lengths) {
+    // Size_bytes is sampled from the collected prod distribution.
+    l = size_bytes_sampler(GetRNG());
+  }
+
+  int str_size =
+      *std::max_element(std::begin(str_lengths), std::end(str_lengths));
+  if (!hot) {
+    // For the 'cold' case, we create a string that doesn't fit in the L3 cache.
+    str_size = std::max(2 * GetL3CacheSize(), str_size);
+  }
+
   // We expect that the execution time of the hashing function only depends on
   // the input size, but not on the input value. Thus, it is sufficient to pick
   // one arbitrary string of the right size as the input.
-  std::string full_str(hashing_size_distribution.size() - 1, 'x');
+  std::string full_str(str_size, 'x');
   absl::string_view full_sv{full_str};
 
-  for (auto &p : parameters) {
-    // Size_bytes is sampled from the collected prod distribution.
-    p = full_sv.substr(0, size_bytes_sampler(GetRNG()));
-  }
-
+  BM_Crc_Parameters parameters{str_lengths, full_sv, hot};
   hashing_call(state, parameters);
 
   // Computes the total_bytes throughput.
   size_t batch_bytes = 0;
-  for (auto &p : parameters) {
-    batch_bytes += p.length();
+  for (auto &p : str_lengths) {
+    batch_bytes += p;
   }
 
   const size_t total_bytes = (state.iterations() * batch_bytes) / batch_size;
@@ -161,12 +201,20 @@ static void BM_Hashing(benchmark::State &state,
       benchmark::Counter::kIsRate);
 }
 
-BENCHMARK_CAPTURE(BM_Hashing, ExtendCrc32c, "Extendcrc32cinternal",
-                  &ExtendCrc32cFunction)
+BENCHMARK_CAPTURE(BM_Hashing, ExtendCrc32c_hot, "Extendcrc32cinternal",
+                  &ExtendCrc32cFunction, true)
     ->DenseRange(0, GetDistributionFiles("Extendcrc32cinternal").size() - 1, 1);
 
-BENCHMARK_CAPTURE(BM_Hashing, ComputeCrc32c, "Computecrc32c",
-                  &ComputeCrc32cFunction)
+BENCHMARK_CAPTURE(BM_Hashing, ComputeCrc32c_hot, "Computecrc32c",
+                  &ComputeCrc32cFunction, true)
+    ->DenseRange(0, GetDistributionFiles("Computecrc32c").size() - 1, 1);
+
+BENCHMARK_CAPTURE(BM_Hashing, ExtendCrc32c_cold, "Extendcrc32cinternal",
+                  &ExtendCrc32cFunction, false)
+    ->DenseRange(0, GetDistributionFiles("Extendcrc32cinternal").size() - 1, 1);
+
+BENCHMARK_CAPTURE(BM_Hashing, ComputeCrc32c_cold, "Computecrc32c",
+                  &ComputeCrc32cFunction, false)
     ->DenseRange(0, GetDistributionFiles("Computecrc32c").size() - 1, 1);
 
 }  // namespace hashing
