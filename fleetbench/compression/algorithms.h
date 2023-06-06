@@ -18,35 +18,50 @@
 #include <stddef.h>
 
 #include <cstddef>
+#include <memory>
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
+#include "zstd.h"
 
 namespace fleetbench {
 namespace compression {
 
+size_t ZDelete(ZSTD_CCtx* ptr);
+size_t ZDelete(ZSTD_DCtx* ptr);
+
+struct ZDeleter {
+  template <class T>
+  void operator()(T* ptr) const {
+    size_t res = ZDelete(ptr);
+    CHECK(!ZSTD_isError(res)) << ZSTD_getErrorName(res);
+  }
+};
+
 class Compressor {
  public:
   virtual ~Compressor() = default;
-  virtual size_t Compress(absl::string_view input, std::string* output,
-                          int compression_level) = 0;
+  virtual size_t Compress(absl::string_view input, std::string* output) = 0;
   virtual bool Decompress(absl::string_view input, std::string* output) = 0;
 };
 
 class ZstdCompressor : public Compressor {
  public:
-  size_t Compress(absl::string_view input, std::string* output,
-                  int compression_level) override;
+  ZstdCompressor(int compression_level, int window_log);
+  size_t Compress(absl::string_view input, std::string* output) override;
   bool Decompress(absl::string_view input, std::string* output) override;
 
  private:
   size_t MaxCompressedSize(size_t input_size) const;
+  std::unique_ptr<ZSTD_CCtx, ZDeleter> cctx_;
+  std::unique_ptr<ZSTD_DCtx, ZDeleter> dctx_;
 };
 
 class SnappyCompressor : public Compressor {
  public:
-  size_t Compress(absl::string_view input, std::string* output,
-                  int compression_level) override;
+  SnappyCompressor() = default;
+  size_t Compress(absl::string_view input, std::string* output) override;
   bool Decompress(absl::string_view input, std::string* output) override;
 };
 

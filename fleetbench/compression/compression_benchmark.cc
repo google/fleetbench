@@ -91,11 +91,18 @@ std::string GetBinary(std::string directory_name) {
 namespace CompressorFactory {
 
 std::unique_ptr<Compressor> CreateCompressor(
-    const absl::string_view compressor_type) {
+    const absl::string_view compressor_type, benchmark::State& state,
+    bool is_compress) {
   if (compressor_type == "Snappy") {
     return std::make_unique<SnappyCompressor>();
   } else if (compressor_type == "ZSTD") {
-    return std::make_unique<ZstdCompressor>();
+    int compression_level = 0;
+    int window_log = 0;
+    if (is_compress) {
+      compression_level = state.range(0);
+      window_log = state.range(1);
+    }
+    return std::make_unique<ZstdCompressor>(compression_level, window_log);
   } else {
     LOG(FATAL) << "Unknown compressor type: " << compressor_type;
     return nullptr;
@@ -111,15 +118,12 @@ static constexpr absl::string_view kCorporaPath =
 static void BM_Compress(benchmark::State& state,
                         absl::string_view compressor_type,
                         std::filesystem::path dir_path) {
-  auto compressor = CompressorFactory::CreateCompressor(compressor_type);
+  auto compressor =
+      CompressorFactory::CreateCompressor(compressor_type, state,
+                                          /* is_compress= */ true);
 
   // Read in benchmark corpus
   const auto& corpora = GetCorpora(dir_path);
-
-  int compression_level = 0;
-  if (compressor_type == "ZSTD") {
-    compression_level = state.range(0);
-  }
 
   // Reserve space to store string after compression and decompression.
   std::vector<std::string> compressed(corpora.size()),
@@ -128,8 +132,7 @@ static void BM_Compress(benchmark::State& state,
   for (auto _ : state) {
     //  Compress file
     for (size_t i = 0; i < corpora.size(); i++) {
-      auto res =
-          compressor->Compress(corpora[i], &compressed[i], compression_level);
+      auto res = compressor->Compress(corpora[i], &compressed[i]);
       benchmark::DoNotOptimize(res);
     }
   }
@@ -143,22 +146,18 @@ static void BM_Compress(benchmark::State& state,
 static void BM_Decompress(benchmark::State& state,
                           absl::string_view compressor_type,
                           std::filesystem::path dir_path) {
-  auto compressor = CompressorFactory::CreateCompressor(compressor_type);
+  auto compressor = CompressorFactory::CreateCompressor(
+      compressor_type, state, /* is_compress= */ false);
 
   // Read in benchmark corpus
   const auto& corpora = GetCorpora(dir_path);
-
-  int compression_level = 0;
-  if (compressor_type == "ZSTD") {
-    compression_level = state.range(0);
-  }
 
   // Reserve space to store string after compression and decompression.
   std::vector<std::string> compressed(corpora.size()),
       decompressed(corpora.size());
 
   for (size_t i = 0; i < corpora.size(); i++) {
-    compressor->Compress(corpora[i], &compressed[i], compression_level);
+    compressor->Compress(corpora[i], &compressed[i]);
   }
 
   for (auto _ : state) {
@@ -216,9 +215,9 @@ void RegisterBenchmarks() {
           if (operation == "COMPRESS") {
             std::string binary = GetBinary(directory_name);
             for (auto level : compression_levels_map[binary])
-              benchmark->Arg(level)->ArgName("compression_level");
-          } else {
-            benchmark->Arg(-1)->Arg(1)->ArgName("compression_level");
+              benchmark->Args({level, 15})
+                  ->Args({level, 16})
+                  ->ArgNames({"compression_level", "window_log"});
           }
         }
       }

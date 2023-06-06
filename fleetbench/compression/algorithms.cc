@@ -1,3 +1,4 @@
+
 // Copyright 2023 The Fleetbench Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,7 +12,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #include "fleetbench/compression/algorithms.h"
 
 #include <string>
@@ -21,16 +21,26 @@
 #include "absl/strings/string_view.h"
 #include "snappy.h"
 #include "zstd.h"
-
 namespace fleetbench {
 namespace compression {
 
+size_t ZDelete(ZSTD_CCtx* ptr) { return ZSTD_freeCCtx(ptr); }
+size_t ZDelete(ZSTD_DCtx* ptr) { return ZSTD_freeDCtx(ptr); }
+
+ZstdCompressor::ZstdCompressor(int compression_level, int window_log)
+    : cctx_(ZSTD_createCCtx()), dctx_(ZSTD_createDCtx()) {
+  // Set compression parameters.
+  ZSTD_CCtx_setParameter(cctx_.get(), ZSTD_c_compressionLevel,
+                         compression_level);
+  ZSTD_CCtx_setParameter(cctx_.get(), ZSTD_c_windowLog, window_log);
+}
+
 size_t ZstdCompressor::Compress(const absl::string_view input,
-                                std::string* output, int compression_level) {
+                                std::string* output) {
   size_t output_size = MaxCompressedSize(input.size());
   output->resize(output_size);
-  size_t final_size = ZSTD_compress(output->data(), output_size, input.data(),
-                                    input.size(), compression_level);
+  size_t final_size = ZSTD_compress2(
+      cctx_.get(), output->data(), output->size(), input.data(), input.size());
   QCHECK(!ZSTD_isError(final_size))
       << "Error compressing: " << ZSTD_getErrorName(final_size);
   output->resize(final_size);
@@ -45,8 +55,8 @@ bool ZstdCompressor::Decompress(const absl::string_view input,
     return false;
   }
   output->resize(output_size);
-  size_t final_size =
-      ZSTD_decompress(output->data(), output_size, input.data(), input.size());
+  size_t final_size = ZSTD_decompressDCtx(
+      dctx_.get(), output->data(), output_size, input.data(), input.size());
   if (ZSTD_isError(final_size)) {
     LOG(ERROR) << "Error decompressing: " << ZSTD_getErrorName(final_size);
     return false;
@@ -62,7 +72,7 @@ size_t ZstdCompressor::MaxCompressedSize(size_t input_size) const {
 }
 
 size_t SnappyCompressor::Compress(const absl::string_view input,
-                                 std::string* output, int compression_level) {
+                                 std::string* output) {
   return snappy::Compress(input.data(), input.size(), output);
 }
 bool SnappyCompressor::Decompress(const absl::string_view input,
