@@ -226,35 +226,33 @@ static void BM_Iterate_Cold(benchmark::State& state) {
   assert(num_strides > 0);
 
   size_t total_num_sets = sets.size();
-  // This construction ensures cold setup for each of the generated sets.
   std::vector<std::vector<typename Set::const_iterator>> set_iterators;
   set_iterators.reserve(total_num_sets);
-  for (const Set& set : sets) {
-    auto it = set.begin();
-    std::vector<typename Set::const_iterator> iters;
-    iters.reserve(num_strides);
-    for (size_t i = 0; i != num_strides; ++i) {
-      iters.push_back(it);
-      std::advance(it, kStride);
-    }
-    set_iterators.push_back(std::move(iters));
-  }
+
   alignas(Value<kValueSizeT>) char data[kValueSizeT];
 
   while (true) {
+    set_iterators.clear();
+    // This construction ensures cold setup for each of the generated sets.
+    for (const Set& set : sets) {
+      auto it = set.begin();
+      std::vector<typename Set::const_iterator> iters;
+      iters.reserve(num_strides);
+      for (size_t i = 0; i != num_strides; ++i) {
+        iters.push_back(it);
+        std::advance(it, kStride);
+      }
+      set_iterators.push_back(std::move(iters));
+    }
     for (size_t i = 0; i != kStride; ++i) {
       for (size_t j = 0; j != num_strides; ++j) {
         if (!state.KeepRunningBatch(total_num_sets)) return;
         // Iterate over sets in the inner loop to reduce caching and ensure cold
         // environment.
         for (size_t k = 0; k != total_num_sets; ++k) {
-          std::vector<typename Set::const_iterator> curr_set_iterators =
+          std::vector<typename Set::const_iterator>& curr_set_iterators =
               set_iterators[k];
-          // skip over out-of-bounds access for smaller sets
-          if (j >= curr_set_iterators.size()) continue;
           auto& iter = curr_set_iterators[j];
-          auto res = (iter == sets[k].end());
-          DoNotOptimize(res);
           memcpy(data, &*iter, kValueSizeT);
           DoNotOptimize(data);
           ++iter;
