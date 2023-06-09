@@ -299,7 +299,7 @@ BENCHMARK_TEMPLATE(BM_Iterate_Cold, ::absl::node_hash_set, 64)
 // existent, to ensure tombstones are created by implementations that use
 // them.
 //
-// Depending on the set implementation, erased elemenets may create tombstones
+// Depending on the set implementation, erased elements may create tombstones
 // which affect performance on insertion and frequency of rehashing, which is
 // what this microbenchmark is capturing.
 //
@@ -336,12 +336,15 @@ static void BM_EraseInsert_Cold(benchmark::State& state) {
   }
 
   while (true) {
+    // We create a copy of 'sets' so that the condition that existent elements
+    // are erased holds in every iteration of the outer loop.
+    std::vector<Set> sets_copy = sets;
     for (size_t i = 0; i != largest_set_size; ++i) {
       // Iterate over sets in the inner loop to reduce caching and ensure cold
       // environment.
-      if (!state.KeepRunningBatch(sets.size())) return;
-      for (size_t j = 0; j != sets.size(); ++j) {
-        Set curr_set = sets[j];
+      if (!state.KeepRunningBatch(sets_copy.size())) return;
+      for (size_t j = 0; j != sets_copy.size(); ++j) {
+        Set& curr_set = sets_copy[j];
         // skip over out-of-bounds access for smaller sets
         if (i >= curr_set.size()) continue;
         auto erase_result = curr_set.erase(keys[j][i]);
