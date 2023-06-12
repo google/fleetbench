@@ -1,0 +1,25 @@
+name: monthly_release
+on:
+  schedule:
+    - cron:  "0 0 1 * *"  # First day of month
+
+jobs:
+  monthly_release:
+    name: GitHub Monthly Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+        - uses: actions/checkout@v2
+        - uses: anothrNick/github-tag-action@1.64.0 
+          id: set_release_tag
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+            WITH_V: true
+            DEFAULT_BUMP: patch
+            INITIAL_VERSION: 0.2.1
+        - uses: marvinpinto/action-automatic-releases@v1.2.1
+          with:
+            repo_token: "${{ secrets.GITHUB_TOKEN }}"
+            prerelease: true
+            automatic_release_tag: ${{ steps.set_release_tag.outputs.new_tag }}
