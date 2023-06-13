@@ -280,7 +280,7 @@ BENCHMARK_TEMPLATE(BM_Iterate_Hot, ::absl::node_hash_set, 64)
 // sets from shrinking. Newly inserted element is different from existent, to
 // ensure tombstones are created by implementations that use them.
 //
-// Depending on the set implementation, erased elemenets may create tombstones
+// Depending on the set implementation, erased elements may create tombstones
 // which affect performance on insertion and frequency of rehashing, which is
 // what this microbenchmark is capturing.
 //
@@ -310,8 +310,17 @@ static void BM_EraseInsert_Hot(benchmark::State& state) {
     if (!s.count(key) && extra_keys.insert(key).second) keys.push_back(key);
   }
 
-  while (state.KeepRunningBatch(keys.size())) {
-    for (size_t i = 0; i != set_size; ++i) {
+  const size_t keys_size_effective = keys.size();
+
+  for (size_t i = 0; i != set_size; ++i) {
+    // We create some overlap (i.e., keys[i] == keys[keys_size_effective+i]) for
+    // 0 <= i < set_size), so that the logic in the main loop below becomes
+    // simpler and does not require potentially expensive modulo operations.
+    keys.push_back(keys[i]);
+  }
+
+  while (state.KeepRunningBatch(keys_size_effective)) {
+    for (size_t i = 0; i != keys_size_effective; ++i) {
       DoNotOptimize(s);
       auto erase_result = s.erase(keys[i]);
       DoNotOptimize(erase_result);
