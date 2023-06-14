@@ -113,7 +113,7 @@ class CorpusChunkManager:
       # The negative compression levels offer faster compression and
       # decompression speed in exchange for some loss in compression ratio
       # compared to level 1. https://facebook.github.io/zstd/
-      compression_levels = [-5, -3, -1] + list(range(0, 12)) + [15]
+      compression_levels = [-5, -3, -1] + list(range(0, 16))
       window_sizes = ZSTD_WINDOW_SIZE
     else:
       raise RuntimeError(f"{self.algorithm} is not supported yet")
