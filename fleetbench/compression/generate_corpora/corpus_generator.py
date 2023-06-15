@@ -263,6 +263,29 @@ class CorpusChunkManager:
     max_compression_ratio_index = len(self.lookup_table[parameters])
     decrease_compression_ratio = True
 
+    # In the lookup table, the smallest chunk size is 1024. Thus, we need
+    # special cares for target call size < 1024. This is done by first
+    # matching the parameter/ratio to select a chunk, and then slicing the chunk
+    # to get the desired call size. Comparing final vs. target compression
+    # ratio, we confirm doing so won't hurt the performance.
+    if target_call_size < 1024:
+      chunk_list = self.lookup_table[parameters][
+          current_compression_ratio_index
+      ]
+      if not chunk_list:
+        return None
+      random_index = random.randint(0, len(chunk_list) - 1)
+      slice_chunk = chunk_list[random_index].data
+      result_string = slice_chunk[0 : int(target_call_size)]
+
+      corpus_chunk = CorpusChunk(
+          data=result_string,
+          chunk_id=chunk_list[random_index].chunk_id,
+          src_file=chunk_list[random_index].src_file,
+      )
+      output_chunk_array.append(corpus_chunk)
+      return output_chunk_array
+
     for call_size in range(0, int(target_call_size), self.chunk_size):
       # Periodically evaluate generated file so far, and adjust ratio if it's
       # necessary
@@ -388,22 +411,21 @@ class CorpusChunkManager:
     if not output_chunks_array:
       return None
 
-    # Compute final compression ratio
-    random.shuffle(output_chunks_array)
-    if self.algorithm == "Snappy":
-      achieved_compression_ratio = CorpusChunkManager.compute_compression_ratio(
-          self, output_chunks_array
-      )
-    else:
-      achieved_compression_ratio = CorpusChunkManager.compute_compression_ratio(
-          self,
-          output_chunks_array,
-          parameters.compression_level,
-      )
-
+    # Get final corpus and compute final compression ratio
     result = bytes()
     for chunk in output_chunks_array:
       result += chunk.data
+
+    random.shuffle(list(result))
+
+    if self.algorithm == "Snappy":
+      compressed_data = self.compress_function(result)
+    else:
+      compressed_data = self.compress_function(
+          result, parameters.compression_level
+      )
+
+    achieved_compression_ratio = len(result) / len(compressed_data)
 
     self.benchmark_achieved_call_sizes.append(len(result))
     self.benchmark_achieved_compression_ratios.append(

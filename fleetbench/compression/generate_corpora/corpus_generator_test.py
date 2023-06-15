@@ -242,6 +242,29 @@ class CorpusGeneratorTest(absltest.TestCase):
 
         self.assertLen(result, sampled_call_size)
 
+  def test_create_chunk_array_snappy_less_than_1024(self):
+    corpus_chunk_manager = corpus_generator.CorpusChunkManager(
+        "Snappy",
+        "compress",
+        DATASETS_TEST_SIMPLE,
+        "A",
+    )
+    parameters = corpus_generator.CompressionParameters(
+        window_size=SNAPPY_WINDOW_SIZE,
+        compression_level=SNAPPY_COMPRESSION_LEVEL,
+    )
+    corpus_chunk_manager.generate_corpus_chunks_lookup()
+
+    sampled_log_size_log2 = 8
+    target_call_size = 2**sampled_log_size_log2
+    sampled_compression_ratio = 1.2
+
+    output_list = corpus_chunk_manager.create_chunk_array(
+        target_call_size, sampled_compression_ratio, parameters
+    )
+    self.assertLen(output_list, 1)
+    self.assertLen(output_list[0].data, target_call_size)
+
 
 if __name__ == "__main__":
   absltest.main()
