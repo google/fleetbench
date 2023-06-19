@@ -8,6 +8,8 @@ cc_library(
     linkstatic = 1,
     deps = [
         "//fleetbench/common",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/random",
     ],
     alwayslink = 1,
@@ -33,9 +35,9 @@ cc_test(
         ":swissmap_benchmark",
         "//fleetbench:benchmark_main",
         "//fleetbench/common",
+        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/container:node_hash_set",
-        "@com_google_absl//absl/random",
         "@com_google_benchmark//:benchmark",
     ],
 )

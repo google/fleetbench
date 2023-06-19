@@ -14,6 +14,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 #include "absl/container/flat_hash_set.h"
@@ -36,11 +37,11 @@ static void BM_FindMiss_Cold(benchmark::State& state) {
   // The larger this value, the colder the benchmark and the longer it takes
   // to run.
   static constexpr size_t kMinTotalBytes = 256 << 20;
-  std::vector<Set> sets =
-      GenerateSets<Set>(state.range(0), kMinTotalBytes / kValueSizeT,
-                        static_cast<Density>(state.range(1)));
-  std::vector<uint32_t> keys(GetLargestSetSize(sets));
-  for (uint32_t& key : keys) key = RandomNonexistent();
+
+  auto& sc = SetsCache<Set>::getInstance();
+  auto& sets = sc.GetGeneratedSets(state.range(0), kMinTotalBytes / kValueSizeT,
+                                   static_cast<Density>(state.range(1)));
+  auto& keys = sc.GetNonExistingKeys(sets);
 
   while (true) {
     for (uint32_t key : keys) {
@@ -93,17 +94,11 @@ void LookupHit_Cold(benchmark::State& state, Lookup lookup) {
   // run.
   static constexpr size_t kMinTotalBytes = 256 << 20;
 
-  std::vector<Set> sets =
-      GenerateSets<Set>(state.range(0), kMinTotalBytes / kValueSizeT,
-                        static_cast<Density>(state.range(1)));
-
-  std::vector<std::vector<uint32_t>> set_elements_randomized =
-      ToVectorRandomized(sets);
-
-  // Transpose to ensure access is cold.
-  std::vector<uint32_t> keys = Transpose(std::move(set_elements_randomized));
-
-  auto n_sets_of_size = GetNumSetsOfSize(sets);
+  auto& sc = SetsCache<Set>::getInstance();
+  auto& sets = sc.GetGeneratedSets(state.range(0), kMinTotalBytes / kValueSizeT,
+                                   static_cast<Density>(state.range(1)));
+  auto& keys = sc.GetTransposedRandomizedKeys(sets);
+  auto& n_sets_of_size = sc.GetNumSetsOfSize(sets);
 
   while (true) {
     for (size_t i = 0; i != GetLargestSetSize(sets); ++i) {
@@ -217,9 +212,9 @@ static void BM_Iterate_Cold(benchmark::State& state) {
   static constexpr size_t kMinTotalBytes = 128 << 20;
   static constexpr size_t kStride = 16;
 
-  std::vector<Set> sets =
-      GenerateSets<Set>(state.range(0), kMinTotalBytes / kValueSizeT,
-                        static_cast<Density>(state.range(1)));
+  auto& sc = SetsCache<Set>::getInstance();
+  auto& sets = sc.GetGeneratedSets(state.range(0), kMinTotalBytes / kValueSizeT,
+                                   static_cast<Density>(state.range(1)));
 
   // `sets.back()` has the minimum size.
   const size_t num_strides = sets.back().size() / kStride;
@@ -316,24 +311,11 @@ static void BM_EraseInsert_Cold(benchmark::State& state) {
   // to run.
   static constexpr size_t kMinTotalBytes = 128 << 20;
 
-  std::vector<Set> sets = GenerateSets<Set>(
-      state.range(0), kMinTotalBytes / kValueSizeT, Density::kMin);
-
-  const size_t largest_set_size = sets.front().size();
-  const size_t num_keys = 3 * largest_set_size;
-  std::vector<std::vector<uint32_t>> keys(sets.size());
-  for (size_t i = 0; i != sets.size(); ++i) {
-    keys[i] = ToVector(sets[i]);
-    std::shuffle(keys[i].begin(), keys[i].end(), GetRNG());
-    absl::flat_hash_set<uint32_t> extra;
-    keys[i].reserve(num_keys);
-    while (keys[i].size() < num_keys) {
-      uint32_t key = RandomExistent();
-      // Generate a unique key that hasn't been inserted before.
-      if (!sets[i].count(key) && extra.insert(key).second)
-        keys[i].push_back(key);
-    }
-  }
+  auto& sc = SetsCache<Set>::getInstance();
+  auto& sets = sc.GetGeneratedSets(state.range(0), kMinTotalBytes / kValueSizeT,
+                                   Density::kMin);
+  auto& keys = sc.GetExtendedKeys(sets);
+  const size_t largest_set_size = GetLargestSetSize(sets);
 
   while (true) {
     // We create a copy of 'sets' so that the condition that existent elements
@@ -393,17 +375,15 @@ static void BM_InsertManyOrdered_Cold(benchmark::State& state) {
   // to run.
   static constexpr size_t kMinTotalBytes = 128 << 20;
 
-  std::vector<Set> sets =
-      GenerateSets<Set>(state.range(0), kMinTotalBytes / kValueSizeT,
-                        static_cast<Density>(state.range(1)));
+  auto& sc = SetsCache<Set>::getInstance();
+  auto& cached_sets =
+      sc.GetGeneratedSets(state.range(0), kMinTotalBytes / kValueSizeT,
+                          static_cast<Density>(state.range(1)));
+  auto& keys = sc.GetTransposedKeys(cached_sets);
+  auto& n_sets_of_size = sc.GetNumSetsOfSize(cached_sets);
 
-  std::vector<std::vector<uint32_t>> set_elements(sets.size());
-  for (size_t i = 0; i != sets.size(); ++i) {
-    set_elements[i] = ToVector(sets[i]);
-  }
-  std::vector<uint32_t> keys = Transpose(std::move(set_elements));
-
-  auto n_sets_of_size = GetNumSetsOfSize(sets);
+  // create a copy because 'sets' is modified in the loop below
+  auto sets = cached_sets;
   size_t largest_set_size = GetLargestSetSize(sets);
 
   while (true) {
@@ -465,14 +445,15 @@ static void BM_InsertManyUnordered_Cold(benchmark::State& state) {
   // to run.
   static constexpr size_t kMinTotalBytes = 128 << 20;
 
-  std::vector<Set> sets =
-      GenerateSets<Set>(state.range(0), kMinTotalBytes / kValueSizeT,
-                        static_cast<Density>(state.range(1)));
+  auto& sc = SetsCache<Set>::getInstance();
+  auto& cached_sets =
+      sc.GetGeneratedSets(state.range(0), kMinTotalBytes / kValueSizeT,
+                          static_cast<Density>(state.range(1)));
+  auto& keys = sc.GetTransposedRandomizedKeys(cached_sets);
+  auto& n_sets_of_size = sc.GetNumSetsOfSize(cached_sets);
 
-  std::vector<std::vector<uint32_t>> set_elements = ToVectorRandomized(sets);
-  std::vector<uint32_t> keys = Transpose(std::move(set_elements));
-
-  auto n_sets_of_size = GetNumSetsOfSize(sets);
+  // create a copy because 'sets' is modified in the loop below
+  auto sets = cached_sets;
   size_t largest_set_size = GetLargestSetSize(sets);
 
   while (true) {

@@ -15,6 +15,11 @@
 #ifndef THIRD_PARTY_FLEETBENCH_SWISSMAP_SWISSMAP_BENCHMARK_H_
 #define THIRD_PARTY_FLEETBENCH_SWISSMAP_SWISSMAP_BENCHMARK_H_
 
+#include <utility>
+#include <vector>
+
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/random/random.h"
 #include "fleetbench/common/common.h"
 
@@ -33,6 +38,25 @@ enum class Density {
   kMin,  // minimum load factor
   kMax,  // maximum load factor
 };
+
+// Transposes the input 2D vector and concatenates the resulting elements. The
+// input is not required to be a matrix - the elements of `input` can have
+// different sizes, but `input.front()` is required to have the maximum size of
+// all elements. The output will have size `input.size() * m.front().size()`. If
+// not all elements of `input` have the same size, then any elements in the
+// output corresponding to missing `T`s from the input are default constructed.
+template <class T>
+std::vector<T> Transpose(std::vector<std::vector<T>> input) {
+  assert(!input.empty());
+  std::vector<T> v(input.size() * input.front().size());
+  for (size_t i = 0; i != input.size(); ++i) {
+    assert(input[i].size() <= input[0].size());
+    for (size_t j = 0; j != input[i].size(); ++j) {
+      v[j * input.size() + i] = input[i][j];
+    }
+  }
+  return v;
+}
 
 // Returns a set filled with random data with size at least min_size and either
 // low or high load factor depending on the requested density. Calling this
@@ -109,6 +133,140 @@ std::vector<Set> GenerateSets(size_t min_size, size_t min_total_size,
   return generated_sets;
 }
 
+// Helper class to avoid performing the same initializations repeatedly.
+template <class Set>
+class SetsCache {
+ public:
+  static SetsCache<Set>& getInstance() {
+    static SetsCache<Set> instance;
+    return instance;
+  }
+
+  // Caches calls to GenerateSets, i.e., for repeated calls with the same
+  // parameters, the function will return a reference to the same vector of
+  // generated sets.
+  std::vector<Set>& GetGeneratedSets(size_t min_size, size_t min_total_size,
+                                     Density density) {
+    auto& sets = generated_sets_[min_size][min_total_size][density];
+
+    if (sets.empty()) {
+      sets = GenerateSets<Set>(min_size, min_total_size, density);
+    }
+    return sets;
+  }
+
+  // Returns a reference to a vector of keys that do not occur in 'sets'. Note
+  // that 'sets' must not be modified between calls to this function.
+  std::vector<uint32_t>& GetNonExistingKeys(std::vector<Set>& sets) {
+    auto& keys = non_ex_keys_[&sets];
+
+    if (keys.empty()) {
+      keys.resize(GetLargestSetSize(sets));
+      for (uint32_t& key : keys) key = RandomNonexistent();
+    }
+
+    return keys;
+  }
+
+  // Returns a reference to a vector v obtained by calling Transpose() on
+  // ToVectorRandomized(sets). Note that 'sets' must not be modified between
+  // calls to this function.
+  std::vector<uint32_t>& GetTransposedRandomizedKeys(std::vector<Set>& sets) {
+    auto& keys = transp_r_keys_[&sets];
+
+    if (keys.empty()) {
+      std::vector<std::vector<uint32_t>> set_elements_randomized =
+          ToVectorRandomized(sets);
+
+      // Transpose to ensure access is cold.
+      keys = Transpose(std::move(set_elements_randomized));
+    }
+
+    return keys;
+  }
+
+  // Returns a reference to a vector obtained by transposing 'sets'. Note that
+  // 'sets' must not be modified between calls to this function.
+  std::vector<uint32_t>& GetTransposedKeys(std::vector<Set>& sets) {
+    auto& keys = transp_keys_[&sets];
+
+    if (keys.empty()) {
+      std::vector<std::vector<uint32_t>> set_elements(sets.size());
+      for (size_t i = 0; i != sets.size(); ++i) {
+        set_elements[i] = ToVector(sets[i]);
+      }
+      keys = Transpose(std::move(set_elements));
+    }
+
+    return keys;
+  }
+
+  // Returns a reference to a vector v such that v[i] first contains the
+  // elements of sets[i] (in random order), followed by a large number of
+  // elements that do not occur in sets[i]. Note that 'sets' must not be
+  // modified between calls to this function.
+  std::vector<std::vector<uint32_t>>& GetExtendedKeys(std::vector<Set>& sets) {
+    auto& keys = ext_keys_[&sets];
+
+    if (keys.empty()) {
+      const size_t num_keys = 3 * GetLargestSetSize(sets);
+      keys.resize(sets.size());
+      for (size_t i = 0; i != sets.size(); ++i) {
+        keys[i] = ToVector(sets[i]);
+        std::shuffle(keys[i].begin(), keys[i].end(), GetRNG());
+        absl::flat_hash_set<uint32_t> extra;
+        keys[i].reserve(num_keys);
+        while (keys[i].size() < num_keys) {
+          uint32_t key = RandomExistent();
+          // Generate a unique key that hasn't been inserted before.
+          if (!sets[i].count(key) && extra.insert(key).second)
+            keys[i].push_back(key);
+        }
+      }
+    }
+
+    return keys;
+  }
+
+  // Returns a vector v, such that v[i] contains the number of sets in the input
+  // that have at least i elements. The input must be sorted by size in
+  // descending order. Note that 'sets' must not be modified between calls to
+  // this function.
+  std::vector<size_t>& GetNumSetsOfSize(std::vector<Set>& sets) {
+    auto& n_sets_of_size = n_sets_of_size_[&sets];
+
+    if (n_sets_of_size.empty()) {
+      n_sets_of_size.resize(GetLargestSetSize(sets) + 1);
+      for (size_t i = 0; i < n_sets_of_size.size(); ++i) {
+        size_t j = 0;
+        for (; j < sets.size() && i <= sets[j].size(); ++j) {
+        }
+        n_sets_of_size[i] = j;
+      }
+    }
+
+    return n_sets_of_size;
+  }
+
+  SetsCache<Set>(SetsCache<Set> const&) = delete;
+  void operator=(SetsCache<Set> const&) = delete;
+
+ private:
+  SetsCache<Set>() {}
+
+  using GeneratedSetsMap = absl::flat_hash_map<
+      size_t, absl::flat_hash_map<
+                  size_t, absl::flat_hash_map<Density, std::vector<Set>>>>;
+  GeneratedSetsMap generated_sets_;
+
+  absl::flat_hash_map<std::vector<Set>*, std::vector<uint32_t>> non_ex_keys_;
+  absl::flat_hash_map<std::vector<Set>*, std::vector<uint32_t>> transp_keys_;
+  absl::flat_hash_map<std::vector<Set>*, std::vector<uint32_t>> transp_r_keys_;
+  absl::flat_hash_map<std::vector<Set>*, std::vector<std::vector<uint32_t>>>
+      ext_keys_;
+  absl::flat_hash_map<std::vector<Set>*, std::vector<size_t>> n_sets_of_size_;
+};
+
 template <class Set>
 std::vector<uint32_t> ToVector(const Set& set) {
   return std::vector<uint32_t>(set.begin(), set.end());
@@ -125,45 +283,11 @@ std::vector<std::vector<uint32_t>> ToVectorRandomized(std::vector<Set> sets) {
   return output;
 }
 
-// Returns a vector v, such that v[i] contains the number of sets in the input
-// that have at least i elements. The input must be sorted by size in
-// descending order.
-template <class Set>
-std::vector<size_t> GetNumSetsOfSize(const std::vector<Set>& sets) {
-  std::vector<size_t> n_sets_of_size(sets.front().size() + 1);
-  for (size_t i = 0; i < sets.front().size() + 1; ++i) {
-    size_t j = 0;
-    for (; j < sets.size() && i <= sets[j].size(); ++j) {
-    }
-    n_sets_of_size[i] = j;
-  }
-  return n_sets_of_size;
-}
-
 // Returns the size of the largest set in the input. The input must be sorted by
 // size in descending order.
 template <class Set>
 size_t GetLargestSetSize(const std::vector<Set>& sets) {
   return sets.front().size();
-}
-
-// Transposes the input 2D vector and concatenates the resulting elements. The
-// input is not required to be a matrix - the elements of `input` can have
-// different sizes, but `input.front()` is required to have the maximum size of
-// all elements. The output will have size `input.size() * m.front().size()`. If
-// not all elements of `input` have the same size, then any elements in the
-// output corresponding to missing `T`s from the input are default constructed.
-template <class T>
-std::vector<T> Transpose(std::vector<std::vector<T>> input) {
-  assert(!input.empty());
-  std::vector<T> v(input.size() * input.front().size());
-  for (size_t i = 0; i != input.size(); ++i) {
-    assert(input[i].size() <= input[0].size());
-    for (size_t j = 0; j != input[i].size(); ++j) {
-      v[j * input.size() + i] = input[i][j];
-    }
-  }
-  return v;
 }
 
 // Ballast provides additional padding of `kSize` to highlight hash set behavior
