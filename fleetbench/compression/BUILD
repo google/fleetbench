@@ -69,10 +69,10 @@ genrule(
     name = "generate_data",
     outs = ["corpora/%s" % s for s in CORPORA],
     cmd = "$(location :synthesize_data) $(RULEDIR)/corpora 10",
-    exec_tools = [
+    output_to_bindir = True,
+    tools = [
         ":synthesize_data",
     ],
-    output_to_bindir = True,
 )
 
 cc_test(
