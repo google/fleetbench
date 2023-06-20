@@ -42,8 +42,9 @@ static void BM_FindMiss_Hot(benchmark::State& state) {
   // run.
   static constexpr size_t kOpsPerKey = 512;
 
-  std::vector<Set> sets = GenerateSets<Set>(
-      state.range(0), kMinTotalKeyCount, static_cast<Density>(state.range(1)));
+  auto& sc = SetsCache<Set>::GetInstance();
+  auto& sets = sc.GetGeneratedSets(state.range(0), kMinTotalKeyCount,
+                                   static_cast<Density>(state.range(1)));
   const size_t keys_per_set = kMinTotalKeyCount / sets.size();
 
   while (state.KeepRunningBatch(sets.size() * keys_per_set * kOpsPerKey)) {
@@ -98,7 +99,9 @@ void LookupHit_Hot(benchmark::State& state, Lookup lookup) {
   static constexpr size_t kMinTotalKeyCount = 64 << 10;
   static constexpr size_t kOpsPerKey = 512;
 
-  std::vector<Set> sets = GenerateSets<Set>(
+  auto& sc = SetsCache<Set>::GetInstance();
+  // Create a copy because 'sets' may be modified by the code below.
+  std::vector<Set> sets = sc.GetGeneratedSets(
       state.range(0), kMinTotalKeyCount, static_cast<Density>(state.range(1)));
 
   if (sets.size() == 1) {
@@ -228,8 +231,9 @@ static void BM_Iterate_Hot(benchmark::State& state) {
   // the longer the benchmark will run.
   static constexpr size_t kMinTotalKeyCount = 256 << 10;
 
-  std::vector<Set> sets = GenerateSets<Set>(
-      state.range(0), kMinTotalKeyCount, static_cast<Density>(state.range(1)));
+  auto& sc = SetsCache<Set>::GetInstance();
+  auto& sets = sc.GetGeneratedSets(state.range(0), kMinTotalKeyCount,
+                                   static_cast<Density>(state.range(1)));
   alignas(Value<kValueSizeT>) char data[kValueSizeT];
   while (state.KeepRunningBatch(sets.size() * sets.front().size() *
                                 kRepetitions)) {
@@ -371,12 +375,13 @@ static void BM_InsertManyOrdered_Hot(benchmark::State& state) {
   // the longer the benchmark will run.
   static constexpr size_t kMinTotalKeyCount = 256 << 10;
 
-  std::vector<Set> sets = GenerateSets<Set>(
-      state.range(0), kMinTotalKeyCount, static_cast<Density>(state.range(1)));
-  std::vector<std::vector<uint32_t>> keys(sets.size());
-  for (size_t i = 0; i != sets.size(); ++i) {
-    keys[i] = ToVector(sets[i]);
-  }
+  auto& sc = SetsCache<Set>::GetInstance();
+  auto& cached_sets = sc.GetGeneratedSets(state.range(0), kMinTotalKeyCount,
+                                          static_cast<Density>(state.range(1)));
+  auto& keys = sc.GetKeys(cached_sets);
+
+  // create a copy because 'sets' is modified in the loop below
+  auto sets = cached_sets;
 
   while (state.KeepRunningBatch(sets.size() * sets.front().size() *
                                 kRepetitions)) {

@@ -38,7 +38,7 @@ static void BM_FindMiss_Cold(benchmark::State& state) {
   // to run.
   static constexpr size_t kMinTotalBytes = 256 << 20;
 
-  auto& sc = SetsCache<Set>::getInstance();
+  auto& sc = SetsCache<Set>::GetInstance();
   auto& sets = sc.GetGeneratedSets(state.range(0), kMinTotalBytes / kValueSizeT,
                                    static_cast<Density>(state.range(1)));
   auto& keys = sc.GetNonExistingKeys(sets);
@@ -94,7 +94,7 @@ void LookupHit_Cold(benchmark::State& state, Lookup lookup) {
   // run.
   static constexpr size_t kMinTotalBytes = 256 << 20;
 
-  auto& sc = SetsCache<Set>::getInstance();
+  auto& sc = SetsCache<Set>::GetInstance();
   auto& sets = sc.GetGeneratedSets(state.range(0), kMinTotalBytes / kValueSizeT,
                                    static_cast<Density>(state.range(1)));
   auto& keys = sc.GetTransposedRandomizedKeys(sets);
@@ -212,7 +212,7 @@ static void BM_Iterate_Cold(benchmark::State& state) {
   static constexpr size_t kMinTotalBytes = 128 << 20;
   static constexpr size_t kStride = 16;
 
-  auto& sc = SetsCache<Set>::getInstance();
+  auto& sc = SetsCache<Set>::GetInstance();
   auto& sets = sc.GetGeneratedSets(state.range(0), kMinTotalBytes / kValueSizeT,
                                    static_cast<Density>(state.range(1)));
 
@@ -311,7 +311,7 @@ static void BM_EraseInsert_Cold(benchmark::State& state) {
   // to run.
   static constexpr size_t kMinTotalBytes = 128 << 20;
 
-  auto& sc = SetsCache<Set>::getInstance();
+  auto& sc = SetsCache<Set>::GetInstance();
   auto& sets = sc.GetGeneratedSets(state.range(0), kMinTotalBytes / kValueSizeT,
                                    Density::kMin);
   auto& keys = sc.GetExtendedKeys(sets);
@@ -375,7 +375,7 @@ static void BM_InsertManyOrdered_Cold(benchmark::State& state) {
   // to run.
   static constexpr size_t kMinTotalBytes = 128 << 20;
 
-  auto& sc = SetsCache<Set>::getInstance();
+  auto& sc = SetsCache<Set>::GetInstance();
   auto& cached_sets =
       sc.GetGeneratedSets(state.range(0), kMinTotalBytes / kValueSizeT,
                           static_cast<Density>(state.range(1)));
@@ -445,7 +445,7 @@ static void BM_InsertManyUnordered_Cold(benchmark::State& state) {
   // to run.
   static constexpr size_t kMinTotalBytes = 128 << 20;
 
-  auto& sc = SetsCache<Set>::getInstance();
+  auto& sc = SetsCache<Set>::GetInstance();
   auto& cached_sets =
       sc.GetGeneratedSets(state.range(0), kMinTotalBytes / kValueSizeT,
                           static_cast<Density>(state.range(1)));

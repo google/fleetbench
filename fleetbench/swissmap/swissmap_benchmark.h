@@ -137,7 +137,7 @@ std::vector<Set> GenerateSets(size_t min_size, size_t min_total_size,
 template <class Set>
 class SetsCache {
  public:
-  static SetsCache<Set>& getInstance() {
+  static SetsCache<Set>& GetInstance() {
     static SetsCache<Set> instance;
     return instance;
   }
@@ -153,6 +153,22 @@ class SetsCache {
       sets = GenerateSets<Set>(min_size, min_total_size, density);
     }
     return sets;
+  }
+
+  // Returns a vector v such that v[i] is a vector containing the elements of
+  // sets[i]. Note that 'sets' must not be modified between calls to this
+  // function.
+  std::vector<std::vector<uint32_t>>& GetKeys(std::vector<Set>& sets) {
+    auto& keys = keys_[&sets];
+
+    if (keys.empty()) {
+      keys.resize(sets.size());
+      for (size_t i = 0; i != sets.size(); ++i) {
+        keys[i] = ToVector(sets[i]);
+      }
+    }
+
+    return keys;
   }
 
   // Returns a reference to a vector of keys that do not occur in 'sets'. Note
@@ -259,6 +275,8 @@ class SetsCache {
                   size_t, absl::flat_hash_map<Density, std::vector<Set>>>>;
   GeneratedSetsMap generated_sets_;
 
+  absl::flat_hash_map<std::vector<Set>*, std::vector<std::vector<uint32_t>>>
+      keys_;
   absl::flat_hash_map<std::vector<Set>*, std::vector<uint32_t>> non_ex_keys_;
   absl::flat_hash_map<std::vector<Set>*, std::vector<uint32_t>> transp_keys_;
   absl::flat_hash_map<std::vector<Set>*, std::vector<uint32_t>> transp_r_keys_;
