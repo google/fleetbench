@@ -54,7 +54,7 @@ BINARIES = [
     "U",
 ]
 
-BENCHMARK_NUMS = 10
+BENCHMARK_NUMS = 100
 
 CORPORA = [
     "%s-%s-%s/corpus_%d" % (x, y, z, w)
@@ -68,7 +68,7 @@ CORPORA = [
 genrule(
     name = "generate_data",
     outs = ["corpora/%s" % s for s in CORPORA],
-    cmd = "$(location :synthesize_data) $(RULEDIR)/corpora 10",
+    cmd = "$(location :synthesize_data) $(RULEDIR)/corpora 100",
     output_to_bindir = True,
     tools = [
         ":synthesize_data",
