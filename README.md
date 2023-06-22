@@ -37,8 +37,6 @@ are 3 levels of fidelity that we consider:
 1.  The suite's performance counters match production.
 1.  An optimization's impact on the suite matches the impact on production.
 
-The goal of the suite for Y22 is to achieve the first level of fidelity.
-
 ## Versioning
 
 Fleetbench uses [semantic versioning](http://semver.org) for its releases, where
@@ -67,14 +65,15 @@ optimizations.
 
 ### TCMalloc per-CPU Mode
 
-TCMalloc is the underlying memory allocator in this benchmark suite. The
-supposed default operation mode should be
-[per-CPU mode](https://google.github.io/tcmalloc/overview.html). RSEQ is
-required for this mode, however, glibc took control of it since version 2.35,
-and TCMalloc reverts to using per-thread caching instead
-([more info](https://github.com/google/tcmalloc/issues/144)). We **strongly
-recommend** adding environment variable: `GLIBC_TUNABLES=glibc.pthread.rseq=0`
-to ensure per-CPU mode is being applied when running the benchmark. For example:
+TCMalloc is the underlying memory allocator in this benchmark suite. By default
+it operates in [per-CPU mode](https://google.github.io/tcmalloc/overview.html).
+
+However, [RSEQ](https://lwn.net/Articles/883104/) is required for this to work.
+
+To avoid [conflicts](https://github.com/google/tcmalloc/issues/144) with glibc's
+use of RSEQ, we **strongly recommend** setting the environment variable:
+`GLIBC_TUNABLES=glibc.pthread.rseq=0` to ensure per-CPU mode is being applied
+when running the benchmark. For example:
 
 ```
 GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel run --config=opt fleetbench/swissmap:hot_swissmap_benchmark
@@ -109,12 +108,13 @@ Use `--config=westmere` for Westmere-era processors.
 
 ### Running Benchmarks
 
-Swissmap benchmark for cold access setup takes much longer to run to completion,
-so by default it has a `--benchmark_filter` flag set to narrow down to smaller
-set sizes of `16` and `64` elements:
+Swissmap benchmark for cold access setup takes a long time to run to completion.
+We suggest using the `--benchmark_filter` flag to narrow down to smaller set
+sizes of e.g. `16` and `64` elements:
 
 ```
-bazel run --config=opt fleetbench/swissmap:cold_swissmap_benchmark
+bazel run --config=opt fleetbench/swissmap:cold_swissmap_benchmark -- \
+--benchmark_filter=".*set_size:(16|64).*"
 ```
 
 To change this filter, you can specify a regex in `--benchmark_filter` flag
@@ -122,43 +122,23 @@ To change this filter, you can specify a regex in `--benchmark_filter` flag
 Example to run for only sets of `16` and `512` elements:
 
 ```
-bazel run --config=opt fleetbench/swissmap:cold_swissmap_benchmark -- --benchmark_filter=".*set_size:(16|512).*"
+bazel run --config=opt fleetbench/swissmap:cold_swissmap_benchmark -- \
+--benchmark_filter=".*set_size:(16|512).*"
 ```
 
-The protocol buffer benchmark is set to run for at least 3s by default:
-
-```
-bazel run --config=opt fleetbench/proto:proto_benchmark
-```
-
-To change the duration to 30s, run the following:
+To extend the runtime of a benchmark, e.g. to collect more profile samples, use
+--benchmark_min_time.
 
 ```
 bazel run --config=opt fleetbench/proto:proto_benchmark -- --benchmark_min_time=30s
 ```
 
-The TCMalloc Empirical Driver benchmark can take ~1hr to run all benchmarks:
+The TCMalloc Empirical Driver benchmark can take ~1hr to run all benchmarks, so
+running a subset may be advised.
 
 ```
 bazel run --config=opt fleetbench/tcmalloc:empirical_driver -- --benchmark_counters_tabular=true
 ```
-
-To build and execute the benchmark in separate steps, run the commands below.
-
-NOTE: you'll need to specify the flags `--benchmark_filter` and
-`--benchmark_min_time` explicitly when build and execution are split into two
-separate steps.
-
-```
-bazel build --config=opt fleetbench/swissmap:hot_swissmap_benchmark
-bazel-bin/fleetbench/swissmap/hot_swissmap_benchmark --benchmark_filter=all
-```
-
-NOTE: the suite will be expanded with the ability to execute all benchmarks with
-one target.
-
-WARNING: MacOS and Windows have not been tested, and are not currently supported
-by Fleetbench.
 
 ### Reducing run-to-run variance
 
@@ -175,15 +155,15 @@ list of techniques that help with reducing run-to-run latency variance:
     `--benchmark_repetitions`.
 *   Recommended by the benchmarking framework
     [here](https://github.com/google/benchmark/blob/main/docs/reducing_variance.md#reducing-variance-in-benchmarks):
-    *   Disable frequently scaling,
-    *   Bind the process to a core by setting its affinity,
-    *   Disable processor boosting,
+    *   Disable frequency scaling
+    *   Bind the process to a core by setting its affinity
+    *   Disable processor boosting
     *   Disable Hyperthreading/SMT (should not affect single-threaded
-        benchmarks).
+        benchmarks)
     *   NOTE: We do not recommend reducing the working set of the benchmark to
         fit into L1 cache, contrary to the recommendations in the link, as it
         would significantly reduce this benchmarking suite's representativeness.
-*   Disable memory randomization (ASLR).
+*   Disable memory randomization (ASLR)
 
 ## Future Work
 
@@ -243,10 +223,18 @@ bazel run --config=clang --config=opt --features=thin_lto fleetbench/proto:proto
 
 1.  Q: Can I run Fleetbench without TCMalloc?
 
-    A: Fleetbench is built with Bazel, which supports --custom_malloc option
-    ([bazel docs](https://bazel.build/docs/user-manual#custom-malloc)). This
-    should allow you to override the malloc attributed configured to take
-    tcmalloc as the default.
+    A: Yes. Specify `--custom_malloc="@bazel_tools//tools/cpp:malloc"` on the
+    bazel command line to override with the system allocator.
+
+1.  Q: Can I run with Address Sanitizer?
+
+    A: Yes. Note that you need to override TCMalloc as well for ASAN to work.
+
+    Example:
+
+```
+    bazel build --custom_malloc="@bazel_tools//tools/cpp:malloc" -c opt fleetbench/proto:proto_benchmark --copt=-fsanitize=address --linkopt=-fsanitize=address
+```
 
 1.  Q: Are the benchmarks fixed in nature?
 
