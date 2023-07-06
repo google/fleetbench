@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "absl/crc/crc32c.h"
+#include "absl/hash/hash.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
@@ -93,6 +94,43 @@ void ComputeCrc32cFunction(benchmark::State &state,
         start += l + 4096;
       }
       auto res = absl::ComputeCrc32c(buf);
+      benchmark::DoNotOptimize(res);
+    }
+  }
+}
+
+void CombineContiguousFunction(benchmark::State &state,
+                               BM_Crc_Parameters &parameters) {
+  size_t batch_size = parameters.str_lengths.size();
+  size_t start = 0;
+  // Run benchmark and call combine_contiguous
+  while (state.KeepRunningBatch(batch_size)) {
+    for (auto &l : parameters.str_lengths) {
+      if (!parameters.hot) {
+        if (start + l >= parameters.sv.length()) {
+          start = 0;
+        }
+      }
+      absl::string_view buf = parameters.sv.substr(start, l);
+      if (!parameters.hot) {
+        // +4096 to put the next element in a different cache block, and to
+        // prevent prefetching
+        start += l + 4096;
+      }
+      // The callregz data we use is for combine_contiguous(). However, as this
+      // function is in an 'internal' namespace, we benchmark
+      // Hash<absl::string_view>() instead. Note that Hash<absl::string_view>()
+      // actually calls combine_contiguous() twice, the first time to hash the
+      // string content itself, and the second time to hash the length of the
+      // string, i.e., an element of size 8 (=sizeof(size(t))). However, this
+      // second call does not lead to an overrepresentation of calls to
+      // combine_contiguous() with size 8 here, as the corresponding calls
+      // appear to be missing from the callregz data (potentially because of
+      // inlining). So including these calls here should actually make the
+      // distribution of call sizes to combine_contiguous() more similar to that
+      // of the fleet, where a significant percentage of absl::Hash cycles is
+      // spent on hashing strings.
+      auto res = absl::Hash<absl::string_view>{}(buf);
       benchmark::DoNotOptimize(res);
     }
   }
@@ -209,6 +247,10 @@ BENCHMARK_CAPTURE(BM_Hashing, ComputeCrc32c_hot, "Computecrc32c",
                   &ComputeCrc32cFunction, true)
     ->DenseRange(0, GetDistributionFiles("Computecrc32c").size() - 1, 1);
 
+BENCHMARK_CAPTURE(BM_Hashing, combine_contiguous_hot, "Combine_contiguous",
+                  &CombineContiguousFunction, true)
+    ->DenseRange(0, GetDistributionFiles("Combine_contiguous").size() - 1, 1);
+
 BENCHMARK_CAPTURE(BM_Hashing, ExtendCrc32c_cold, "Extendcrc32cinternal",
                   &ExtendCrc32cFunction, false)
     ->DenseRange(0, GetDistributionFiles("Extendcrc32cinternal").size() - 1, 1);
@@ -216,6 +258,10 @@ BENCHMARK_CAPTURE(BM_Hashing, ExtendCrc32c_cold, "Extendcrc32cinternal",
 BENCHMARK_CAPTURE(BM_Hashing, ComputeCrc32c_cold, "Computecrc32c",
                   &ComputeCrc32cFunction, false)
     ->DenseRange(0, GetDistributionFiles("Computecrc32c").size() - 1, 1);
+
+BENCHMARK_CAPTURE(BM_Hashing, combine_contiguous_cold, "Combine_contiguous",
+                  &CombineContiguousFunction, false)
+    ->DenseRange(0, GetDistributionFiles("Combine_contiguous").size() - 1, 1);
 
 }  // namespace hashing
 }  // namespace fleetbench
