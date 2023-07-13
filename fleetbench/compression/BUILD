@@ -25,12 +25,6 @@ cc_library(
     ],
 )
 
-sh_binary(
-    name = "synthesize_data",
-    srcs = [":synthesize_data.sh"],
-    data = ["//fleetbench/compression/generate_corpora"],
-)
-
 ALGORITHMS = [
     "Snappy",
     "ZSTD",
@@ -68,10 +62,10 @@ CORPORA = [
 genrule(
     name = "generate_data",
     outs = ["corpora/%s" % s for s in CORPORA],
-    cmd = "$(location :synthesize_data) $(RULEDIR)/corpora 100",
+    cmd = "$(location //fleetbench/compression/generate_corpora:generate_corpora) --output_dir=$(RULEDIR)/corpora --benchmark_nums=100",
     output_to_bindir = True,
     tools = [
-        ":synthesize_data",
+        "//fleetbench/compression/generate_corpora",
     ],
 )
 

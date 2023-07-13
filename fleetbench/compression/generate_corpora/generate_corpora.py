@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""The program to automatically generate Compression Benchmark corpus.
+r"""The program to automatically generate Compression Benchmark corpus.
 
 This generator reads metric distributions from pre-stored .json files, and
 samples from the distributions to produce a set of target parameters, such as
@@ -26,11 +26,12 @@ The generated files will be in the specified output directory.
 
 To run the script:
 bazel run //fleetbench/compression/generate_corpora:generate_corpora \
--- --distribution_name="$.json" --output_dir="$output_directory"
+-- --output_dir="$output_directory"
 """
 
 from collections.abc import Sequence
 import json
+import multiprocessing
 import os
 
 from absl import app
@@ -39,13 +40,6 @@ from absl import flags
 from rules_python.python.runfiles import runfiles
 from fleetbench.compression.generate_corpora import corpus_generator
 from fleetbench.compression.generate_corpora import distribution_tracker
-
-JSON_FILE_NAME = flags.DEFINE_string(
-    "distribution_name",
-    None,
-    "the .json file name of the compression distribution",
-    required=True,
-)
 
 OUTPUT_DIR = flags.DEFINE_string(
     "output_dir", None, "Output directory", required=True
@@ -77,16 +71,15 @@ DISTRIBUTION_DIR = (
 )
 
 
-def main(argv: Sequence[str]) -> None:
-  if len(argv) > 1:
-    raise app.UsageError("Too many command-line arguments.")
+def GenerateCorporaForJsonFile(json_file_name):
+  """Generates corpora for a .json file."""
 
   json_path = runfiles.Create().Rlocation(
-      os.path.join(DISTRIBUTION_DIR, JSON_FILE_NAME.value)
+      os.path.join(DISTRIBUTION_DIR, json_file_name)
   )
   if not os.path.exists(json_path):
     raise app.ValueError(f"{json_path} does not exist.")
-  filename_without_extension = os.path.splitext(JSON_FILE_NAME.value)[0]
+  filename_without_extension = os.path.splitext(json_file_name)[0]
   algorithm, operation, name = filename_without_extension.split("-")
 
   with open(json_path, "r") as openfile:
@@ -104,6 +97,14 @@ def main(argv: Sequence[str]) -> None:
       name,
       OUTPUT_DIR.value,
   )
+
+def main(argv: Sequence[str]) -> None:
+  if len(argv) > 1:
+    raise app.UsageError("Too many command-line arguments.")
+
+  for _, _, json_file_names in os.walk(runfiles.Create().Rlocation(DISTRIBUTION_DIR)):
+    with multiprocessing.Pool(4) as p:
+      p.map(GenerateCorporaForJsonFile, json_file_names)
 
 
 if __name__ == "__main__":
