@@ -63,17 +63,23 @@ bazel run --config=opt fleetbench/swissmap:hot_swissmap_benchmark
 Important: Always run benchmarks with `--config=opt` to apply essential compiler
 optimizations.
 
-### TCMalloc per-CPU Mode
+### Ensuring TCMalloc per-CPU Mode
 
 TCMalloc is the underlying memory allocator in this benchmark suite. By default
 it operates in [per-CPU mode](https://google.github.io/tcmalloc/overview.html).
 
-However, [RSEQ](https://lwn.net/Articles/883104/) is required for this to work.
+Note: the [Restartable Sequences (RSEQ)](https://lwn.net/Articles/883104/)
+kernel feature is required for per-CPU mode. RSEQ has the limitation that a
+given thread can only register a single `rseq` structure with the kernel. Recent
+versions of glibc do this on initialization,
+[preventing TCMalloc](https://github.com/google/tcmalloc/issues/144) from using
+it.
 
-To avoid [conflicts](https://github.com/google/tcmalloc/issues/144) with glibc's
-use of RSEQ, we **strongly recommend** setting the environment variable:
-`GLIBC_TUNABLES=glibc.pthread.rseq=0` to ensure per-CPU mode is being applied
-when running the benchmark. For example:
+Set the environment variable: `GLIBC_TUNABLES=glibc.pthread.rseq=0` to prevent
+glibc from doing this registration. This will allow TCMalloc to operate in
+per-CPU mode.
+
+For example:
 
 ```
 GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel run --config=opt fleetbench/swissmap:hot_swissmap_benchmark
