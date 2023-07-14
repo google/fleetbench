@@ -25,48 +25,27 @@ cc_library(
     ],
 )
 
-ALGORITHMS = [
-    "Snappy",
-    "ZSTD",
-]
-
-COMPRESS = [
-    "COMPRESS",
-    "DECOMPRESS",
-]
-
-BINARIES = [
-    "A",
-    "B",
-    "C",
-    "D",
-    "F",
-    "L",
-    "M",
-    "P",
-    "S",
-    "U",
-]
-
 BENCHMARK_NUMS = 100
 
-CORPORA = [
-    "%s-%s-%s/corpus_%d" % (x, y, z, w)
-    for x in ALGORITHMS
-    for y in COMPRESS
-    for z in BINARIES
-    for w in range(BENCHMARK_NUMS)
-    if not (x == "ZSTD" and y == "COMPRESS" and z == "L")
-]
+JSON_FILES = [json.split("/")[-1] for json in glob(["distributions/*"])]
 
-genrule(
-    name = "generate_data",
-    outs = ["corpora/%s" % s for s in CORPORA],
-    cmd = "$(location //fleetbench/compression/generate_corpora:generate_corpora) --output_dir=$(RULEDIR)/corpora --benchmark_nums=100",
+[genrule(
+    name = "generate_data_%s" % json,
+    srcs = ["distributions/%s" % json],
+    outs = ["corpora/%s/corpus_%d" % (
+        json.removesuffix(".json"),
+        n,
+    ) for n in range(BENCHMARK_NUMS)],
+    cmd = "$(location //fleetbench/compression/generate_corpora:generate_corpora) --distribution_name=$< --output_dir=$(RULEDIR)/corpora --benchmark_nums=100",
     output_to_bindir = True,
     tools = [
         "//fleetbench/compression/generate_corpora",
     ],
+) for json in JSON_FILES]
+
+filegroup(
+    name = "generate_data",
+    srcs = ["generate_data_%s" % json for json in JSON_FILES],
 )
 
 cc_test(

@@ -26,20 +26,25 @@ The generated files will be in the specified output directory.
 
 To run the script:
 bazel run //fleetbench/compression/generate_corpora:generate_corpora \
--- --output_dir="$output_directory"
+-- --distribution_name="$.json" --output_dir="$output_directory"
 """
 
 from collections.abc import Sequence
 import json
-import multiprocessing
 import os
 
 from absl import app
 from absl import flags
 
-from rules_python.python.runfiles import runfiles
 from fleetbench.compression.generate_corpora import corpus_generator
 from fleetbench.compression.generate_corpora import distribution_tracker
+
+JSON_PATH = flags.DEFINE_string(
+    "distribution_name",
+    None,
+    "the .json file name of the compression distribution",
+    required=True,
+)
 
 OUTPUT_DIR = flags.DEFINE_string(
     "output_dir", None, "Output directory", required=True
@@ -66,23 +71,18 @@ DATASETS = [
     "urls.10K",
 ]
 
-DISTRIBUTION_DIR = (
-    "com_google_fleetbench/fleetbench/compression/generate_corpora/distributions"
-)
 
+def main(argv: Sequence[str]) -> None:
+  if len(argv) > 1:
+    raise app.UsageError("Too many command-line arguments.")
 
-def GenerateCorporaForJsonFile(json_file_name):
-  """Generates corpora for a .json file."""
-
-  json_path = runfiles.Create().Rlocation(
-      os.path.join(DISTRIBUTION_DIR, json_file_name)
-  )
-  if not os.path.exists(json_path):
-    raise app.ValueError(f"{json_path} does not exist.")
-  filename_without_extension = os.path.splitext(json_file_name)[0]
+  if not os.path.exists(JSON_PATH.value):
+    raise app.ValueError(f"{JSON_PATH.value} does not exist.")
+  filename = os.path.split(JSON_PATH.value)[1]
+  filename_without_extension = os.path.splitext(filename)[0]
   algorithm, operation, name = filename_without_extension.split("-")
 
-  with open(json_path, "r") as openfile:
+  with open(JSON_PATH.value, "r") as openfile:
     json_distribution = json.load(openfile)
     distribution = distribution_tracker.process_distribution(
         json_distribution, name, algorithm, operation
@@ -97,15 +97,6 @@ def GenerateCorporaForJsonFile(json_file_name):
       name,
       OUTPUT_DIR.value,
   )
-
-def main(argv: Sequence[str]) -> None:
-  if len(argv) > 1:
-    raise app.UsageError("Too many command-line arguments.")
-
-  for _, _, json_file_names in os.walk(runfiles.Create().Rlocation(DISTRIBUTION_DIR)):
-    with multiprocessing.Pool(4) as p:
-      p.map(GenerateCorporaForJsonFile, json_file_names)
-
 
 if __name__ == "__main__":
   app.run(main)

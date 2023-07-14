@@ -39,12 +39,10 @@ py_test(
 py_binary(
     name = "generate_corpora",
     srcs = ["generate_corpora.py"],
-    data = glob(["distributions/**"]),
     deps = [
         ":corpus_generator",
         ":distribution_tracker",
         "@com_google_absl_py//absl:app",
         "@com_google_absl_py//absl/flags",
-        "@rules_python//python/runfiles",
     ],
 )
