@@ -186,7 +186,6 @@ void RegisterBenchmarks() {
   std::vector<absl::string_view> algorithms = {"Snappy", "ZSTD"};
   std::vector<absl::string_view> operations = {"COMPRESS", "DECOMPRESS"};
 
-  // Get ZSTD specific parameters map
   auto compression_levels_map = GetCompressionLevelsMap();
 
   for (const auto& algorithm : algorithms) {
@@ -214,7 +213,7 @@ void RegisterBenchmarks() {
 
           if (operation == "COMPRESS") {
             std::string binary = GetBinary(directory_name);
-            for (auto level : compression_levels_map[binary])
+            for (auto level : compression_levels_map[algorithm][binary])
               benchmark->Args({level, 15})
                   ->Args({level, 16})
                   ->ArgNames({"compression_level", "window_log"});

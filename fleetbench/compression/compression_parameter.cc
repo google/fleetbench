@@ -17,6 +17,7 @@
 #include <fstream>
 #include <ios>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
@@ -26,9 +27,11 @@
 
 namespace fleetbench {
 namespace compression {
-absl::flat_hash_map<std::string, std::vector<int64_t> >
+absl::flat_hash_map<std::string,
+                    absl::flat_hash_map<std::string, std::vector<int64_t> > >
 GetCompressionLevelsMap() {
-  absl::flat_hash_map<std::string, std::vector<int64_t> >
+  absl::flat_hash_map<std::string,
+                      absl::flat_hash_map<std::string, std::vector<int64_t> > >
       compression_levels_map;
 
   std::string path =
@@ -40,12 +43,13 @@ GetCompressionLevelsMap() {
   while (std::getline(file, line)) {
     // Finds binary
     std::vector<std::string> columns = absl::StrSplit(line, ',');
-    std::string binary = columns[0];
-    std::vector<int64_t> levels(columns.size() - 1);
-    for (size_t i = 1; i < columns.size(); i++) {
-      QCHECK(absl::SimpleAtoi(columns[i], &levels[i - 1]));
+    std::string algorithm = columns[0];
+    std::string binary = columns[1];
+    std::vector<int64_t> levels(columns.size() - 2);
+    for (size_t i = 2; i < columns.size(); i++) {
+      QCHECK(absl::SimpleAtoi(columns[i], &levels[i - 2]));
     }
-    compression_levels_map[binary] = levels;
+    compression_levels_map[algorithm][binary] = levels;
   }
 
   return compression_levels_map;

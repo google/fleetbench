@@ -27,7 +27,8 @@ namespace compression {
 // and its corresponding compression levels. The function returns a map where
 // the binary is the key, and the associated compression levels vector as the
 // value.
-absl::flat_hash_map<std::string, std::vector<int64_t> >
+absl::flat_hash_map<std::string,
+                    absl::flat_hash_map<std::string, std::vector<int64_t> > >
 GetCompressionLevelsMap();
 
 }  // namespace compression
