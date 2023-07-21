@@ -17,7 +17,6 @@
 #include <string>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "snappy.h"
 #include "zstd.h"
@@ -50,17 +49,13 @@ size_t ZstdCompressor::Compress(const absl::string_view input,
 bool ZstdCompressor::Decompress(const absl::string_view input,
                                 std::string* output) {
   size_t output_size = ZSTD_getDecompressedSize(input.data(), input.size());
-  if (!output_size) {
-    LOG(ERROR) << "Error decompressing: no valid output size";
-    return false;
-  }
+  QCHECK(output_size) << "Error decompressing: no valid output size";
+
   output->resize(output_size);
   size_t final_size = ZSTD_decompressDCtx(
       dctx_.get(), output->data(), output_size, input.data(), input.size());
-  if (ZSTD_isError(final_size)) {
-    LOG(ERROR) << "Error decompressing: " << ZSTD_getErrorName(final_size);
-    return false;
-  }
+  QCHECK(!ZSTD_isError(final_size))
+      << "Error decompressing: " << ZSTD_getErrorName(final_size);
   return true;
 }
 

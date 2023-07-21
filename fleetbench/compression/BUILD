@@ -6,7 +6,6 @@ cc_library(
     hdrs = ["algorithms.h"],
     deps = [
         "@ZSTD//:zstdlib",
-        "@com_google_absl//absl/log",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings",
         "@snappy",
