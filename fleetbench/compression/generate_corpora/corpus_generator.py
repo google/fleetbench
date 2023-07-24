@@ -33,6 +33,7 @@ DATASET_DIR = (
 SNAPPY_WINDOW_SIZE = [16]
 SNAPPY_COMPRESSION_LEVEL = [0]
 
+ZSTD_COMPRESS_COMPRESSION_LEVEL = [-7, -5, -3, -1] + list(range(0, 17)) + [20]
 # The default compression level is 3
 # https://github.com/facebook/zstd/tree/7806d803383b75b00868a5367154a18caf535a92/programs#usage-of-command-line-interface
 ZSTD_DECOMPRESS_COMPRESSION_LEVEL = [3]
@@ -113,7 +114,7 @@ class CorpusChunkManager:
       # The negative compression levels offer faster compression and
       # decompression speed in exchange for some loss in compression ratio
       # compared to level 1. https://facebook.github.io/zstd/
-      compression_levels = [-5, -3, -1] + list(range(0, 16))
+      compression_levels = ZSTD_COMPRESS_COMPRESSION_LEVEL
       window_sizes = ZSTD_WINDOW_SIZE
     else:
       raise RuntimeError(f"{self.algorithm} is not supported yet")
@@ -371,10 +372,17 @@ class CorpusChunkManager:
           f"{self.algorithm} and {self.operation} is not supported yet"
       )
 
+    sampled_compression_level = int(sampled_compression_level)
     parameters = CompressionParameters(
         window_size=sampled_window_size,
-        compression_level=int(sampled_compression_level),
+        compression_level=sampled_compression_level,
     )
+    if self.algorithm == "ZSTD" and self.operation == "COMPRESS":
+      if sampled_compression_level not in ZSTD_COMPRESS_COMPRESSION_LEVEL:
+        raise RuntimeError(
+            f"Sampled compression level {sampled_compression_level} is not"
+            " supported."
+        )
     return parameters, target_call_size, target_compression_ratio
 
   def generate_benchmark_corpus(self, distribution):
