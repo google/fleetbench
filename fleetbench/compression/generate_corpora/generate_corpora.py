@@ -32,9 +32,11 @@ bazel run //fleetbench/compression/generate_corpora:generate_corpora \
 from collections.abc import Sequence
 import json
 import os
+import random
 
 from absl import app
 from absl import flags
+import numpy as np
 
 from fleetbench.compression.generate_corpora import corpus_generator
 from fleetbench.compression.generate_corpora import distribution_tracker
@@ -75,6 +77,10 @@ DATASETS = [
 def main(argv: Sequence[str]) -> None:
   if len(argv) > 1:
     raise app.UsageError("Too many command-line arguments.")
+
+  # Force random seeds to 0, to ensure reproducibility of genrule.
+  random.seed(0)
+  np.random.seed(0)
 
   if not os.path.exists(JSON_PATH.value):
     raise app.ValueError(f"{JSON_PATH.value} does not exist.")
