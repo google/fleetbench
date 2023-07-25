@@ -18,8 +18,10 @@
 
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
+#include "fleetbench/compression/zlibwrapper.h"
 #include "snappy.h"
 #include "zstd.h"
+
 namespace fleetbench {
 namespace compression {
 
@@ -73,6 +75,46 @@ size_t SnappyCompressor::Compress(const absl::string_view input,
 bool SnappyCompressor::Decompress(const absl::string_view input,
                                  std::string* output) {
   return snappy::Uncompress(input.data(), input.size(), output);
+}
+
+ZLibCompressor::ZLibCompressor(int compression_level, int window_log)
+    : compression_level_(compression_level), window_log_(window_log) {}
+
+size_t ZLibCompressor::Compress(const absl::string_view input,
+                                std::string* output) {
+  ZLib zlib;
+  zlib.SetCompressionLevel(compression_level_);
+  zlib.SetCompressionWindowSizeInBits(window_log_);
+  // We use a gzip header, so that we can get the size of the uncompressed data
+  // in Decompress().
+  zlib.SetGzipHeaderMode();
+
+  auto compressed_length = ZLib::MinCompressbufSize(input.size());
+  output->resize(compressed_length);
+  int status =
+      zlib.Compress(reinterpret_cast<Bytef*>(&(*output)[0]), &compressed_length,
+                    reinterpret_cast<const Bytef*>(input.data()), input.size());
+  QCHECK(status == Z_OK) << "Error compressing: " << status << output;
+
+  output->resize(compressed_length);
+  return output->size();
+}
+
+bool ZLibCompressor::Decompress(const absl::string_view input,
+                                std::string* output) {
+  ZLib zlib;
+  zlib.SetCompressionWindowSizeInBits(window_log_);
+  zlib.SetGzipHeaderMode();
+
+  auto uncompressed_length =
+      zlib.GzipUncompressedLength((const uint8_t*)input.data(), input.size());
+  output->resize(uncompressed_length);
+  int status = zlib.Uncompress(
+      reinterpret_cast<Bytef*>(&(*output)[0]), &uncompressed_length,
+      reinterpret_cast<const Bytef*>(input.data()), input.size());
+  output->resize(uncompressed_length);
+
+  return (status == Z_OK);
 }
 
 }  // namespace compression

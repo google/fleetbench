@@ -21,6 +21,7 @@
 #include <iterator>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -95,17 +96,17 @@ std::unique_ptr<Compressor> CreateCompressor(
     bool is_compress) {
   if (compressor_type == "Snappy") {
     return std::make_unique<SnappyCompressor>();
-  } else if (compressor_type == "ZSTD") {
-    int compression_level = 0;
-    int window_log = 0;
-    if (is_compress) {
-      compression_level = state.range(0);
-      window_log = state.range(1);
-    }
-    return std::make_unique<ZstdCompressor>(compression_level, window_log);
   } else {
-    LOG(FATAL) << "Unknown compressor type: " << compressor_type;
-    return nullptr;
+    auto compression_level = state.range(0);
+    auto window_log = state.range(1);
+    if (compressor_type == "ZSTD") {
+      return std::make_unique<ZstdCompressor>(compression_level, window_log);
+    } else if (compressor_type == "ZLib") {
+      return std::make_unique<ZLibCompressor>(compression_level, window_log);
+    } else {
+      LOG(FATAL) << "Unknown compressor type: " << compressor_type;
+      return nullptr;
+    }
   }
 }
 }  // namespace CompressorFactory
@@ -183,12 +184,18 @@ void RegisterBenchmarks() {
     LOG(FATAL) << "Can't find runfile directory: " << error;
   std::string path =
   runfiles->Rlocation(std::string(fleetbench::compression::kCorporaPath));
-  std::vector<absl::string_view> algorithms = {"Snappy", "ZSTD"};
+  auto compression_levels_map = GetCompressionLevelsMap();
   std::vector<absl::string_view> operations = {"COMPRESS", "DECOMPRESS"};
 
-  auto compression_levels_map = GetCompressionLevelsMap();
+  using algorithms_entry = std::tuple<std::string, std::string,
+                                      std::vector<int64_t>, int64_t, int64_t>;
+  auto algorithms = {algorithms_entry("Snappy", "Snappy", {}, NULL, NULL),
+                     algorithms_entry("ZSTD", "ZSTD", {15, 16}, 0, 0),
+                     algorithms_entry("Flate", "ZLib", {15}, 15, 6)};
 
-  for (const auto& algorithm : algorithms) {
+  for (const auto& [algorithm, compressor_type, compress_window_sizes,
+                    default_window_size, default_compression_level] :
+       algorithms) {
     for (const auto& operation : operations) {
       auto benchmark_fn = fleetbench::compression::BM_Compress;
       if (operation == "DECOMPRESS")
@@ -204,19 +211,20 @@ void RegisterBenchmarks() {
         std::string directory_name = directory.filename().string();
         std::string benchmark_name = absl::StrCat("BM_", directory_name);
 
-        if (algorithm == "Snappy") {
-          benchmark::RegisterBenchmark(benchmark_name.c_str(), benchmark_fn,
-                                       "Snappy", directory);
-        } else {
-          auto* benchmark = benchmark::RegisterBenchmark(
-              benchmark_name.c_str(), benchmark_fn, "ZSTD", directory);
+        auto* benchmark = benchmark::RegisterBenchmark(
+            benchmark_name.c_str(), benchmark_fn, compressor_type, directory);
 
+        if (compression_levels_map.contains(algorithm)) {
+          benchmark->ArgNames({"compression_level", "window_log"});
           if (operation == "COMPRESS") {
             std::string binary = GetBinary(directory_name);
-            for (auto level : compression_levels_map[algorithm][binary])
-              benchmark->Args({level, 15})
-                  ->Args({level, 16})
-                  ->ArgNames({"compression_level", "window_log"});
+            for (auto level : compression_levels_map[algorithm][binary]) {
+              for (auto window_log : compress_window_sizes) {
+                benchmark->Args({level, window_log});
+              }
+            }
+          } else {
+            benchmark->Args({default_compression_level, default_window_size});
           }
         }
       }

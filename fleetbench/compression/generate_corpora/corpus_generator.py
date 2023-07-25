@@ -18,6 +18,7 @@ import collections
 import dataclasses
 import os
 import random
+import zlib
 
 from absl import logging
 import zstandard as zstd
@@ -33,7 +34,7 @@ DATASET_DIR = (
 SNAPPY_WINDOW_SIZE = [16]
 SNAPPY_COMPRESSION_LEVEL = [0]
 
-ZSTD_COMPRESS_COMPRESSION_LEVEL = [-7, -5, -3, -1] + list(range(0, 17)) + [20]
+ZSTD_COMPRESS_COMPRESSION_LEVELS = [-7, -5, -3, -1] + list(range(0, 17)) + [20]
 # The default compression level is 3
 # https://github.com/facebook/zstd/tree/7806d803383b75b00868a5367154a18caf535a92/programs#usage-of-command-line-interface
 ZSTD_DECOMPRESS_COMPRESSION_LEVEL = [3]
@@ -41,6 +42,14 @@ ZSTD_DECOMPRESS_COMPRESSION_LEVEL = [3]
 # value 0 means "use default windowLog"
 # https://github.com/facebook/zstd/blob/7806d803383b75b00868a5367154a18caf535a92/lib/zstd.h#L352
 ZSTD_WINDOW_SIZE = [0]
+
+FLATE_COMPRESS_COMPRESSION_LEVELS = [-1] + list(range(1, 10))
+# The default compression level is -1, which is, according to
+# https://zlib.net/manual.html, currently equivalent to level 6.
+FLATE_DECOMPRESS_COMPRESSION_LEVEL = [-1]
+# The default (and maximum) window size for zlib is 15.
+# https://github.com/madler/zlib/blob/master/zconf.h#L267
+FLATE_WINDOW_SIZE = [15]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -74,14 +83,15 @@ class CorpusChunkManager:
       chunk_size=1 * 1024,
   ):
     if algorithm == "Snappy":
-      self.algorithm = "Snappy"
       self.compress_function = snappy.compress
     elif algorithm == "ZSTD":
-      self.algorithm = "ZSTD"
       self.compress_function = zstd_compress
+    elif algorithm == "Flate":
+      self.compress_function = zlib.compress
     else:
       raise RuntimeError(f"{algorithm} is not supported yet")
 
+    self.algorithm = algorithm
     self.operation = operation
     self.dataset = dataset
     self.binary = binary
@@ -114,8 +124,11 @@ class CorpusChunkManager:
       # The negative compression levels offer faster compression and
       # decompression speed in exchange for some loss in compression ratio
       # compared to level 1. https://facebook.github.io/zstd/
-      compression_levels = ZSTD_COMPRESS_COMPRESSION_LEVEL
+      compression_levels = ZSTD_COMPRESS_COMPRESSION_LEVELS
       window_sizes = ZSTD_WINDOW_SIZE
+    elif self.algorithm == "Flate":
+      compression_levels = FLATE_COMPRESS_COMPRESSION_LEVELS
+      window_sizes = FLATE_WINDOW_SIZE
     else:
       raise RuntimeError(f"{self.algorithm} is not supported yet")
 
@@ -367,6 +380,12 @@ class CorpusChunkManager:
     elif self.algorithm == "ZSTD" and self.operation == "DECOMPRESS":
       sampled_compression_level = ZSTD_DECOMPRESS_COMPRESSION_LEVEL[0]
       sampled_window_size = ZSTD_WINDOW_SIZE[0]
+    elif self.algorithm == "Flate" and self.operation == "COMPRESS":
+      sampled_compression_level = sampled_parameters["compression_level"]
+      sampled_window_size = FLATE_WINDOW_SIZE[0]
+    elif self.algorithm == "Flate" and self.operation == "DECOMPRESS":
+      sampled_compression_level = FLATE_DECOMPRESS_COMPRESSION_LEVEL[0]
+      sampled_window_size = FLATE_WINDOW_SIZE[0]
     else:
       raise RuntimeError(
           f"{self.algorithm} and {self.operation} is not supported yet"
@@ -377,8 +396,14 @@ class CorpusChunkManager:
         window_size=sampled_window_size,
         compression_level=sampled_compression_level,
     )
-    if self.algorithm == "ZSTD" and self.operation == "COMPRESS":
-      if sampled_compression_level not in ZSTD_COMPRESS_COMPRESSION_LEVEL:
+    if self.operation == "COMPRESS":
+      if (
+          self.algorithm == "ZSTD"
+          and sampled_compression_level not in ZSTD_COMPRESS_COMPRESSION_LEVELS
+      ) or (
+          self.algorithm == "Flate"
+          and sampled_compression_level not in FLATE_COMPRESS_COMPRESSION_LEVELS
+      ):
         raise RuntimeError(
             f"Sampled compression level {sampled_compression_level} is not"
             " supported."

@@ -5,10 +5,29 @@ cc_library(
     srcs = ["algorithms.cc"],
     hdrs = ["algorithms.h"],
     deps = [
+        ":zlibwrapper",
         "@ZSTD//:zstdlib",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings",
         "@snappy",
+    ],
+)
+
+cc_library(
+    name = "zlibwrapper",
+    srcs = [
+        "gzipheader.cc",
+        "zlibwrapper.cc",
+    ],
+    hdrs = [
+        "gzipheader.h",
+        "zlibwrapper.h",
+    ],
+    deps = [
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/log:check",
+        "@zlib",
     ],
 )
 
@@ -71,7 +90,9 @@ cc_test(
     name = "compression_smoketest",
     srcs = ["compression_benchmark.cc"],
     # Just run a single benchmark to reduce the test runtime.
-    args = ["--benchmark_filter=BM_ZSTD-COMPRESS-B/compression_level:1/window_log:15"],
+    args = ["--benchmark_filter=(BM_Snappy-COMPRESS-Fleet|" +
+            "BM_ZSTD-COMPRESS-B/compression_level:1/window_log:15|" +
+            "BM_Flate-COMPRESS-Fleet/compression_level:1/window_log:15)"],
     data = [":generate_data"],
     linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
