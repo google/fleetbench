@@ -72,8 +72,8 @@ class ZLibCompressor : public Compressor {
   bool Decompress(absl::string_view input, std::string* output) override;
 
  private:
-  int compression_level_;
-  int window_log_;
+  const int compression_level_;
+  const int window_log_;
 };
 
 }  // namespace compression

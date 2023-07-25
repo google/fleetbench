@@ -187,15 +187,17 @@ void RegisterBenchmarks() {
   auto compression_levels_map = GetCompressionLevelsMap();
   std::vector<absl::string_view> operations = {"COMPRESS", "DECOMPRESS"};
 
-  using algorithms_entry = std::tuple<std::string, std::string,
+  using algorithms_entry = std::tuple<std::string, std::string, std::string,
                                       std::vector<int64_t>, int64_t, int64_t>;
-  auto algorithms = {algorithms_entry("Snappy", "Snappy", {}, NULL, NULL),
-                     algorithms_entry("ZSTD", "ZSTD", {15, 16}, 0, 0),
-                     algorithms_entry("Flate", "ZLib", {15}, 15, 6)};
+  auto algorithms = {
+      algorithms_entry("Snappy", "Snappy", "", {}, NULL, NULL),
+      algorithms_entry("ZSTD", "ZSTD", "", {15, 16}, 0, 0),
+      algorithms_entry("Flate", "ZLib", "", {15}, 15, 6),
+  };
 
-  for (const auto& [algorithm, compressor_type, compress_window_sizes,
-                    default_window_size, default_compression_level] :
-       algorithms) {
+  for (const auto& [algorithm, compressor_type, name_suffix,
+                    compress_window_sizes, default_window_size,
+                    default_compression_level] : algorithms) {
     for (const auto& operation : operations) {
       auto benchmark_fn = fleetbench::compression::BM_Compress;
       if (operation == "DECOMPRESS")
@@ -209,7 +211,8 @@ void RegisterBenchmarks() {
       for (const auto& directory : directories) {
         // Binary names, i.e, A, B,..
         std::string directory_name = directory.filename().string();
-        std::string benchmark_name = absl::StrCat("BM_", directory_name);
+        std::string benchmark_name =
+            absl::StrCat("BM_", directory_name, name_suffix);
 
         auto* benchmark = benchmark::RegisterBenchmark(
             benchmark_name.c_str(), benchmark_fn, compressor_type, directory);
