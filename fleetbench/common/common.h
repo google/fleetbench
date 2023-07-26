@@ -14,21 +14,27 @@
 #ifndef THIRD_PARTY_FLEETBENCH_COMMON_COMMON_H_
 #define THIRD_PARTY_FLEETBENCH_COMMON_COMMON_H_
 
-#include "absl/random/random.h"
+#include <random>
 
 namespace fleetbench {
 
-using ::absl::InsecureBitGen;
+// Wrapper around a random number generator.
+// If --fixed_seed is true (the default), the seed will be 0 for better
+// reproducibility.
+class Random {
+ public:
+  static Random& instance();
+  std::default_random_engine& rng() { return rng_; }
+  void Reset();
 
-inline InsecureBitGen MakeRNG() {
-  std::seed_seq seed;  // Stable across binaries, distinct across commits.
-  return InsecureBitGen(seed);
-}
+ private:
+  explicit Random(bool fixed_seed);
 
-inline InsecureBitGen& GetRNG() {
-  static auto* rng = new auto(MakeRNG());
-  return *rng;
-}
+  const bool fixed_seed_;
+  std::default_random_engine rng_;
+};
+
+inline std::default_random_engine& GetRNG() { return Random::instance().rng(); }
 
 }  // namespace fleetbench
 #endif  // THIRD_PARTY_FLEETBENCH_COMMON_COMMON_H_

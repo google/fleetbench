@@ -114,7 +114,7 @@ Set GenerateSet(size_t min_size, Density density) {
 template <class Set>
 std::vector<Set> GenerateSets(size_t min_size, size_t min_total_size,
                               Density density) {
-  GetRNG() = MakeRNG();
+  Random::instance().Reset();
   size_t total_size = 0;
   std::vector<Set> generated_sets;
   generated_sets.reserve(min_total_size / min_size + 1);

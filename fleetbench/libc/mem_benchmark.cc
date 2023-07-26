@@ -246,6 +246,9 @@ static void BM_Memory(benchmark::State &state, Args &&...args) {
 
   memory_call(state, parameters, buffer_size);
 
+  // Make each benchmark repetition reproducible, if using a fixed seed.
+  Random::instance().Reset();
+
   // Computes the total_types throughput.
   size_t batch_bytes = 0;
   for (auto &P : parameters) {
@@ -259,6 +262,8 @@ static void BM_Memory(benchmark::State &state, Args &&...args) {
   state.counters["bytes_per_cycle"] = benchmark::Counter(
       total_bytes / benchmark::CPUInfo::Get().cycles_per_second,
       benchmark::Counter::kIsRate);
+  state.counters["bytes"] =
+      benchmark::Counter(total_bytes, benchmark::Counter::kDefaults);
 }
 
 BENCHMARK_CAPTURE(BM_Memory, memcpy, GetMemcpySizeDistributions(),
