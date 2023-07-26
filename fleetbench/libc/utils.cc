@@ -14,8 +14,6 @@
 
 #include "fleetbench/libc/utils.h"
 
-#include <optional>
-
 #include "absl/log/check.h"
 
 namespace fleetbench {
@@ -25,8 +23,8 @@ MemoryBuffers::MemoryBuffers(const size_t size, const size_t alignment)
     : size_(size),
       src_(reinterpret_cast<char*>(aligned_alloc(alignment, size_))),
       dst_(reinterpret_cast<char*>(aligned_alloc(alignment, size_))) {
-  memset(src_, 'X', size);
-  memset(dst_, 'X', size);
+  memset(src_, 0xFF, size);
+  memset(dst_, 0xFF, size);
 }
 
 char* MemoryBuffers::src(size_t offset) {
@@ -47,6 +45,16 @@ char* MemoryBuffers::dst(size_t offset) {
 const char* MemoryBuffers::dst(size_t offset) const {
   DCHECK_LT(offset, size_);
   return dst_ + offset;
+}
+
+const char* MemoryBuffers::comparison_dst(size_t mismatch_pos) const {
+  if (mismatch_pos == 0) return dst_;
+  memset(dst_ + mismatch_pos - 1, 0x00, 1);
+  return dst_;
+}
+
+void MemoryBuffers::reset_dst(size_t mismatch_pos) {
+  memset(dst_ + mismatch_pos, 0xFF, 1);
 }
 
 MemoryBuffers::~MemoryBuffers() {
