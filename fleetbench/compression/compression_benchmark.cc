@@ -103,6 +103,8 @@ std::unique_ptr<Compressor> CreateCompressor(
       return std::make_unique<ZstdCompressor>(compression_level, window_log);
     } else if (compressor_type == "ZLib") {
       return std::make_unique<ZLibCompressor>(compression_level, window_log);
+    } else if (compressor_type == "Brotli") {
+      return std::make_unique<BrotliCompressor>(compression_level, window_log);
     } else {
       LOG(FATAL) << "Unknown compressor type: " << compressor_type;
       return nullptr;
@@ -193,6 +195,7 @@ void RegisterBenchmarks() {
       algorithms_entry("Snappy", "Snappy", "", {}, NULL, NULL),
       algorithms_entry("ZSTD", "ZSTD", "", {15, 16}, 0, 0),
       algorithms_entry("Flate", "ZLib", "", {15}, 15, 6),
+      algorithms_entry("Brotli", "Brotli", "", {18}, 18, 2),
   };
 
   for (const auto& [algorithm, compressor_type, name_suffix,

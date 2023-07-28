@@ -76,6 +76,17 @@ class ZLibCompressor : public Compressor {
   const int window_log_;
 };
 
+class BrotliCompressor : public Compressor {
+ public:
+  BrotliCompressor(int compression_level, int window_log);
+  size_t Compress(absl::string_view input, std::string* output) override;
+  bool Decompress(absl::string_view input, std::string* output) override;
+
+ private:
+  int compression_level_;
+  int window_log_;
+};
+
 }  // namespace compression
 }  // namespace fleetbench
 

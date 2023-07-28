@@ -115,7 +115,7 @@ def process_distribution(input_distribution, name, algorithm, operation):
   distribution_tracker = DistributionTracker("call_size", input_distribution)
   for call_size_bucket in input_distribution:
     if algorithm == "Snappy" or (
-        algorithm in ["ZSTD", "Flate"] and operation == "DECOMPRESS"
+        algorithm in ["ZSTD", "Flate", "Brotli"] and operation == "DECOMPRESS"
     ):
       compression_ratio_distribution_tracker = DistributionTracker(
           "compression_ratio",
@@ -124,8 +124,8 @@ def process_distribution(input_distribution, name, algorithm, operation):
       distribution_tracker.add_child_distribution(
           call_size_bucket, compression_ratio_distribution_tracker
       )
-    elif algorithm in ["ZSTD", "Flate"] and operation == "COMPRESS":
-      # Unpack ZSTD or Flate metrics.
+    elif algorithm in ["ZSTD", "Flate", "Brotli"] and operation == "COMPRESS":
+      # Unpack ZSTD, Flate or Brotli metrics.
       # The order is:
       # call_size --> compression_level --> window_size --> compression_ratio
       compression_level_distribution = input_distribution[call_size_bucket].get(

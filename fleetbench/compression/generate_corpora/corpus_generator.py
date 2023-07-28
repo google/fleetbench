@@ -21,6 +21,7 @@ import random
 import zlib
 
 from absl import logging
+import brotli
 import zstandard as zstd
 
 from rules_python.python.runfiles import runfiles
@@ -50,6 +51,19 @@ FLATE_DECOMPRESS_COMPRESSION_LEVEL = [-1]
 # The default (and maximum) window size for zlib is 15.
 # https://github.com/madler/zlib/blob/master/zconf.h#L267
 FLATE_WINDOW_SIZE = [15]
+
+# The minimum compression level is 0 and the maximum 11 (according to
+# https://github.com/google/brotli/blob/master/c/include/brotli/encode.h#L40,
+# which calls it "quality" instead of "compression level").
+BROTLI_COMPRESS_COMPRESSION_LEVELS = list(range(0, 12))
+# While the default compression level is 11
+# (https://github.com/google/brotli/blob/master/c/include/brotli/encode.h#L61),
+# the fleet mostly uses level 2.
+BROTLI_DECOMPRESS_COMPRESSION_LEVEL = [2]
+# While the default window size for Brotli is 22
+# (https://github.com/google/brotli/blob/master/c/include/brotli/encode.h#L63),
+# the fleet mostly uses size 18.
+BROTLI_WINDOW_SIZE = [18]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -88,6 +102,8 @@ class CorpusChunkManager:
       self.compress_function = zstd_compress
     elif algorithm == "Flate":
       self.compress_function = zlib.compress
+    elif algorithm == "Brotli":
+      self.compress_function = brotli.compress
     else:
       raise RuntimeError(f"{algorithm} is not supported yet")
 
@@ -129,6 +145,9 @@ class CorpusChunkManager:
     elif self.algorithm == "Flate":
       compression_levels = FLATE_COMPRESS_COMPRESSION_LEVELS
       window_sizes = FLATE_WINDOW_SIZE
+    elif self.algorithm == "Brotli":
+      compression_levels = BROTLI_COMPRESS_COMPRESSION_LEVELS
+      window_sizes = BROTLI_WINDOW_SIZE
     else:
       raise RuntimeError(f"{self.algorithm} is not supported yet")
 
@@ -183,6 +202,10 @@ class CorpusChunkManager:
           for parameters in compression_parameters_list:
             if self.algorithm == "Snappy":
               compressed_data = self.compress_function(data)
+            elif self.algorithm == "Brotli":
+              compressed_data = self.compress_function(
+                  data, quality=parameters.compression_level
+              )
             else:
               compressed_data = self.compress_function(
                   data,
@@ -243,6 +266,10 @@ class CorpusChunkManager:
 
     if self.algorithm == "Snappy":
       compressed_data = self.compress_function(uncompressed_data)
+    elif self.algorithm == "Brotli":
+      compressed_data = self.compress_function(
+          uncompressed_data, quality=compression_level
+      )
     else:
       compressed_data = self.compress_function(
           uncompressed_data, compression_level
@@ -386,6 +413,12 @@ class CorpusChunkManager:
     elif self.algorithm == "Flate" and self.operation == "DECOMPRESS":
       sampled_compression_level = FLATE_DECOMPRESS_COMPRESSION_LEVEL[0]
       sampled_window_size = FLATE_WINDOW_SIZE[0]
+    elif self.algorithm == "Brotli" and self.operation == "COMPRESS":
+      sampled_compression_level = sampled_parameters["compression_level"]
+      sampled_window_size = BROTLI_WINDOW_SIZE[0]
+    elif self.algorithm == "Brotli" and self.operation == "DECOMPRESS":
+      sampled_compression_level = BROTLI_DECOMPRESS_COMPRESSION_LEVEL[0]
+      sampled_window_size = BROTLI_WINDOW_SIZE[0]
     else:
       raise RuntimeError(
           f"{self.algorithm} and {self.operation} is not supported yet"
@@ -398,11 +431,21 @@ class CorpusChunkManager:
     )
     if self.operation == "COMPRESS":
       if (
-          self.algorithm == "ZSTD"
-          and sampled_compression_level not in ZSTD_COMPRESS_COMPRESSION_LEVELS
-      ) or (
-          self.algorithm == "Flate"
-          and sampled_compression_level not in FLATE_COMPRESS_COMPRESSION_LEVELS
+          (
+              self.algorithm == "ZSTD"
+              and sampled_compression_level
+              not in ZSTD_COMPRESS_COMPRESSION_LEVELS
+          )
+          or (
+              self.algorithm == "Flate"
+              and sampled_compression_level
+              not in FLATE_COMPRESS_COMPRESSION_LEVELS
+          )
+          or (
+              self.algorithm == "Brotli"
+              and sampled_compression_level
+              not in BROTLI_COMPRESS_COMPRESSION_LEVELS
+          )
       ):
         raise RuntimeError(
             f"Sampled compression level {sampled_compression_level} is not"
@@ -453,6 +496,10 @@ class CorpusChunkManager:
 
     if self.algorithm == "Snappy":
       compressed_data = self.compress_function(result)
+    elif self.algorithm == "Brotli":
+      compressed_data = self.compress_function(
+          result, quality=parameters.compression_level
+      )
     else:
       compressed_data = self.compress_function(
           result, parameters.compression_level

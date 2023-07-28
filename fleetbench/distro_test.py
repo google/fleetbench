@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from absl.testing import absltest
+import brotli
 import numpy as np
 import zstandard
 
@@ -32,6 +33,10 @@ class DistroTest(absltest.TestCase):
   def testSnappy(self):
     compressed_bytes = snappy.compress(b"12345678")
     self.assertEqual(snappy.uncompress(compressed_bytes), b"12345678")
+
+  def testBrotli(self):
+    compressed_bytes = brotli.compress(b"12345678")
+    self.assertEqual(brotli.decompress(compressed_bytes), b"12345678")
 
 
 if __name__ == "__main__":

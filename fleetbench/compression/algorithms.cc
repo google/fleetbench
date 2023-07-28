@@ -18,6 +18,8 @@
 
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
+#include "c/include/brotli/decode.h"
+#include "c/include/brotli/encode.h"
 #include "fleetbench/compression/zlibwrapper.h"
 #include "snappy.h"
 #include "zstd.h"
@@ -115,6 +117,99 @@ bool ZLibCompressor::Decompress(const absl::string_view input,
   output->resize(uncompressed_length);
 
   return (status == Z_OK);
+}
+
+BrotliCompressor::BrotliCompressor(int compression_level, int window_log)
+    : compression_level_(compression_level), window_log_(window_log) {}
+
+size_t BrotliCompressor::Compress(absl::string_view input,
+                                  std::string* output) {
+  output->clear();
+
+  BrotliEncoderState* state =
+      BrotliEncoderCreateInstance(nullptr, nullptr, nullptr);
+  QCHECK(state != nullptr) << "Error creating BrotliEncoderState";
+  QCHECK(BrotliEncoderSetParameter(state, BROTLI_PARAM_QUALITY,
+                                   compression_level_) == BROTLI_TRUE)
+      << "Error setting compression level";
+  QCHECK(BrotliEncoderSetParameter(state, BROTLI_PARAM_LGWIN, window_log_) ==
+         BROTLI_TRUE)
+      << "Error setting window size";
+  QCHECK(BrotliEncoderSetParameter(state, BROTLI_PARAM_SIZE_HINT,
+                                   input.size()) == BROTLI_TRUE)
+      << "Error setting size hint";
+
+  size_t available_in, available_out = 0;
+  BROTLI_BOOL result = BROTLI_TRUE;
+  while (!input.empty() && result) {
+    available_in = input.size();
+    const uint8_t* next_in = reinterpret_cast<const uint8_t*>(input.data());
+    result = BrotliEncoderCompressStream(state, BROTLI_OPERATION_PROCESS,
+                                         &available_in, &next_in,
+                                         &available_out, nullptr, nullptr);
+    size_t buffer_size = 0;
+    const uint8_t* buffer = BrotliEncoderTakeOutput(state, &buffer_size);
+    if (buffer_size > 0) {
+      output->append(reinterpret_cast<const char*>(buffer), buffer_size);
+    }
+    input.remove_prefix(input.size() - available_in);
+  }
+  while (result && !BrotliEncoderIsFinished(state)) {
+    available_in = 0;
+    const uint8_t* next_in = nullptr;
+    result = BrotliEncoderCompressStream(state, BROTLI_OPERATION_FINISH,
+                                         &available_in, &next_in,
+                                         &available_out, nullptr, nullptr);
+    size_t buffer_size = 0;
+    const uint8_t* buffer = BrotliEncoderTakeOutput(state, &buffer_size);
+    if (buffer_size > 0) {
+      output->append(reinterpret_cast<const char*>(buffer), buffer_size);
+    }
+  }
+  BrotliEncoderDestroyInstance(state);
+  QCHECK(result) << "Error compressing: " << result << output;
+
+  return output->size();
+}
+
+bool BrotliCompressor::Decompress(absl::string_view input,
+                                  std::string* output) {
+  output->clear();
+  BrotliDecoderState* state =
+      BrotliDecoderCreateInstance(nullptr, nullptr, nullptr);
+  QCHECK(state != nullptr) << "Error creating BrotliDecoderState";
+
+  size_t available_in, available_out = 0;
+  BrotliDecoderResult result = BROTLI_DECODER_RESULT_SUCCESS;
+  while (!input.empty() && result != BROTLI_DECODER_RESULT_ERROR) {
+    available_in = input.size();
+    const uint8_t* next_in = reinterpret_cast<const uint8_t*>(input.data());
+    result = BrotliDecoderDecompressStream(state, &available_in, &next_in,
+                                           &available_out, nullptr, nullptr);
+    input.remove_prefix(input.size() - available_in);
+    size_t buffer_size = 0;
+    const uint8_t* buffer = BrotliDecoderTakeOutput(state, &buffer_size);
+    if (buffer_size > 0) {
+      output->append(reinterpret_cast<const char*>(buffer), buffer_size);
+    } else if (result == BROTLI_DECODER_RESULT_SUCCESS) {
+      // Decoding is finished and all output is pushed.
+      break;
+    }
+  }
+  while (result == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT) {
+    available_in = 0;
+    const uint8_t* next_in = nullptr;
+    result = BrotliDecoderDecompressStream(state, &available_in, &next_in,
+                                           &available_out, nullptr, nullptr);
+    size_t buffer_size = 0;
+    const uint8_t* buffer = BrotliDecoderTakeOutput(state, &buffer_size);
+    if (buffer_size > 0) {
+      output->append(reinterpret_cast<const char*>(buffer), buffer_size);
+    }
+  }
+  BrotliDecoderDestroyInstance(state);
+
+  return result == BROTLI_DECODER_RESULT_SUCCESS && input.empty();
 }
 
 }  // namespace compression

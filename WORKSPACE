@@ -97,6 +97,14 @@ http_archive(
     urls = ["https://github.com/facebook/zstd/archive/v1.4.5.zip"],
 )
 
+# Brotli
+http_archive(
+    name = "brotli", # 2023-07-28
+    sha256 = "8c165ad05f6ab62b528f72dba7e5777b6361e4de24332ed34f929ff44479fb8c",
+    strip_prefix = "brotli-0300be36ba019c55d2edc48353270fa18008d49c",
+    urls = ["https://github.com/google/brotli/archive/0300be36ba019c55d2edc48353270fa18008d49c.zip"],
+)
+
 # libpfm4, for perf counters
 http_archive(
     name = "libpfm", # 2023-01-12
