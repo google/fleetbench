@@ -25,6 +25,7 @@
 #include "absl/types/span.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/common/common.h"
+#include "fleetbench/dynamic_registrar.h"
 #include "fleetbench/libc/memory_size_distributions.h"
 #include "fleetbench/libc/utils.h"
 
@@ -289,6 +290,19 @@ BENCHMARK_CAPTURE(BM_Memory, bcmp, GetBcmpSizeDistributions(), kBcmpBufferCount,
 BENCHMARK_CAPTURE(BM_Memory, memset, GetMemsetSizeDistributions(),
                   kMemsetBufferCount, &MemsetFunction, IsCompare::NO)
     ->DenseRange(0, GetMemsetSizeDistributions().size() - 1, 1);
+
+class BenchmarkRegisterer {
+ public:
+  BenchmarkRegisterer() {
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memory/bcmp/6");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memory/memcmp/6");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memory/memcpy/6");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memory/memmove/6");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memory/memset/6");
+  }
+};
+
+BenchmarkRegisterer br;
 
 }  // namespace libc
 }  // namespace fleetbench

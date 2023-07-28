@@ -168,6 +168,7 @@ cc_test(
     deps = [
         ":benchmark_lib",
         "//fleetbench:benchmark_main",
+        "//fleetbench:dynamic_registrar",
         "//fleetbench/common",
         "@com_google_absl//absl/random",
         "@com_google_benchmark//:benchmark",

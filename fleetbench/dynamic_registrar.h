@@ -16,6 +16,7 @@
 #define THIRD_PARTY_FLEETBENCH_DYNAMIC_REGISTRAR_H_
 
 #include <functional>
+#include <string>
 #include <vector>
 
 namespace fleetbench {
@@ -38,8 +39,17 @@ class DynamicRegistrar {
   // Called by fleetbench main() to execute all registered callbacks.
   void Run();
 
+  // Used by fleetbench main() as the default benchmark filter if the
+  // --benchmark_filter flag is not set. The returned filter is the disjunction
+  // of all filters that were added by calls to AddDefaultFilter.
+  std::string GetDefaultFilter() const { return default_filter_; }
+
+  // Adds an additional benchmark filter.
+  void AddDefaultFilter(std::string filter);
+
  private:
   std::vector<std::function<void()>> callbacks_;
+  std::string default_filter_;
 };
 }  // namespace fleetbench
 

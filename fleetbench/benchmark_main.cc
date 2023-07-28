@@ -29,14 +29,14 @@ int main(int argc, char* argv[]) {
       tcmalloc::MallocExtension::ProcessBackgroundActions();
     }) : nullptr;
   setenv("FLEETBENCH_PROGRAM_PATH", argv[0], 1);
-  std::string defaultFilter = "all";
-  if (!benchmark::GetBenchmarkFilter().empty()) {
-    // if benchmark-filter is set, then use it instead.
-    defaultFilter = benchmark::GetBenchmarkFilter();
+  if (benchmark::GetBenchmarkFilter().empty()) {
+    // --benchmark_filter flag not set
+    benchmark::SetBenchmarkFilter(
+        fleetbench::DynamicRegistrar::Get()->GetDefaultFilter());
   }
 
   fleetbench::DynamicRegistrar::Get()->Run();
 
-  benchmark::RunSpecifiedBenchmarks(defaultFilter);
+  benchmark::RunSpecifiedBenchmarks();
   return 0;
 }

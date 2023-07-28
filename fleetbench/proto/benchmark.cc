@@ -16,6 +16,7 @@
 
 #include "benchmark/benchmark.h"
 
+#include "fleetbench/dynamic_registrar.h"
 #include "fleetbench/proto/lifecycle.h"
 
 namespace fleetbench {
@@ -45,5 +46,14 @@ void BM_Protogen_NoArena(benchmark::State& state) {
   }
 }
 BENCHMARK(BM_Protogen_NoArena);
+
+class BenchmarkRegisterer {
+ public:
+  BenchmarkRegisterer() {
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Protogen_Arena");
+  }
+};
+
+BenchmarkRegisterer br;
 
 }  // namespace fleetbench

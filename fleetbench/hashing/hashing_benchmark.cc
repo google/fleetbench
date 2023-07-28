@@ -31,6 +31,7 @@
 #include "absl/strings/string_view.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/common/common.h"
+#include "fleetbench/dynamic_registrar.h"
 
 namespace fleetbench {
 namespace hashing {
@@ -262,6 +263,27 @@ BENCHMARK_CAPTURE(BM_Hashing, ComputeCrc32c_cold, "Computecrc32c",
 BENCHMARK_CAPTURE(BM_Hashing, combine_contiguous_cold, "Combine_contiguous",
                   &CombineContiguousFunction, false)
     ->DenseRange(0, GetDistributionFiles("Combine_contiguous").size() - 1, 1);
+
+class BenchmarkRegisterer {
+ public:
+  BenchmarkRegisterer() {
+    // We use the fleet-wide distributions as the defaults.
+    // TODO(aabel): register benchmarks dynamically so that we can have "Fleet"
+    // in the name and use ".*Fleet.*" as the filter here instead of hard-coded
+    // numbers
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Hashing/ExtendCrc32c_hot/4");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Hashing/ComputeCrc32c_hot/4");
+    DynamicRegistrar::Get()->AddDefaultFilter(
+        "BM_Hashing/combine_contiguous_hot/2");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Hashing/ExtendCrc32c_cold/4");
+    DynamicRegistrar::Get()->AddDefaultFilter(
+        "BM_Hashing/ComputeCrc32c_cold/4");
+    DynamicRegistrar::Get()->AddDefaultFilter(
+        "BM_Hashing/combine_contiguous_cold/2");
+  }
+};
+
+BenchmarkRegisterer br;
 
 }  // namespace hashing
 }  // namespace fleetbench

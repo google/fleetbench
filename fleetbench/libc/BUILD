@@ -76,6 +76,7 @@ cc_test(
         ":memory_size_distributions",
         ":utils",
         "//fleetbench:benchmark_main",
+        "//fleetbench:dynamic_registrar",
         "//fleetbench/common",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/random:distributions",

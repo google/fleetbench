@@ -20,6 +20,7 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/container/node_hash_set.h"
 #include "benchmark/benchmark.h"
+#include "fleetbench/dynamic_registrar.h"
 #include "fleetbench/swissmap/swissmap_benchmark.h"
 
 // All benchmarks in this file are for cold lookups.
@@ -498,5 +499,15 @@ BENCHMARK_TEMPLATE(BM_InsertManyUnordered_Cold, ::absl::node_hash_set, 64)
         {static_cast<int64_t>(Density::kMin),
          static_cast<int64_t>(Density::kMax)},
     });
+
+class BenchmarkRegisterer {
+ public:
+  BenchmarkRegisterer() {
+    DynamicRegistrar::Get()->AddDefaultFilter(
+        "BM_InsertHit_Cold.*::absl::flat_hash_set.*64.*set_size:64.*density:0");
+  }
+};
+
+BenchmarkRegisterer br;
 
 }  // namespace fleetbench

@@ -21,6 +21,7 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/container/node_hash_set.h"
 #include "benchmark/benchmark.h"
+#include "fleetbench/dynamic_registrar.h"
 #include "fleetbench/swissmap/swissmap_benchmark.h"
 
 // All benchmarks in this file are for hot lookups.
@@ -596,5 +597,15 @@ void BM_StrDestructor(benchmark::State& state) {
   }
 }
 BENCHMARK(BM_StrDestructor);
+
+class BenchmarkRegisterer {
+ public:
+  BenchmarkRegisterer() {
+    DynamicRegistrar::Get()->AddDefaultFilter(
+        "BM_InsertHit_Hot.*::absl::flat_hash_set.*64.*set_size:64.*density:0");
+  }
+};
+
+BenchmarkRegisterer br;
 
 }  // namespace fleetbench

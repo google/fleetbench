@@ -242,6 +242,14 @@ class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
+    DynamicRegistrar::Get()->AddDefaultFilter(
+        ".*Brotli-COMPRESS.*Fleet.*level:2/window_log:18");
+    DynamicRegistrar::Get()->AddDefaultFilter(
+        ".*Flate-COMPRESS.*Fleet/.*level:6/window_log:15");
+    DynamicRegistrar::Get()->AddDefaultFilter(".*Snappy-COMPRESS.*Fleet.*");
+    DynamicRegistrar::Get()->AddDefaultFilter(
+        ".*ZSTD-COMPRESS.*Fleet.*level:-1/window_log:15");
+    DynamicRegistrar::Get()->AddDefaultFilter(".*DECOMPRESS.*Fleet.*");
   }
 };
 

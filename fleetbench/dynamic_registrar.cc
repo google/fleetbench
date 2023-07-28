@@ -15,6 +15,7 @@
 #include "fleetbench/dynamic_registrar.h"
 
 #include <functional>
+#include <string>
 #include <utility>
 
 namespace fleetbench {
@@ -33,6 +34,13 @@ void DynamicRegistrar::Run() {
     callback();
   }
   callbacks_.clear();
+}
+
+void DynamicRegistrar::AddDefaultFilter(std::string filter) {
+  if (!default_filter_.empty()) {
+    default_filter_.append("|");
+  }
+  default_filter_.append(filter);
 }
 
 }  // namespace fleetbench

@@ -29,6 +29,7 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "benchmark/benchmark.h"
+#include "fleetbench/dynamic_registrar.h"
 #include "fleetbench/tcmalloc/empirical.h"
 #include "fleetbench/tcmalloc/empirical_distributions.h"
 #include "fleetbench/tcmalloc/empirical_heap_size.h"
@@ -528,6 +529,15 @@ BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kUniform)
     ->ThreadRange(1, std::thread::hardware_concurrency())
     ->UseRealTime();
 #endif
+
+class BenchmarkRegisterer {
+ public:
+  BenchmarkRegisterer() {
+    DynamicRegistrar::Get()->AddDefaultFilter(".*kFoxtrot.*/threads:1$");
+  }
+};
+
+BenchmarkRegisterer br;
 
 }  // namespace tcmalloc
 }  // namespace fleetbench

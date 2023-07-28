@@ -8,6 +8,7 @@ cc_test(
     malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
         "//fleetbench:benchmark_main",
+        "//fleetbench:dynamic_registrar",
         "//fleetbench/common",
         "@com_google_absl//absl/crc:crc32c",
         "@com_google_absl//absl/hash",
