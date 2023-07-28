@@ -1,0 +1,138 @@
+{
+  "11.0": {
+    "count": 7,
+    "bytes": 13135,
+    "compression_level": {
+      "2": {
+        "count": 7,
+        "bytes": 13135,
+        "compression_ratio": {
+          "1.2": {
+            "count": 6,
+            "bytes": 11619
+          },
+          "2.2": {
+            "count": 1,
+            "bytes": 1516
+          }
+        }
+      }
+    }
+  },
+  "12.0": {
+    "count": 433,
+    "bytes": 1527541,
+    "compression_level": {
+      "2": {
+        "count": 433,
+        "bytes": 1527541,
+        "compression_ratio": {
+          "1.2": {
+            "count": 3,
+            "bytes": 8485
+          },
+          "1.3": {
+            "count": 27,
+            "bytes": 91670
+          },
+          "1.4": {
+            "count": 58,
+            "bytes": 190032
+          },
+          "1.5": {
+            "count": 37,
+            "bytes": 98155
+          },
+          "1.6": {
+            "count": 38,
+            "bytes": 133875
+          },
+          "1.7": {
+            "count": 110,
+            "bytes": 409472
+          },
+          "1.8": {
+            "count": 128,
+            "bytes": 483141
+          },
+          "1.9": {
+            "count": 21,
+            "bytes": 83726
+          },
+          "2.0": {
+            "count": 3,
+            "bytes": 7730
+          },
+          "2.1": {
+            "count": 6,
+            "bytes": 15817
+          },
+          "2.4": {
+            "count": 1,
+            "bytes": 2168
+          },
+          "3.2": {
+            "count": 1,
+            "bytes": 3270
+          }
+        }
+      }
+    }
+  },
+  "13.0": {
+    "count": 238,
+    "bytes": 1068773,
+    "compression_level": {
+      "2": {
+        "count": 238,
+        "bytes": 1068773,
+        "compression_ratio": {
+          "1.3": {
+            "count": 2,
+            "bytes": 8337
+          },
+          "1.4": {
+            "count": 16,
+            "bytes": 70891
+          },
+          "1.5": {
+            "count": 20,
+            "bytes": 87376
+          },
+          "1.6": {
+            "count": 1,
+            "bytes": 4222
+          },
+          "1.7": {
+            "count": 26,
+            "bytes": 111738
+          },
+          "1.8": {
+            "count": 89,
+            "bytes": 387372
+          },
+          "1.9": {
+            "count": 38,
+            "bytes": 173420
+          },
+          "2.0": {
+            "count": 30,
+            "bytes": 142425
+          },
+          "2.1": {
+            "count": 14,
+            "bytes": 71631
+          },
+          "2.2": {
+            "count": 1,
+            "bytes": 5590
+          },
+          "3.5": {
+            "count": 1,
+            "bytes": 5771
+          }
+        }
+      }
+    }
+  }
+}
