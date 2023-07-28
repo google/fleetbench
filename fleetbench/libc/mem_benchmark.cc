@@ -40,6 +40,11 @@ static constexpr size_t kBcmpBufferCount = 2;
 // The chance that two memory buffers are exactly same -- memcmp/bcmp only.
 static constexpr float kComparisonEqual = 0.4;
 
+// Whether a memory function is to be considered as "comparing bytes"
+// (memcmp/bcmp only). This is useful when generating buffers so we can test
+// effect of buffers comparing equal or different.
+enum class IsCompare : bool { YES = true, NO = false };
+
 // KibiByte. 1kKiB = 1024 bytes
 static constexpr int64_t kKiB = 1024;
 
@@ -122,8 +127,8 @@ void MemcmpFunction(benchmark::State &state,
   // Run benchmark and call memcmp function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      auto res = memcmp(buffers.comparison_dst(p.offset), buffers.src(0),
-                        p.size_bytes);
+      buffers.mark_dst(p.offset);
+      auto res = memcmp(buffers.dst(0), buffers.src(0), p.size_bytes);
       benchmark::DoNotOptimize(res);
       buffers.reset_dst(p.offset);
     }
@@ -138,8 +143,8 @@ void BcmpFunction(benchmark::State &state,
   // Run benchmark and call bcmp function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      auto res =
-          bcmp(buffers.comparison_dst(p.offset), buffers.src(0), p.size_bytes);
+      buffers.mark_dst(p.offset);
+      auto res = bcmp(buffers.dst(0), buffers.src(0), p.size_bytes);
       benchmark::DoNotOptimize(res);
       buffers.reset_dst(p.offset);
     }
@@ -182,7 +187,7 @@ static void BM_Memory(benchmark::State &state, Args &&...args) {
   auto distributions = std::get<0>(args_tuple);
   auto buffer_count = std::get<1>(args_tuple);
   auto memory_call = std::get<2>(args_tuple);
-  bool is_compare = std::get<3>(args_tuple);
+  auto is_compare = std::get<3>(args_tuple);
 
   // Remaining available memory size in L1 for needed parameters to run
   // benchmark.
@@ -215,23 +220,14 @@ static void BM_Memory(benchmark::State &state, Args &&...args) {
     // uniform distribution in interval [0, offset_upper_bound), where
     // 'offset_upper_bound' is calculated by subtracting size_bytes from
     // maximum buffer size to avoid accessing past the end of the buffer.
-    size_t offset_upper_bound = buffer_size - p.size_bytes;
+    const size_t offset_upper_bound = buffer_size - p.size_bytes;
 
-    // For non-comparison operation, offset is used to calculate the starting
-    // position of the memory block.
-    // For memcmp/bcmp, it indicates the position of the first mismatch char in
-    // two buffers.
-    if (!is_compare) {
-      p.offset = absl::Uniform<uint16_t>(GetRNG(), 0, offset_upper_bound);
-
-      // Check offset is valid.
-      CHECK_LT(p.offset + p.size_bytes, buffer_size)
-          << "May result in src buffer overflow";
-    } else {
-      // The value of offset indicates:
+    if (is_compare == IsCompare::YES) {
+      // For memcmp/bcmp, the offset indicates the position of the first
+      // mismatch char between the two buffers. The value of offset indicates:
       //  0 : Buffers always compare equal,
-      // >0 : Buffers compare different at byte = offset-1.
-      bool is_identical = absl::Bernoulli(GetRNG(), kComparisonEqual);
+      // >0 : Buffers compare different at 'byte = offset - 1'.
+      const bool is_identical = absl::Bernoulli(GetRNG(), kComparisonEqual);
       if (is_identical) {
         p.offset = 0;
       } else {
@@ -241,6 +237,14 @@ static void BM_Memory(benchmark::State &state, Args &&...args) {
         p.offset += 1;
         CHECK_LT(p.offset, buffer_size) << "May result in buffer overflow";
       }
+    } else {
+      // For non-comparison operation, offset is used to calculate the starting
+      // position of the memory block.
+      p.offset = absl::Uniform<uint16_t>(GetRNG(), 0, offset_upper_bound);
+
+      // Check offset is valid.
+      CHECK_LT(p.offset + p.size_bytes, buffer_size)
+          << "May result in src buffer overflow";
     }
   }
 
@@ -267,23 +271,23 @@ static void BM_Memory(benchmark::State &state, Args &&...args) {
 }
 
 BENCHMARK_CAPTURE(BM_Memory, memcpy, GetMemcpySizeDistributions(),
-                  kMemcpyBufferCount, &MemcpyFunction, /*is_compare=*/false)
+                  kMemcpyBufferCount, &MemcpyFunction, IsCompare::NO)
     ->DenseRange(0, GetMemcpySizeDistributions().size() - 1, 1);
 
 BENCHMARK_CAPTURE(BM_Memory, memmove, GetMemmoveSizeDistributions(),
-                  kMemmoveBufferCount, &MemmoveFunction, /*is_compare=*/false)
+                  kMemmoveBufferCount, &MemmoveFunction, IsCompare::NO)
     ->DenseRange(0, GetMemmoveSizeDistributions().size() - 1, 1);
 
 BENCHMARK_CAPTURE(BM_Memory, memcmp, GetMemcmpSizeDistributions(),
-                  kMemcmpBufferCount, &MemcmpFunction, /*is_compare=*/true)
+                  kMemcmpBufferCount, &MemcmpFunction, IsCompare::YES)
     ->DenseRange(0, GetMemcmpSizeDistributions().size() - 1, 1);
 
 BENCHMARK_CAPTURE(BM_Memory, bcmp, GetBcmpSizeDistributions(), kBcmpBufferCount,
-                  &BcmpFunction, /*is_compare=*/true)
+                  &BcmpFunction, IsCompare::YES)
     ->DenseRange(0, GetBcmpSizeDistributions().size() - 1, 1);
 
 BENCHMARK_CAPTURE(BM_Memory, memset, GetMemsetSizeDistributions(),
-                  kMemsetBufferCount, &MemsetFunction, /*is_compare=*/false)
+                  kMemsetBufferCount, &MemsetFunction, IsCompare::NO)
     ->DenseRange(0, GetMemsetSizeDistributions().size() - 1, 1);
 
 }  // namespace libc

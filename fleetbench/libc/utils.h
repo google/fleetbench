@@ -42,12 +42,12 @@ class MemoryBuffers {
   const char *dst(size_t offset) const;
 
   // Below helpers are for `memcmp/bcmp` only, where we may want to compare
-  // buffers that have different values starting at `mismatch_pos-1`. We
-  // differentiate byte at that pos to invoke early termination check. Note that
-  // `mismatch_pos` should be a non-negative , less than buffer size value. If
-  // it is zero, two buffers are equal. After comparison, we reset the buffer to
-  // make it ready for the next iteration.
-  const char *comparison_dst(size_t mismatch_pos) const;
+  // buffers that have different values starting at `mismatch_pos - 1`. We
+  // modify the byte at that position to invoke early termination check. Note
+  // that `mismatch_pos` should be a non-negative, less than buffer size value.
+  // If it is zero, two buffers are equal. After comparison, we reset the buffer
+  // to make it ready for the next iteration.
+  void mark_dst(size_t mismatch_pos);
   void reset_dst(size_t mismatch_pos);
 
   // The size of the source and destination buffers.

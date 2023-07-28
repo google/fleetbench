@@ -47,14 +47,12 @@ const char* MemoryBuffers::dst(size_t offset) const {
   return dst_ + offset;
 }
 
-const char* MemoryBuffers::comparison_dst(size_t mismatch_pos) const {
-  if (mismatch_pos == 0) return dst_;
-  memset(dst_ + mismatch_pos - 1, 0x00, 1);
-  return dst_;
+void MemoryBuffers::mark_dst(size_t mismatch_pos) {
+  if (mismatch_pos > 0) dst_[mismatch_pos - 1] = 0x00;
 }
 
 void MemoryBuffers::reset_dst(size_t mismatch_pos) {
-  memset(dst_ + mismatch_pos, 0xFF, 1);
+  if (mismatch_pos > 0) dst_[mismatch_pos - 1] = 0xFF;
 }
 
 MemoryBuffers::~MemoryBuffers() {
