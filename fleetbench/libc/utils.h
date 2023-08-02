@@ -23,21 +23,37 @@
 namespace fleetbench {
 namespace libc {
 
-// TODO(liyuying): change the class implementation to fit more memory
-// operations.
-// -- memcmp and bcmp require 2 read only buffers
-// -- memset requires 1 dst buffer.
+// Parameters to store memory operations data and it consumes 4B.
+// NOTE: Ideally we would store 2 offsets, one for src, and one dst. However, it
+// will require at least 6B, which is not great as unaligned loads may become
+// expensive on some platforms. Therefore, we encode the memory operation
+// arguments into 32 bits here.
+struct BM_Mem_Parameters {
+  unsigned offset : 16;      // max: 16 KiB - 1
+  unsigned size_bytes : 16;  // max: 16 KiB - 1
+} __attribute__((__packed__));
+static_assert(sizeof(BM_Mem_Parameters) == sizeof(uint32_t));
+
 class MemoryBuffers {
  public:
   // Sanitizer can't handle Alignment > 512.
   explicit MemoryBuffers(const size_t size, const size_t alignment = 512);
   ~MemoryBuffers();
 
-  // A pointer in the source buffer at the specified offset.
+  size_t get_offset() const;
+  void set_offset(size_t offset);
+
+  // A pointer in the source buffer at the specified offset. If there is no
+  // input 'offset' argument, we use member variable `offset_` to calculate the
+  // pointer.
+  char *src();
   char *src(size_t offset);
   const char *src(size_t offset) const;
 
-  // A pointer in the destination buffer at the specified offset.
+  // A pointer in the destination buffer at the specified offset.  If there is
+  // no input 'offset' argument, we use member variable `offset_` to calculate
+  // the pointer.
+  char *dst();
   char *dst(size_t offset);
   const char *dst(size_t offset) const;
 
@@ -55,6 +71,7 @@ class MemoryBuffers {
 
  private:
   const size_t size_;
+  size_t offset_ = 0;
   char *src_ = nullptr;
   char *dst_ = nullptr;
 };

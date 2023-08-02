@@ -18,6 +18,7 @@
 #include <random>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "absl/log/check.h"
@@ -52,7 +53,7 @@ enum class IsCompare : bool { YES = true, NO = false };
 static constexpr int64_t kKiB = 1024;
 
 // Reserved space for the benchmarking framework to operate (otherwise it will
-// evict our buffers from L1).
+// evict our buffers from current cache).
 static constexpr int64_t kReservedBenchmarkBytes = 1 * kKiB;
 
 // Reserved space for precomputed parameters for memory operation.
@@ -60,16 +61,17 @@ static constexpr int64_t kPrecomputeParametersBytes = 4 * kKiB;
 
 using CacheInfo = benchmark::CPUInfo::CacheInfo;
 
-// Parameters to store memory operations data and it consumes 4B.
-// NOTE: Ideally we would store 2 offsets, one for src, and one dst. However, it
-// will require at least 6B, which is not great as unaligned loads may become
-// expensive on some platforms. Therefore, we encode the memory operation
-// arguments into 32 bits here.
-struct BM_Mem_Parameters {
-  unsigned offset : 16;      // max: 16 KiB - 1
-  unsigned size_bytes : 16;  // max: 16 KiB - 1
-} __attribute__((__packed__));
-static_assert(sizeof(BM_Mem_Parameters) == sizeof(uint32_t));
+// Helper function to create non cache resident benchmark.
+// By keeping incrementing the offset, we explore all the memory of a given
+// buffer, which increases the cache miss chance of the previous cache level.
+// The function updates the `offset_` value stored in `buffer`.
+void CalculateSpan(MemoryBuffers *buffer, const BM_Mem_Parameters &parameters,
+                   const size_t buffer_size) {
+  size_t offset = buffer->get_offset();
+  offset += parameters.offset + parameters.size_bytes;
+  if (offset + parameters.size_bytes >= buffer_size) offset = 0;
+  buffer->set_offset(offset);
+}
 
 void MemcpyFunction(benchmark::State &state,
                     std::vector<BM_Mem_Parameters> &parameters,
@@ -79,8 +81,8 @@ void MemcpyFunction(benchmark::State &state,
   // Run benchmark and call memcpy function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      auto res =
-          memcpy(buffers.dst(p.offset), buffers.src(p.offset), p.size_bytes);
+      CalculateSpan(&buffers, p, buffer_size);
+      auto res = memcpy(buffers.dst(), buffers.src(), p.size_bytes);
       benchmark::DoNotOptimize(res);
     }
   }
@@ -112,8 +114,9 @@ void MemmoveFunction(benchmark::State &state,
   // Run benchmark and call memmove function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      auto res = memmove(buffers.dst(buffers.size() / 3), buffers.dst(p.offset),
-                         p.size_bytes);
+      CalculateSpan(&buffers, p, buffer_size);
+      auto res =
+          memmove(buffers.dst(buffers.size() / 3), buffers.dst(), p.size_bytes);
       benchmark::DoNotOptimize(res);
     }
   }
@@ -127,8 +130,9 @@ void MemcmpFunction(benchmark::State &state,
   // Run benchmark and call memcmp function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
+      CalculateSpan(&buffers, p, buffer_size);
       buffers.mark_dst(p.offset);
-      auto res = memcmp(buffers.dst(0), buffers.src(0), p.size_bytes);
+      auto res = memcmp(buffers.dst(), buffers.src(), p.size_bytes);
       benchmark::DoNotOptimize(res);
       buffers.reset_dst(p.offset);
     }
@@ -143,8 +147,9 @@ void BcmpFunction(benchmark::State &state,
   // Run benchmark and call bcmp function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
+      CalculateSpan(&buffers, p, buffer_size);
       buffers.mark_dst(p.offset);
-      auto res = bcmp(buffers.dst(0), buffers.src(0), p.size_bytes);
+      auto res = bcmp(buffers.dst(), buffers.src(), p.size_bytes);
       benchmark::DoNotOptimize(res);
       buffers.reset_dst(p.offset);
     }
@@ -159,7 +164,8 @@ void MemsetFunction(benchmark::State &state,
   // Run benchmark and call memset function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      auto res = memset(buffers.dst(p.offset), p.offset % 0xFF, p.size_bytes);
+      CalculateSpan(&buffers, p, buffer_size);
+      auto res = memset(buffers.dst(), p.offset % 0xFF, p.size_bytes);
       benchmark::DoNotOptimize(res);
     }
   }
@@ -182,14 +188,12 @@ static void BM_Memory(benchmark::State &state,
                                           std::vector<BM_Mem_Parameters> &,
                                           const size_t),
                       const IsCompare &is_compare, const size_t cache_size) {
-  // Remaining available memory size in L1 for needed parameters to run
-  // benchmark.
+  // Remaining available memory size in current cache for needed parameters to
+  // run benchmark.
   const size_t available_bytes =
       cache_size - kPrecomputeParametersBytes - kReservedBenchmarkBytes;
 
-  // Number of parameters that allows all can resident in L1.
-  const size_t batch_size =
-      kPrecomputeParametersBytes / sizeof(BM_Mem_Parameters);
+  const size_t batch_size = 1000;
 
   // Pre-calculates parameter values.
   std::vector<BM_Mem_Parameters> parameters(batch_size);
@@ -202,7 +206,7 @@ static void BM_Memory(benchmark::State &state,
   std::discrete_distribution<uint16_t> size_bytes_sampler(
       memory_size_distribution.begin(), memory_size_distribution.end());
 
-  // Max buffer size can be stored in L1 cache.
+  // Max buffer size can be stored in current cache.
   const size_t buffer_size = available_bytes / buffer_count;
 
   for (auto &p : parameters) {
@@ -270,8 +274,6 @@ void RegisterBenchmarks() {
   CHECK_GT(GetBcmpSizeDistributions().size(), 6);
   CHECK_GT(GetMemsetSizeDistributions().size(), 6);
 
-  int cache_size = GetCacheSize(1, "Data");
-
   using operation_entry =
       std::tuple<std::string, absl::Span<const SizeDistribution>, size_t,
                  void (*)(benchmark::State &, std::vector<BM_Mem_Parameters> &,
@@ -289,26 +291,34 @@ void RegisterBenchmarks() {
       operation_entry("memset", GetMemsetSizeDistributions(),
                       kMemsetBufferCount, &MemsetFunction, IsCompare::NO),
   };
+  auto cache_resident_info = {
+      std::make_pair("L1", GetCacheSize(1, "Data")),
+      std::make_pair("L2", GetCacheSize(2)),
+      std::make_pair("LLC", GetCacheSize(3)),
+      std::make_pair("Cold", 2 * GetCacheSize(3)),
+  };
   auto memory_benchmark = fleetbench::libc::BM_Memory;
-  for (const auto &[name, distributions, buffer_counter, memory_function,
-                    is_compare] : memory_operations) {
-    std::string benchmark_name = absl::StrCat("BM_", name);
-    auto *benchmark = benchmark::RegisterBenchmark(
-        benchmark_name.c_str(), memory_benchmark, distributions, buffer_counter,
-        memory_function, is_compare, cache_size);
-    benchmark->DenseRange(0, distributions.size() - 1, 1);
+  for (const auto &[function_name, distributions, buffer_counter,
+                    memory_function, is_compare] : memory_operations) {
+    for (const auto &[cache_name, cache_size] : cache_resident_info) {
+      std::string benchmark_name =
+          absl::StrCat("BM_", function_name, "_", cache_name);
+      auto *benchmark = benchmark::RegisterBenchmark(
+          benchmark_name.c_str(), memory_benchmark, distributions,
+          buffer_counter, memory_function, is_compare, cache_size);
+      benchmark->DenseRange(0, distributions.size() - 1, 1);
+    }
   }
 }
-
 class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_bcmp/6");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_memcmp/6");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_memcpy/6");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_memmove/6");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_memset/6");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_bcmp_L1/6");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_memcmp_L1/6");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_memcpy_L1/6");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_memmove_L1/6");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_memset_L1/6");
   }
 };
 
