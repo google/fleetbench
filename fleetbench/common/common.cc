@@ -14,9 +14,18 @@
 
 #include "fleetbench/common/common.h"
 
+#include <algorithm>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <random>
+#include <string>
+#include <vector>
 
 #include "absl/flags/flag.h"
+#include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/string_view.h"
 
 ABSL_FLAG(bool, fixed_seed, true,
           "Use a fixed seed for random number generation.");
@@ -41,6 +50,32 @@ void Random::Reset() {
   if (fixed_seed_) {
     rng_.seed(0);
   }
+}
+
+std::vector<std::filesystem::path> GetMatchingFiles(std::filesystem::path& dir,
+                                                    absl::string_view prefix) {
+  std::vector<std::filesystem::path> files;
+  for (const auto& entry : std::filesystem::directory_iterator(dir)) {
+    if (absl::StartsWith(entry.path().filename().string(), prefix)) {
+      files.push_back(entry.path());
+    }
+  }
+  std::sort(files.begin(), files.end());
+  return files;
+}
+
+std::vector<double> ReadDistributionFile(std::filesystem::path file) {
+  std::vector<double> distribution;
+  std::string column;
+  std::fstream f(file, std::ios_base::in);
+  while (std::getline(f, column, ',')) {
+    double d = 0.0;
+    if (!absl::SimpleAtod(column, &d)) {
+      std::cerr << "Invalid column: " << column << "\n";
+    }
+    distribution.push_back(d);
+  }
+  return distribution;
 }
 
 }  // namespace fleetbench

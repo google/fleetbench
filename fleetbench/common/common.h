@@ -14,7 +14,10 @@
 #ifndef THIRD_PARTY_FLEETBENCH_COMMON_COMMON_H_
 #define THIRD_PARTY_FLEETBENCH_COMMON_COMMON_H_
 
+#include <filesystem>
 #include <random>
+
+#include "absl/strings/string_view.h"
 
 namespace fleetbench {
 
@@ -35,6 +38,17 @@ class Random {
 };
 
 inline std::default_random_engine& GetRNG() { return Random::instance().rng(); }
+
+// Returns a sorted list of the files in directory 'dir' whose filenames start
+// with 'prefix'.
+std::vector<std::filesystem::path> GetMatchingFiles(std::filesystem::path& dir,
+                                                    absl::string_view prefix);
+
+// Reads a CSV file that contains a distribution. Such a file has a single line;
+// the columns represent the relative frequency with which the corresponding
+// input occurs. The function returns a vector whose entries correspond to the
+// columns in the CSV file.
+std::vector<double> ReadDistributionFile(std::filesystem::path file);
 
 }  // namespace fleetbench
 #endif  // THIRD_PARTY_FLEETBENCH_COMMON_COMMON_H_

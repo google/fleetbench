@@ -7,6 +7,9 @@ cc_library(
         "common.h",
     ],
     linkstatic = 1,
-    deps = ["@com_google_absl//absl/flags:flag"],
+    deps = [
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/strings",
+    ],
     alwayslink = 1,
 )

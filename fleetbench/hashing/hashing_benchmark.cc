@@ -14,11 +14,8 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <cstring>
 #include <filesystem>
-#include <fstream>
-#include <iostream>
 #include <iterator>
 #include <random>
 #include <string>
@@ -26,8 +23,6 @@
 
 #include "absl/crc/crc32c.h"
 #include "absl/hash/hash.h"
-#include "absl/strings/match.h"
-#include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/common/common.h"
@@ -137,44 +132,12 @@ void CombineContiguousFunction(benchmark::State &state,
   }
 }
 
-// Returns a sorted list of the files in directory 'dir' whose filenames start
-// with 'prefix'.
-static std::vector<std::filesystem::path> GetMatchingFiles(
-    std::filesystem::path &dir, absl::string_view prefix) {
-  std::vector<std::filesystem::path> files;
-  for (const auto &entry : std::filesystem::directory_iterator(dir)) {
-    if (absl::StartsWith(entry.path().filename().string(), prefix)) {
-      files.push_back(entry.path());
-    }
-  }
-  std::sort(files.begin(), files.end());
-  return files;
-}
-
 // Returns a sorted list of the files for the distributions whose filenames
 // start with 'prefix'.
 static std::vector<std::filesystem::path> GetDistributionFiles(
     absl::string_view prefix) {
   auto p = std::filesystem::path(__FILE__).replace_filename("distributions");
   return GetMatchingFiles(p, prefix);
-}
-
-// Reads a CSV file that contains a distribution. Such a file has a single line;
-// the columns represent the relative frequency with which the corresponding
-// input occurs. The function returns a vector whose entries correspond to the
-// columns in the CSV file.
-static std::vector<double> ReadDistributionFile(std::filesystem::path file) {
-  std::vector<double> distribution;
-  std::string column;
-  std::fstream f(file, std::ios_base::in);
-  while (std::getline(f, column, ',')) {
-    double d = 0.0;
-    if (!absl::SimpleAtod(column, &d)) {
-      std::cerr << "Invalid column: " << column << "\n";
-    }
-    distribution.push_back(d);
-  }
-  return distribution;
 }
 
 static int GetL3CacheSize() {
