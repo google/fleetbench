@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <filesystem>
 #include <random>
 #include <string>
 #include <tuple>
@@ -25,11 +26,9 @@
 #include "absl/random/distributions.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/common/common.h"
 #include "fleetbench/dynamic_registrar.h"
-#include "fleetbench/libc/memory_size_distributions.h"
 #include "fleetbench/libc/utils.h"
 
 namespace fleetbench {
@@ -171,6 +170,14 @@ void MemsetFunction(benchmark::State &state,
   }
 }
 
+// Returns a sorted list of the files for the distributions whose filenames
+// start with 'prefix'.
+static std::vector<std::filesystem::path> GetDistributionFiles(
+    absl::string_view prefix) {
+  auto p = std::filesystem::path(__FILE__).replace_filename("distributions");
+  return GetMatchingFiles(p, prefix);
+}
+
 static int GetCacheSize(size_t cache_level, absl::string_view cache_type = "") {
   for (const CacheInfo &ci : benchmark::CPUInfo::Get().caches) {
     if (ci.level == cache_level) {
@@ -182,7 +189,7 @@ static int GetCacheSize(size_t cache_level, absl::string_view cache_type = "") {
 }
 
 static void BM_Memory(benchmark::State &state,
-                      const absl::Span<const SizeDistribution> distributions,
+                      const std::vector<double> &memory_size_distribution,
                       size_t buffer_count,
                       void (*memory_call)(benchmark::State &,
                                           std::vector<BM_Mem_Parameters> &,
@@ -197,10 +204,6 @@ static void BM_Memory(benchmark::State &state,
 
   // Pre-calculates parameter values.
   std::vector<BM_Mem_Parameters> parameters(batch_size);
-
-  // Gets prod memory distribution and the name.
-  const auto &[distribution_name, memory_size_distribution] =
-      distributions[state.range(0)];
 
   // Convert prod size distribution to a discrete distribution.
   std::discrete_distribution<uint16_t> size_bytes_sampler(
@@ -257,7 +260,6 @@ static void BM_Memory(benchmark::State &state,
   }
 
   const size_t total_bytes = (state.iterations() * batch_bytes) / batch_size;
-  state.SetLabel(absl::StrCat(distribution_name));
 
   state.SetBytesProcessed(total_bytes);
   state.counters["bytes_per_cycle"] = benchmark::Counter(
@@ -268,28 +270,21 @@ static void BM_Memory(benchmark::State &state,
 }
 
 void RegisterBenchmarks() {
-  CHECK_GT(GetMemcpySizeDistributions().size(), 6);
-  CHECK_GT(GetMemmoveSizeDistributions().size(), 6);
-  CHECK_GT(GetMemcmpSizeDistributions().size(), 6);
-  CHECK_GT(GetBcmpSizeDistributions().size(), 6);
-  CHECK_GT(GetMemsetSizeDistributions().size(), 6);
-
   using operation_entry =
-      std::tuple<std::string, absl::Span<const SizeDistribution>, size_t,
+      std::tuple<std::string, size_t,
                  void (*)(benchmark::State &, std::vector<BM_Mem_Parameters> &,
                           const size_t),
                  IsCompare>;
   auto memory_operations = {
-      operation_entry("memcpy", GetMemcpySizeDistributions(),
-                      kMemcpyBufferCount, &MemcpyFunction, IsCompare::NO),
-      operation_entry("memmove", GetMemmoveSizeDistributions(),
-                      kMemmoveBufferCount, &MemmoveFunction, IsCompare::NO),
-      operation_entry("memcmp", GetMemcmpSizeDistributions(),
-                      kMemcmpBufferCount, &MemcmpFunction, IsCompare::YES),
-      operation_entry("bcmp", GetBcmpSizeDistributions(), kBcmpBufferCount,
-                      &BcmpFunction, IsCompare::YES),
-      operation_entry("memset", GetMemsetSizeDistributions(),
-                      kMemsetBufferCount, &MemsetFunction, IsCompare::NO),
+      operation_entry("Memcpy", kMemcpyBufferCount, &MemcpyFunction,
+                      IsCompare::NO),
+      operation_entry("Memmove", kMemmoveBufferCount, &MemmoveFunction,
+                      IsCompare::NO),
+      operation_entry("Memcmp", kMemcmpBufferCount, &MemcmpFunction,
+                      IsCompare::YES),
+      operation_entry("Bcmp", kBcmpBufferCount, &BcmpFunction, IsCompare::YES),
+      operation_entry("Memset", kMemsetBufferCount, &MemsetFunction,
+                      IsCompare::NO),
   };
   auto cache_resident_info = {
       std::make_pair("L1", GetCacheSize(1, "Data")),
@@ -298,27 +293,36 @@ void RegisterBenchmarks() {
       std::make_pair("Cold", 2 * GetCacheSize(3)),
   };
   auto memory_benchmark = fleetbench::libc::BM_Memory;
-  for (const auto &[function_name, distributions, buffer_counter,
-                    memory_function, is_compare] : memory_operations) {
-    for (const auto &[cache_name, cache_size] : cache_resident_info) {
-      std::string benchmark_name =
-          absl::StrCat("BM_", function_name, "_", cache_name);
-      auto *benchmark = benchmark::RegisterBenchmark(
-          benchmark_name.c_str(), memory_benchmark, distributions,
-          buffer_counter, memory_function, is_compare, cache_size);
-      benchmark->DenseRange(0, distributions.size() - 1, 1);
+  for (const auto &[distribution_file_prefix, buffer_counter, memory_function,
+                    is_compare] : memory_operations) {
+    const auto &files = GetDistributionFiles(distribution_file_prefix);
+    for (const auto &file : files) {
+      auto distribution_name = file.filename().string();
+      distribution_name.erase(distribution_name.find(".csv"));
+      distribution_name.replace(distribution_name.find("Google"), 6, "-");
+
+      const std::vector<double> memory_size_distribution =
+          ReadDistributionFile(file);
+      for (const auto &[cache_name, cache_size] : cache_resident_info) {
+        std::string benchmark_name =
+            absl::StrCat("BM_", distribution_name, "_", cache_name);
+        benchmark::RegisterBenchmark(benchmark_name.c_str(), memory_benchmark,
+                                     memory_size_distribution, buffer_counter,
+                                     memory_function, is_compare, cache_size);
+      }
     }
   }
 }
+
 class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_bcmp_L1/6");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_memcmp_L1/6");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_memcpy_L1/6");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_memmove_L1/6");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_memset_L1/6");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Bcmp-S_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memcmp-S_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memcpy-S_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memmove-S_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memset-S_L1");
   }
 };
 
