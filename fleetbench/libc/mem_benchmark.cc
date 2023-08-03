@@ -318,11 +318,11 @@ class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Bcmp-S_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memcmp-S_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memcpy-S_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memmove-S_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memset-S_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Bcmp-Fleet_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memcmp-Fleet_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memcpy-Fleet_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memmove-Fleet_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memset-Fleet_L1");
   }
 };
 
