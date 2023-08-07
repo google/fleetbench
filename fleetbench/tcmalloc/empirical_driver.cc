@@ -360,17 +360,6 @@ std::vector<std::unique_ptr<SimThread>>& GetSimThreads() {
   return *sim_threads;
 }
 
-void RecordBirthsAndDeaths(EmpiricalData* load) {
-  // Round number of births / deaths to record down to a multiple of kBatch.
-  const int buffer_size = (kRecordAndReplayBufferSize / kBatch) * kBatch;
-  for (int i = 0; i < buffer_size; ++i) {
-    load->RecordNext();
-  }
-
-  load->RestoreSnapshot();
-  load->BuildDeathObjectPointers();
-}
-
 template <DistributionProfile kProfile>
 void BM_TCMalloc_Empirical_Driver_Setup(const benchmark::State& state) {
   const size_t nthreads = state.threads();
