@@ -41,7 +41,7 @@ inline std::default_random_engine& GetRNG() { return Random::instance().rng(); }
 
 // Returns a sorted list of the files in directory 'dir' whose filenames start
 // with 'prefix'.
-std::vector<std::filesystem::path> GetMatchingFiles(std::filesystem::path& dir,
+std::vector<std::filesystem::path> GetMatchingFiles(absl::string_view dir,
                                                     absl::string_view prefix);
 
 // Reads a CSV file that contains a distribution. Such a file has a single line;
@@ -49,6 +49,9 @@ std::vector<std::filesystem::path> GetMatchingFiles(std::filesystem::path& dir,
 // input occurs. The function returns a vector whose entries correspond to the
 // columns in the CSV file.
 std::vector<double> ReadDistributionFile(std::filesystem::path file);
+
+// Returns the runtime path of a runfile in the fleetbench directory.
+std::string GetFleetbenchRuntimePath(const absl::string_view path);
 
 }  // namespace fleetbench
 #endif  // THIRD_PARTY_FLEETBENCH_COMMON_COMMON_H_

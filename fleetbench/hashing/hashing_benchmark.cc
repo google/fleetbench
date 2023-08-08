@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
-#include <filesystem>
+#include <filesystem>  // NOLINT
 #include <iterator>
 #include <random>
 #include <string>
@@ -139,8 +139,8 @@ void CombineContiguousFunction(benchmark::State &state,
 // start with 'prefix'.
 static std::vector<std::filesystem::path> GetDistributionFiles(
     absl::string_view prefix) {
-  auto p = std::filesystem::path(__FILE__).replace_filename("distributions");
-  return GetMatchingFiles(p, prefix);
+  return GetMatchingFiles(GetFleetbenchRuntimePath("hashing/distributions"),
+                          prefix);
 }
 
 static int GetL3CacheSize() {

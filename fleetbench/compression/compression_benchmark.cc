@@ -25,7 +25,6 @@
 #include <utility>
 #include <vector>
 
-#include "tools/cpp/runfiles/runfiles.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
@@ -33,11 +32,10 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "benchmark/benchmark.h"
+#include "fleetbench/common/common.h"
 #include "fleetbench/compression/algorithms.h"
 #include "fleetbench/compression/compression_parameter.h"
 #include "fleetbench/dynamic_registrar.h"
-
-using bazel::tools::cpp::runfiles::Runfiles;
 
 namespace fleetbench {
 namespace compression {
@@ -115,8 +113,7 @@ std::unique_ptr<Compressor> CreateCompressor(
 
 }  // namespace
 
-static constexpr absl::string_view kCorporaPath =
-    "com_google_fleetbench/fleetbench/compression/corpora/";
+static constexpr absl::string_view kCorporaPath = "compression/corpora/";
 
 static void BM_Compress(benchmark::State& state,
                         absl::string_view compressor_type,
@@ -178,14 +175,7 @@ static void BM_Decompress(benchmark::State& state,
 
 namespace {
 void RegisterBenchmarks() {
-  //github.com/bazelbuild/bazel/blob/master/tools/cpp/runfiles/runfiles_src.h
-  std::string error;
-  const char* program_path = std::getenv("FLEETBENCH_PROGRAM_PATH");
-  std::unique_ptr<Runfiles> runfiles(Runfiles::Create(program_path, &error));
-  if (runfiles == nullptr)
-    LOG(FATAL) << "Can't find runfile directory: " << error;
-  std::string path =
-  runfiles->Rlocation(std::string(fleetbench::compression::kCorporaPath));
+  std::string path = GetFleetbenchRuntimePath(kCorporaPath);
   auto compression_levels_map = GetCompressionLevelsMap();
   std::vector<absl::string_view> operations = {"COMPRESS", "DECOMPRESS"};
 

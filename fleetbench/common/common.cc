@@ -22,10 +22,15 @@
 #include <string>
 #include <vector>
 
+#include "tools/cpp/runfiles/runfiles.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+
+#include "absl/log/log.h"
+using bazel::tools::cpp::runfiles::Runfiles;
 
 ABSL_FLAG(bool, fixed_seed, true,
           "Use a fixed seed for random number generation.");
@@ -52,7 +57,7 @@ void Random::Reset() {
   }
 }
 
-std::vector<std::filesystem::path> GetMatchingFiles(std::filesystem::path& dir,
+std::vector<std::filesystem::path> GetMatchingFiles(absl::string_view dir,
                                                     absl::string_view prefix) {
   std::vector<std::filesystem::path> files;
   for (const auto& entry : std::filesystem::directory_iterator(dir)) {
@@ -76,6 +81,17 @@ std::vector<double> ReadDistributionFile(std::filesystem::path file) {
     distribution.push_back(d);
   }
   return distribution;
+}
+
+std::string GetFleetbenchRuntimePath(const absl::string_view path) {
+  //github.com/bazelbuild/bazel/blob/master/tools/cpp/runfiles/runfiles_src.h
+  std::string error;
+  const char* program_path = std::getenv("FLEETBENCH_PROGRAM_PATH");
+  std::unique_ptr<Runfiles> runfiles(Runfiles::Create(program_path, &error));
+  if (runfiles == nullptr)
+    LOG(FATAL) << "Can't find runfile directory: " << error;
+  return runfiles->Rlocation(
+      absl::StrCat("com_google_fleetbench/fleetbench/", path));
 }
 
 }  // namespace fleetbench

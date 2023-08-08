@@ -15,7 +15,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <filesystem>
+#include <filesystem>  // NOLINT
 #include <random>
 #include <string>
 #include <tuple>
@@ -174,8 +174,8 @@ void MemsetFunction(benchmark::State &state,
 // start with 'prefix'.
 static std::vector<std::filesystem::path> GetDistributionFiles(
     absl::string_view prefix) {
-  auto p = std::filesystem::path(__FILE__).replace_filename("distributions");
-  return GetMatchingFiles(p, prefix);
+  return GetMatchingFiles(GetFleetbenchRuntimePath("libc/distributions"),
+                          prefix);
 }
 
 static int GetCacheSize(size_t cache_level, absl::string_view cache_type = "") {

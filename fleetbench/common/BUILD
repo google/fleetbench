@@ -8,7 +8,9 @@ cc_library(
     ],
     linkstatic = 1,
     deps = [
+        "@bazel_tools//tools/cpp/runfiles",
         "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/log",
         "@com_google_absl//absl/strings",
     ],
     alwayslink = 1,
