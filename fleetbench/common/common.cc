@@ -19,6 +19,7 @@
 #include <fstream>
 #include <iostream>
 #include <random>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -81,6 +82,25 @@ std::vector<double> ReadDistributionFile(std::filesystem::path file) {
     distribution.push_back(d);
   }
   return distribution;
+}
+
+std::vector<std::vector<std::string>> ReadCsv(std::filesystem::path file,
+                                              char delimiter) {
+  std::vector<std::vector<std::string>> lines;
+  std::string line;
+
+  std::fstream f(file, std::ios_base::in);
+  while (std::getline(f, line)) {
+    std::stringstream linestream(line);
+
+    std::string substring;
+    std::vector<std::string> substrings{};
+    while (std::getline(linestream, substring, delimiter)) {
+      substrings.push_back(substring);
+    }
+    lines.push_back(substrings);
+  }
+  return lines;
 }
 
 std::string GetFleetbenchRuntimePath(const absl::string_view path) {

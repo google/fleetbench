@@ -16,6 +16,8 @@
 
 #include <filesystem>
 #include <random>
+#include <string>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 
@@ -49,6 +51,12 @@ std::vector<std::filesystem::path> GetMatchingFiles(absl::string_view dir,
 // input occurs. The function returns a vector whose entries correspond to the
 // columns in the CSV file.
 std::vector<double> ReadDistributionFile(std::filesystem::path file);
+
+// Similar to ReadDistributionFile, except this function accepts file that has
+// multiple lines. Each line converts to a vector of string, separated by the
+// delimiter.
+std::vector<std::vector<std::string>> ReadCsv(std::filesystem::path file,
+                                              char delimiter);
 
 // Returns the runtime path of a runfile in the fleetbench directory.
 std::string GetFleetbenchRuntimePath(const absl::string_view path);
