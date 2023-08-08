@@ -17,17 +17,18 @@
 #include "fleetbench/tcmalloc/empirical_driver.h"
 
 #include <algorithm>
+#include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <optional>
 #include <thread>  // NOLINT(build/c++11)
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "absl/base/internal/spinlock.h"
 #include "absl/log/check.h"
-#include "absl/strings/str_format.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/dynamic_registrar.h"
 #include "fleetbench/tcmalloc/empirical.h"
@@ -54,16 +55,6 @@ static constexpr int64_t kSimulatedBytesPerSec = 0;
 static constexpr size_t kRecordAndReplayBufferSize = 1'000'000;
 // Number of bytes to try to release from the page heap per second.
 static constexpr int64_t kEmpiricalMallocReleaseBytesPerSec = 0;
-// Constants for spikes.
-// 1/QPS for spikes.
-static constexpr absl::Duration kSpikeRate = absl::Milliseconds(10);
-// Processing time for spikes.
-static constexpr absl::Duration kSpikeLifetime = absl::Milliseconds(30);
-// Probability a spike freed by the thread which created it.
-static constexpr double kSpikeLocality = 0.90;
-// Additional memory allocated periodically. Could model per-query memory or
-// diurnal variation, etc.
-static constexpr size_t kSpikeBytes = 0;
 
 // Which source of profiled allocation to use for the base load.
 // This can be beta, bravo, charlie, delta, echo, foxtrot, merced, sierra,
@@ -87,9 +78,6 @@ const EmpiricalProfile& Profile(DistributionProfile profile) {
   CHECK(i != choices->end());
   return i->second;
 }
-const EmpiricalProfile& SpikeProfile(const DistributionProfile& spike_profile) {
-  return Profile(spike_profile);
-}
 
 const EmpiricalProfile& TransientProfile(
     const DistributionProfile& transient_profile) {
@@ -108,73 +96,8 @@ class SequenceNumber {
   std::atomic<intptr_t> value_;
 };
 
-ABSL_CONST_INIT SequenceNumber seeds;
-ABSL_CONST_INIT StatsCounter live_spikes;
-ABSL_CONST_INIT StatsCounter spike_usage;
-ABSL_CONST_INIT StatsCounter dead_spikes;
 ABSL_CONST_INIT StatsCounter reps;
 
-// This represents a sudden increase in usage (think of it as the allocation
-// required to serve a query) which lives for a while, then dies.
-class Spike {
- public:
-  explicit Spike(size_t size, DistributionProfile profile)
-      : data_(seeds.GetNext(), SpikeProfile(profile), size, alloc,
-              sized_delete) {
-    spike_usage.Add(data_.usage());
-    live_spikes.Add(1);
-  }
-
-  ~Spike() {
-    spike_usage.Add(-static_cast<ssize_t>(data_.usage()));
-    dead_spikes.Add(1);
-  }
-
-  size_t bytes_allocated() const { return data_.total_bytes_allocated(); }
-
- private:
-  EmpiricalData data_;
-};
-
-// Generates an overall average of (lifetime/rate) live spikes of size
-// <spike_bytes>:
-//
-// Each thread independently generates full size spikes with random
-// timing.  Each thread has an indepedent Poisson process; the Spike
-// objects have size spike_bytes; each thread's interarrival is scaled
-// down so the overall rate is spike_rate.
-absl::Duration SpikeInterarrival(uint64_t num_threads) {
-  // Remember, high scale, since this is an interarrival mean, decreases rate.
-  static size_t scale = num_threads;
-  return kSpikeRate * scale;
-}
-
-absl::Duration Exp(absl::BitGen* random, absl::Duration mean) {
-  return std::exponential_distribution<double>()(*random) * mean;
-}
-
-absl::Duration SpikeLifetime(absl::BitGen* random) {
-  return Exp(random, kSpikeLifetime);
-}
-
-// On the n-th call to this function from a given thread, returns the proper
-// time for the n-th spike from that thread.
-absl::Time SpikeTime(uint64_t num_threads) {
-  // Don't allow skew in thread creation time.
-  static absl::Time begin = absl::Now();
-  thread_local size_t i = 0;
-  i++;
-
-  // Have a thread local generator for interarrival times.  If we're shared,
-  // they should all have the same seed (we still use local generators for
-  // scalability.)
-  thread_local absl::BitGen local_gen(
-      absl::SeedSeq{[]() -> size_t { return seeds.GetNext(); }()});
-
-  thread_local absl::Time last = begin;
-  last += Exp(&local_gen, SpikeInterarrival(num_threads));
-  return last;
-}
 
 class SimThread {
  public:
@@ -185,7 +108,6 @@ class SimThread {
         siblings_(siblings),
         bytes_(bytes),
         transient_(transient),
-        spike_is_local_(kSpikeLocality),
         nthreads_(siblings.size()),
         profile_(profile),
         load_(n_, Profile(profile_), bytes_, alloc, sized_delete),
@@ -201,8 +123,7 @@ class SimThread {
   }
 
   size_t total_bytes_allocated() {
-    return load_bytes_allocated_.load(std::memory_order_relaxed) +
-           spike_bytes_allocated_.load(std::memory_order_relaxed);
+    return load_bytes_allocated_.load(std::memory_order_relaxed);
   }
 
   size_t load_allocations() {
@@ -231,10 +152,6 @@ class SimThread {
     auto transient = std::make_unique<EmpiricalData>(
         n_, TransientProfile(profile_), transient_, alloc, sized_delete);
     transient.reset(nullptr);
-    {
-      absl::base_internal::SpinLockHolder h(&lock_);
-      next_spike_ = FirstSpike();
-    }
 
     RecordBirthsAndDeaths(&load_);
     done_recording_ = true;
@@ -246,7 +163,6 @@ class SimThread {
       load_.ReplayNext();
     }
     load_.RestartTraceIfNecessary();
-    absl::Time t = absl::Now();
     reps.Add(kBatch);
     auto allocated = load_.total_bytes_allocated();
     load_bytes_allocated_.store(allocated, std::memory_order_relaxed);
@@ -260,79 +176,19 @@ class SimThread {
     }
 
     load_usage_.store(load_.usage(), std::memory_order_relaxed);
-    if (KillSpikesCheckNew(t)) {
-      MakeSpike(t, load_.rng());
-    }
   }
 
  private:
-  // returns true if we should make a new spike too!
-  bool KillSpikesCheckNew(absl::Time t) {
-    std::vector<Spike*> dead;
-    bool ready_for_new;
-    {
-      absl::base_internal::SpinLockHolder h(&lock_);
-      ready_for_new = t >= next_spike_;
-
-      auto it = to_kill_.begin();
-      for (; it != to_kill_.end() && t >= it->first; ++it) {
-        dead.insert(dead.end(), it->second.begin(), it->second.end());
-      }
-      to_kill_.erase(to_kill_.begin(), it);
-    }
-
-    for (auto* d : dead) {
-      delete d;
-    }
-
-    return ready_for_new;
-  }
-
-  absl::Time FirstSpike() {
-    if (kSpikeBytes == 0) return absl::InfiniteFuture();
-
-    return SpikeTime(nthreads_);
-  }
-
-  void MakeSpike(absl::Time t, absl::BitGen* random) {
-    // First, compute next spike times.
-    {
-      absl::Time when = SpikeTime(nthreads_);
-      absl::base_internal::SpinLockHolder h(&lock_);
-      next_spike_ = when;
-    }
-
-    Spike* s = new Spike(kSpikeBytes, profile_);
-    spike_bytes_allocated_.fetch_add(s->bytes_allocated());
-    absl::Duration life = SpikeLifetime(random);
-    absl::Time death = absl::Now() + life;
-    SimThread* killer = this;
-    // This slightly overselects ourselves, since we might be the random
-    // sibling, but that's minor.
-    if (!spike_is_local_(*random)) {
-      size_t i = absl::uniform_int_distribution<size_t>(
-          0, siblings_.size() - 1)(*random);
-      killer = siblings_[i].get();
-    }
-
-    absl::base_internal::SpinLockHolder h(&killer->lock_);
-    killer->to_kill_[death].push_back(s);
-  }
-
   size_t n_;
   std::atomic<bool> thread_is_done_;
-  absl::Time next_spike_ ABSL_GUARDED_BY(lock_);
   const absl::Span<const std::unique_ptr<SimThread>> siblings_;
   size_t bytes_, transient_;
-  absl::bernoulli_distribution spike_is_local_;
   uint64_t nthreads_;
   DistributionProfile profile_;
   std::atomic<size_t> load_bytes_allocated_{0};
   std::atomic<size_t> load_allocations_{0};
-  std::atomic<size_t> spike_bytes_allocated_{0};
   std::atomic<size_t> load_usage_{0};
   absl::base_internal::SpinLock lock_;
-  std::map<absl::Time, std::vector<Spike*>> to_kill_ ABSL_GUARDED_BY(lock_);
   size_t run_release_each_bytes_{};
   size_t next_release_boundary_{};
   EmpiricalData load_;
@@ -398,11 +254,6 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
   size_t bytes = sim_threads[thread_idx]->total_bytes_allocated();
   size_t allocations = sim_threads[thread_idx]->load_allocations();
   double bytes_per_allocation = bytes / allocations;
-
-  // Counters of total for the entire execution of the benchmark.
-  state.counters["SpikesBytes"] =
-      benchmark::Counter(spike_usage.value(), benchmark::Counter::kDefaults,
-                         benchmark::Counter::OneK::kIs1024);
 
   // Bytes and allocations per second is most useful for applications.
   state.counters["RateBytes"] = benchmark::Counter(
