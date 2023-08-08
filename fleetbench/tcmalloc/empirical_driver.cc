@@ -30,6 +30,7 @@
 #include "absl/base/internal/spinlock.h"
 #include "absl/log/check.h"
 #include "benchmark/benchmark.h"
+#include "fleetbench/common/common.h"
 #include "fleetbench/dynamic_registrar.h"
 #include "fleetbench/tcmalloc/empirical.h"
 #include "fleetbench/tcmalloc/empirical_distributions.h"
@@ -110,7 +111,7 @@ class SimThread {
         transient_(transient),
         nthreads_(siblings.size()),
         profile_(profile),
-        load_(n_, Profile(profile_), bytes_, alloc, sized_delete),
+        load_(GetRNG()(), Profile(profile_), bytes_, alloc, sized_delete),
         done_recording_(false) {
     if (n == 0) {
       run_release_each_bytes_ =
@@ -229,6 +230,9 @@ void BM_TCMalloc_Empirical_Driver_Setup(const benchmark::State& state) {
   size_t transient_heap_size = base_heap_size * 0.0001;
   const size_t per_thread_transient =
       std::max(transient_heap_size / nthreads, 1ul);
+
+  // Make each benchmark repetition reproducible, if using a fixed seed.
+  Random::instance().Reset();
 
   for (size_t i = 0; i < nthreads; ++i) {
     auto& sim_threads = GetSimThreads();

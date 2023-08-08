@@ -15,11 +15,11 @@
 #include "fleetbench/tcmalloc/empirical.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <vector>
 
 #include "absl/log/check.h"
 #include "absl/random/discrete_distribution.h"
-#include "absl/random/seed_sequences.h"
 #include "absl/random/uniform_int_distribution.h"
 #include "benchmark/benchmark.h"
 
@@ -70,7 +70,7 @@ EmpiricalData::EmpiricalData(size_t seed, const absl::Span<const Entry> weights,
                              size_t total_mem,
                              absl::FunctionRef<void*(size_t)> alloc,
                              absl::FunctionRef<void(void*, size_t)> dealloc)
-    : rng_(absl::SeedSeq{seed}),
+    : rng_(seed),
       alloc_(alloc),
       dealloc_(dealloc),
       usage_(0),

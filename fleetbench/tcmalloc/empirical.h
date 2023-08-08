@@ -38,14 +38,13 @@
 
 #include <stddef.h>
 
-#include <iterator>
+#include <random>
 #include <vector>
 
 #include "absl/algorithm/container.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/check.h"
 #include "absl/random/discrete_distribution.h"
-#include "absl/random/random.h"
 #include "absl/random/uniform_real_distribution.h"
 #include "absl/types/span.h"
 
@@ -213,7 +212,7 @@ class EmpiricalData {
   // startup allocations.)
   std::vector<Entry> Actual() const;
 
-  absl::BitGen* const rng() { return &rng_; }
+  std::default_random_engine* const rng() { return &rng_; }
 
   // Saves the list of live objects of each size class.  We will later restore
   // this list (exactly once) with RestoreSnapshot() after we have constructed
@@ -245,7 +244,7 @@ class EmpiricalData {
   void RestartTraceIfNecessary();
 
  private:
-  absl::BitGen rng_;
+  std::default_random_engine rng_;
 
   struct SizeState {
     const size_t size;
