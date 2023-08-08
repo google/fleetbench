@@ -19,10 +19,13 @@
 #include <iterator>
 #include <random>
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 #include "absl/crc/crc32c.h"
 #include "absl/hash/hash.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/common/common.h"
@@ -33,14 +36,14 @@ namespace hashing {
 
 using CacheInfo = benchmark::CPUInfo::CacheInfo;
 
-struct BM_Crc_Parameters {
+struct BM_Hashing_Parameters {
   std::vector<int> str_lengths;
   absl::string_view sv;
   bool hot;
 };
 
 void ExtendCrc32cFunction(benchmark::State &state,
-                          BM_Crc_Parameters &parameters) {
+                          BM_Hashing_Parameters &parameters) {
   size_t batch_size = parameters.str_lengths.size();
   absl::crc32c_t v0{0};
   size_t start = 0;
@@ -72,7 +75,7 @@ void ExtendCrc32cFunction(benchmark::State &state,
 }
 
 void ComputeCrc32cFunction(benchmark::State &state,
-                           BM_Crc_Parameters &parameters) {
+                           BM_Hashing_Parameters &parameters) {
   size_t batch_size = parameters.str_lengths.size();
   size_t start = 0;
   // Run benchmark and call ComputeCrc32c
@@ -96,7 +99,7 @@ void ComputeCrc32cFunction(benchmark::State &state,
 }
 
 void CombineContiguousFunction(benchmark::State &state,
-                               BM_Crc_Parameters &parameters) {
+                               BM_Hashing_Parameters &parameters) {
   size_t batch_size = parameters.str_lengths.size();
   size_t start = 0;
   // Run benchmark and call combine_contiguous
@@ -149,17 +152,12 @@ static int GetL3CacheSize() {
   return -1;
 }
 
-static void BM_Hashing(
-    benchmark::State &state, absl::string_view distribution_file_prefix,
-    void (*hashing_call)(benchmark::State &, BM_Crc_Parameters &), bool hot) {
+static void BM_Hashing(benchmark::State &state,
+                       const std::vector<double> &hashing_size_distribution,
+                       void (*hashing_call)(benchmark::State &,
+                                            BM_Hashing_Parameters &),
+                       bool hot) {
   const size_t batch_size = 1000;
-
-  // Gets prod hashing size distribution and the name.
-  const auto &files = GetDistributionFiles(distribution_file_prefix);
-  const auto &file = files[state.range(0)];
-  const auto &distribution_name = file.filename().string();
-  const std::vector<double> hashing_size_distribution =
-      ReadDistributionFile(file);
 
   // Convert prod size distribution to a discrete distribution.
   std::discrete_distribution<> size_bytes_sampler(
@@ -185,7 +183,7 @@ static void BM_Hashing(
   std::string full_str(str_size, 'x');
   absl::string_view full_sv{full_str};
 
-  BM_Crc_Parameters parameters{str_lengths, full_sv, hot};
+  BM_Hashing_Parameters parameters{str_lengths, full_sv, hot};
   hashing_call(state, parameters);
 
   // Computes the total_bytes throughput.
@@ -195,7 +193,6 @@ static void BM_Hashing(
   }
 
   const size_t total_bytes = (state.iterations() * batch_bytes) / batch_size;
-  state.SetLabel(distribution_name);
 
   state.SetBytesProcessed(total_bytes);
   state.counters["bytes_per_cycle"] = benchmark::Counter(
@@ -203,46 +200,56 @@ static void BM_Hashing(
       benchmark::Counter::kIsRate);
 }
 
-BENCHMARK_CAPTURE(BM_Hashing, ExtendCrc32c_hot, "Extendcrc32cinternal",
-                  &ExtendCrc32cFunction, true)
-    ->DenseRange(0, GetDistributionFiles("Extendcrc32cinternal").size() - 1, 1);
+void RegisterBenchmarks() {
+  using operation_entry =
+      std::tuple<std::string, std::string,
+                 void (*)(benchmark::State &, BM_Hashing_Parameters &)>;
+  auto hash_operations = {
+      operation_entry("ExtendCrc32c", "Extendcrc32cinternal",
+                      &ExtendCrc32cFunction),
+      operation_entry("ComputeCrc32c", "Computecrc32c", &ComputeCrc32cFunction),
+      operation_entry("combine_contiguous", "Combine_contiguous",
+                      &CombineContiguousFunction),
+  };
+  auto cache_resident_info = {
+      std::make_pair("hot", true),
+      std::make_pair("cold", false),
+  };
+  for (const auto &[function_name, distribution_file_prefix, hash_function] :
+       hash_operations) {
+    const auto files = GetDistributionFiles(distribution_file_prefix);
+    for (const auto &file : files) {
+      auto application = file.filename().string();
+      application.erase(application.find(".csv"));
+      application.erase(0, application.find("Google") + 6);
 
-BENCHMARK_CAPTURE(BM_Hashing, ComputeCrc32c_hot, "Computecrc32c",
-                  &ComputeCrc32cFunction, true)
-    ->DenseRange(0, GetDistributionFiles("Computecrc32c").size() - 1, 1);
-
-BENCHMARK_CAPTURE(BM_Hashing, combine_contiguous_hot, "Combine_contiguous",
-                  &CombineContiguousFunction, true)
-    ->DenseRange(0, GetDistributionFiles("Combine_contiguous").size() - 1, 1);
-
-BENCHMARK_CAPTURE(BM_Hashing, ExtendCrc32c_cold, "Extendcrc32cinternal",
-                  &ExtendCrc32cFunction, false)
-    ->DenseRange(0, GetDistributionFiles("Extendcrc32cinternal").size() - 1, 1);
-
-BENCHMARK_CAPTURE(BM_Hashing, ComputeCrc32c_cold, "Computecrc32c",
-                  &ComputeCrc32cFunction, false)
-    ->DenseRange(0, GetDistributionFiles("Computecrc32c").size() - 1, 1);
-
-BENCHMARK_CAPTURE(BM_Hashing, combine_contiguous_cold, "Combine_contiguous",
-                  &CombineContiguousFunction, false)
-    ->DenseRange(0, GetDistributionFiles("Combine_contiguous").size() - 1, 1);
+      const std::vector<double> hashing_size_distribution =
+          ReadDistributionFile(file);
+      for (const auto &[hot_str, hot] : cache_resident_info) {
+        std::string benchmark_name =
+            absl::StrCat("BM_", function_name, "-", application, "_", hot_str);
+        benchmark::RegisterBenchmark(benchmark_name.c_str(), BM_Hashing,
+                                     hashing_size_distribution, hash_function,
+                                     hot);
+      }
+    }
+  }
+}
 
 class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
+    DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
+
     // We use the fleet-wide distributions as the defaults.
-    // TODO(aabel): register benchmarks dynamically so that we can have "Fleet"
-    // in the name and use ".*Fleet.*" as the filter here instead of hard-coded
-    // numbers
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Hashing/ExtendCrc32c_hot/4");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Hashing/ComputeCrc32c_hot/4");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_ExtendCrc32c-Fleet_hot");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_ComputeCrc32c-Fleet_hot");
     DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_Hashing/combine_contiguous_hot/2");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Hashing/ExtendCrc32c_cold/4");
+        "BM_combine_contiguous-Fleet_hot");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_ExtendCrc32c-Fleet_cold");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_ComputeCrc32c-Fleet_cold");
     DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_Hashing/ComputeCrc32c_cold/4");
-    DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_Hashing/combine_contiguous_cold/2");
+        "BM_combine_contiguous-Fleet_cold");
   }
 };
 
