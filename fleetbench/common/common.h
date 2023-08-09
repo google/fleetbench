@@ -61,5 +61,7 @@ std::vector<std::vector<std::string>> ReadCsv(std::filesystem::path file,
 // Returns the runtime path of a runfile in the fleetbench directory.
 std::string GetFleetbenchRuntimePath(const absl::string_view path);
 
+int GetCacheSize(int cache_level, absl::string_view cache_type = "");
+
 }  // namespace fleetbench
 #endif  // THIRD_PARTY_FLEETBENCH_COMMON_COMMON_H_

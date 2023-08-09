@@ -12,6 +12,7 @@ cc_library(
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/log",
         "@com_google_absl//absl/strings",
+        "@com_google_benchmark//:benchmark",
     ],
     alwayslink = 1,
 )

@@ -143,15 +143,6 @@ static std::vector<std::filesystem::path> GetDistributionFiles(
                           prefix);
 }
 
-static int GetL3CacheSize() {
-  for (const CacheInfo &ci : benchmark::CPUInfo::Get().caches) {
-    if (ci.level == 3) {
-      return ci.size;
-    }
-  }
-  return -1;
-}
-
 static void BM_Hashing(benchmark::State &state,
                        const std::vector<double> &hashing_size_distribution,
                        void (*hashing_call)(benchmark::State &,
@@ -174,7 +165,7 @@ static void BM_Hashing(benchmark::State &state,
       *std::max_element(std::begin(str_lengths), std::end(str_lengths));
   if (!hot) {
     // For the 'cold' case, we create a string that doesn't fit in the L3 cache.
-    str_size = std::max(2 * GetL3CacheSize(), str_size);
+    str_size = std::max(2 * GetCacheSize(3), str_size);
   }
 
   // We expect that the execution time of the hashing function only depends on

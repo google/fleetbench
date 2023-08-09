@@ -58,8 +58,6 @@ static constexpr int64_t kReservedBenchmarkBytes = 1 * kKiB;
 // Reserved space for precomputed parameters for memory operation.
 static constexpr int64_t kPrecomputeParametersBytes = 4 * kKiB;
 
-using CacheInfo = benchmark::CPUInfo::CacheInfo;
-
 // Helper function to create non cache resident benchmark.
 // By keeping incrementing the offset, we explore all the memory of a given
 // buffer, which increases the cache miss chance of the previous cache level.
@@ -176,16 +174,6 @@ static std::vector<std::filesystem::path> GetDistributionFiles(
     absl::string_view prefix) {
   return GetMatchingFiles(GetFleetbenchRuntimePath("libc/distributions"),
                           prefix);
-}
-
-static int GetCacheSize(size_t cache_level, absl::string_view cache_type = "") {
-  for (const CacheInfo &ci : benchmark::CPUInfo::Get().caches) {
-    if (ci.level == cache_level) {
-      if ((cache_level == 1 && ci.type == cache_type) || (cache_level > 1))
-        return ci.size;
-    }
-  }
-  return -1;
 }
 
 static void BM_Memory(benchmark::State &state,

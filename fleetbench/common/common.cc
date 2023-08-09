@@ -29,6 +29,7 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "benchmark/benchmark.h"
 
 #include "absl/log/log.h"
 using bazel::tools::cpp::runfiles::Runfiles;
@@ -37,6 +38,8 @@ ABSL_FLAG(bool, fixed_seed, true,
           "Use a fixed seed for random number generation.");
 
 namespace fleetbench {
+
+using CacheInfo = benchmark::CPUInfo::CacheInfo;
 
 Random& Random::instance() {
   static auto* instance = new Random(absl::GetFlag(FLAGS_fixed_seed));
@@ -112,6 +115,16 @@ std::string GetFleetbenchRuntimePath(const absl::string_view path) {
     LOG(FATAL) << "Can't find runfile directory: " << error;
   return runfiles->Rlocation(
       absl::StrCat("com_google_fleetbench/fleetbench/", path));
+}
+
+int GetCacheSize(int cache_level, absl::string_view cache_type) {
+  for (const CacheInfo& ci : benchmark::CPUInfo::Get().caches) {
+    if (ci.level == cache_level) {
+      if ((cache_level == 1 && ci.type == cache_type) || (cache_level > 1))
+        return ci.size;
+    }
+  }
+  return -1;
 }
 
 }  // namespace fleetbench
