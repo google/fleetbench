@@ -24,6 +24,7 @@
 
 #include "absl/log/check.h"
 #include "absl/random/distributions.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "benchmark/benchmark.h"
@@ -194,7 +195,8 @@ static void BM_Memory(benchmark::State &state,
                       void (*memory_call)(benchmark::State &,
                                           std::vector<BM_Mem_Parameters> &,
                                           const size_t),
-                      const IsCompare &is_compare, const size_t cache_size) {
+                      const IsCompare &is_compare, const size_t cache_size,
+                      const std::string &distribution_name) {
   // Remaining available memory size in current cache for needed parameters to
   // run benchmark.
   const size_t available_bytes =
@@ -267,6 +269,7 @@ static void BM_Memory(benchmark::State &state,
       benchmark::Counter::kIsRate);
   state.counters["bytes"] =
       benchmark::Counter(total_bytes, benchmark::Counter::kDefaults);
+  if (!distribution_name.empty()) state.SetLabel(distribution_name);
 }
 
 void RegisterBenchmarks() {
@@ -296,10 +299,10 @@ void RegisterBenchmarks() {
   for (const auto &[distribution_file_prefix, buffer_counter, memory_function,
                     is_compare] : memory_operations) {
     const auto &files = GetDistributionFiles(distribution_file_prefix);
+    std::string suffix_name = "";
     for (const auto &file : files) {
       auto distribution_name = file.filename().string();
       distribution_name.erase(distribution_name.find(".csv"));
-      distribution_name.replace(distribution_name.find("Google"), 6, "-");
 
       const std::vector<double> memory_size_distribution =
           ReadDistributionFile(file);
@@ -308,7 +311,8 @@ void RegisterBenchmarks() {
             absl::StrCat("BM_", distribution_name, "_", cache_name);
         benchmark::RegisterBenchmark(benchmark_name.c_str(), memory_benchmark,
                                      memory_size_distribution, buffer_counter,
-                                     memory_function, is_compare, cache_size);
+                                     memory_function, is_compare, cache_size,
+                                     suffix_name);
       }
     }
   }
@@ -318,11 +322,11 @@ class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Bcmp-Fleet_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memcmp-Fleet_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memcpy-Fleet_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memmove-Fleet_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memset-Fleet_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Bcmp_Fleet_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memcmp_Fleet_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memcpy_Fleet_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memmove_Fleet_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memset_Fleet_L1");
   }
 };
 
