@@ -18,6 +18,7 @@
 #include <filesystem>  // NOLINT
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <random>
 #include <sstream>
 #include <string>
@@ -36,6 +37,16 @@ using bazel::tools::cpp::runfiles::Runfiles;
 
 ABSL_FLAG(bool, fixed_seed, true,
           "Use a fixed seed for random number generation.");
+
+ABSL_FLAG(std::optional<int>, L1_data_size, {},
+          "Size of the L1 data cache in bytes. Determined automatically if the "
+          "flag is not specified.");
+ABSL_FLAG(std::optional<int>, L2_size, {},
+          "Size of the L2 cache in bytes. Determined automatically if the flag "
+          "is not specified.");
+ABSL_FLAG(std::optional<int>, L3_size, {},
+          "Size of the L3 cache in bytes. Determined automatically if the flag "
+          "is not specified.");
 
 namespace fleetbench {
 
@@ -118,6 +129,17 @@ std::string GetFleetbenchRuntimePath(const absl::string_view path) {
 }
 
 int GetCacheSize(int cache_level, absl::string_view cache_type) {
+  if (absl::GetFlag(FLAGS_L1_data_size).has_value() && cache_level == 1 &&
+      cache_type == "Data") {
+    return absl::GetFlag(FLAGS_L1_data_size).value();
+  }
+  if (absl::GetFlag(FLAGS_L2_size).has_value() && cache_level == 2) {
+    return absl::GetFlag(FLAGS_L2_size).value();
+  }
+  if (absl::GetFlag(FLAGS_L3_size).has_value() && cache_level == 3) {
+    return absl::GetFlag(FLAGS_L3_size).value();
+  }
+
   for (const CacheInfo& ci : benchmark::CPUInfo::Get().caches) {
     if (ci.level == cache_level) {
       if ((cache_level == 1 && ci.type == cache_type) || (cache_level > 1))
