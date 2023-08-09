@@ -24,7 +24,6 @@
 
 #include "absl/log/check.h"
 #include "absl/random/distributions.h"
-#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "benchmark/benchmark.h"

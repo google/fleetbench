@@ -14,7 +14,7 @@
 #ifndef THIRD_PARTY_FLEETBENCH_COMMON_COMMON_H_
 #define THIRD_PARTY_FLEETBENCH_COMMON_COMMON_H_
 
-#include <filesystem>
+#include <filesystem>  // NOLINT
 #include <random>
 #include <string>
 #include <vector>

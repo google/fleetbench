@@ -15,7 +15,7 @@
 #include "fleetbench/common/common.h"
 
 #include <algorithm>
-#include <filesystem>
+#include <filesystem>  // NOLINT
 #include <fstream>
 #include <iostream>
 #include <random>
