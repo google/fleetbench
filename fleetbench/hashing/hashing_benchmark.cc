@@ -186,6 +186,9 @@ static void BM_Hashing(benchmark::State &state,
   BM_Hashing_Parameters parameters{str_lengths, full_sv, hot};
   hashing_call(state, parameters);
 
+  // Make each benchmark repetition reproducible, if using a fixed seed.
+  Random::instance().Reset();
+
   // Computes the total_bytes throughput.
   size_t batch_bytes = 0;
   for (auto &p : str_lengths) {
