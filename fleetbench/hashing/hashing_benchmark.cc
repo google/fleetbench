@@ -147,7 +147,7 @@ static void BM_Hashing(benchmark::State &state,
                        const std::vector<double> &hashing_size_distribution,
                        void (*hashing_call)(benchmark::State &,
                                             BM_Hashing_Parameters &),
-                       bool hot) {
+                       bool hot, const std::string &distribution_name) {
   const size_t batch_size = 1000;
 
   // Convert prod size distribution to a discrete distribution.
@@ -192,6 +192,7 @@ static void BM_Hashing(benchmark::State &state,
   state.counters["bytes_per_cycle"] = benchmark::Counter(
       total_bytes / benchmark::CPUInfo::Get().cycles_per_second,
       benchmark::Counter::kIsRate);
+  if (!distribution_name.empty()) state.SetLabel(distribution_name);
 }
 
 void RegisterBenchmarks() {
@@ -209,22 +210,24 @@ void RegisterBenchmarks() {
       std::make_pair("hot", true),
       std::make_pair("cold", false),
   };
+
   for (const auto &[function_name, distribution_file_prefix, hash_function] :
        hash_operations) {
+    std::string suffix_name = "";
     const auto files = GetDistributionFiles(distribution_file_prefix);
     for (const auto &file : files) {
       auto application = file.filename().string();
       application.erase(application.find(".csv"));
-      application.erase(0, application.find("Google") + 6);
 
       const std::vector<double> hashing_size_distribution =
           ReadDistributionFile(file);
+
       for (const auto &[hot_str, hot] : cache_resident_info) {
         std::string benchmark_name =
-            absl::StrCat("BM_", function_name, "-", application, "_", hot_str);
+            absl::StrCat("BM_", application, "_", hot_str);
         benchmark::RegisterBenchmark(benchmark_name.c_str(), BM_Hashing,
                                      hashing_size_distribution, hash_function,
-                                     hot);
+                                     hot, suffix_name);
       }
     }
   }
@@ -236,14 +239,16 @@ class BenchmarkRegisterer {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
 
     // We use the fleet-wide distributions as the defaults.
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_ExtendCrc32c-Fleet_hot");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_ComputeCrc32c-Fleet_hot");
     DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_combine_contiguous-Fleet_hot");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_ExtendCrc32c-Fleet_cold");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_ComputeCrc32c-Fleet_cold");
+        "BM_Extendcrc32cinternal_Fleet_hot");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Computecrc32c_Fleet_hot");
     DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_combine_contiguous-Fleet_cold");
+        "BM_Combine_contiguous_Fleet_hot");
+    DynamicRegistrar::Get()->AddDefaultFilter(
+        "BM_Extendcrc32cinternal_Fleet_cold");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Computecrc32c_Fleet_cold");
+    DynamicRegistrar::Get()->AddDefaultFilter(
+        "BM_Combine_contiguous_Fleet_cold");
   }
 };
 
