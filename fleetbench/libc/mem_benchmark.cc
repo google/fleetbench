@@ -79,7 +79,7 @@ void MemcpyFunction(benchmark::State &state,
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
       CalculateSpan(&buffers, p, buffer_size);
-      auto res = memcpy(buffers.dst(), buffers.src(), p.size_bytes);
+      auto res = memcpy(buffers.dst(), buffers.src(0), p.size_bytes);
       benchmark::DoNotOptimize(res);
     }
   }
@@ -129,7 +129,7 @@ void MemcmpFunction(benchmark::State &state,
     for (auto &p : parameters) {
       CalculateSpan(&buffers, p, buffer_size);
       buffers.mark_dst(p.offset);
-      auto res = memcmp(buffers.dst(), buffers.src(), p.size_bytes);
+      auto res = memcmp(buffers.dst(), buffers.src(0), p.size_bytes);
       benchmark::DoNotOptimize(res);
       buffers.reset_dst(p.offset);
     }
@@ -146,7 +146,7 @@ void BcmpFunction(benchmark::State &state,
     for (auto &p : parameters) {
       CalculateSpan(&buffers, p, buffer_size);
       buffers.mark_dst(p.offset);
-      auto res = bcmp(buffers.dst(), buffers.src(), p.size_bytes);
+      auto res = bcmp(buffers.dst(), buffers.src(0), p.size_bytes);
       benchmark::DoNotOptimize(res);
       buffers.reset_dst(p.offset);
     }
