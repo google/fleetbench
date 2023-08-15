@@ -38,14 +38,17 @@
 
 #include <stddef.h>
 
+#include <cstdint>
 #include <random>
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/check.h"
 #include "absl/random/discrete_distribution.h"
 #include "absl/random/uniform_real_distribution.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
 namespace fleetbench {
@@ -286,6 +289,9 @@ class EmpiricalData {
   uint32_t death_object_index_ = 0;
 };
 
+std::vector<EmpiricalData::Entry> GetEmpiricalDataEntries(
+    absl::string_view file);
+absl::flat_hash_map<std::string, uint32_t> GetHeapSizes(absl::string_view file);
 using EmpiricalProfile = absl::Span<const EmpiricalData::Entry>;
 
 }  // namespace tcmalloc

@@ -26,7 +26,7 @@ namespace fleetbench {
 
 TEST(ReadDistributionFileTest, Numbers) {
   std::string path =
-      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test1.csv");
+      absl::StrCat(getenv("TEST_TMPDIR"), "/test1.csv");
 
   std::ofstream file(path, std::ofstream::out);
   if (file.is_open()) {
@@ -42,7 +42,7 @@ TEST(ReadDistributionFileTest, Numbers) {
 
 TEST(ReadCsvTest, Numbers) {
   std::string path =
-      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test1.csv");
+      absl::StrCat(getenv("TEST_TMPDIR"), "/test1.csv");
 
   std::ofstream file(path, std::ofstream::out);
   if (file.is_open()) {
@@ -60,7 +60,7 @@ TEST(ReadCsvTest, Numbers) {
 
 TEST(ReadCsvTest, Mixed) {
   std::string path =
-      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test2.csv");
+      absl::StrCat(getenv("TEST_TMPDIR"), "/test2.csv");
 
   std::ofstream file(path, std::ofstream::out);
   if (file.is_open()) {

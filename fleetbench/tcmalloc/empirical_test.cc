@@ -15,10 +15,14 @@
 #include "fleetbench/tcmalloc/empirical.h"
 
 #include <algorithm>
+#include <fstream>
+#include <ostream>
+#include <string>
 #include <vector>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/flags/flag.h"
 #include "absl/random/random.h"
 #include "absl/strings/str_cat.h"
 
@@ -82,7 +86,6 @@ MATCHER_P(DoubleRelEq, err,
   return (std::max(a / b, b / a) - 1) < err;
 }
 
-
 TEST(EmpiricalRecordAndReplay, Basic) {
   constexpr uint32_t kBufferSize = 100000;
   constexpr size_t kSize = 128 * 1024 * 1024;
@@ -127,6 +130,44 @@ TEST(EmpiricalRecordAndReplay, Basic) {
       data.ReplayNext();
     }
   }
+}
+
+TEST(GetEmpiricalDataEntries, EmpiricalDataEntry) {
+  std::string path =
+      absl::StrCat(getenv("TEST_TMPDIR"), "/test1.csv");
+
+  std::ofstream file(path, std::ofstream::out);
+  if (file.is_open()) {
+    file << "1,1.1,2.2" << std::endl;
+    file << "2,3.3,4.4" << std::endl;
+    file.close();
+  }
+  auto result = GetEmpiricalDataEntries(path);
+  EXPECT_EQ(result.size(), 2);
+  EXPECT_EQ(result[0].size, 1);
+  EXPECT_EQ(result[0].alloc_rate, 1.1);
+  EXPECT_EQ(result[0].num_live, 2.2);
+
+  EXPECT_EQ(result[1].size, 2);
+  EXPECT_EQ(result[1].alloc_rate, 3.3);
+  EXPECT_EQ(result[1].num_live, 4.4);
+}
+
+TEST(GetHeapSizes, HeapSizeEntry) {
+  std::string path =
+      absl::StrCat(getenv("TEST_TMPDIR"), "/test2.csv");
+
+  std::ofstream file(path, std::ofstream::out);
+  if (file.is_open()) {
+    file << "a,10" << std::endl;
+    file << "ab,20" << std::endl;
+    file << "abc,30" << std::endl;
+    file.close();
+  }
+  auto result = GetHeapSizes(path);
+  EXPECT_THAT(result, testing::UnorderedElementsAre(testing::Pair("a", 10),
+                                                    testing::Pair("ab", 20),
+                                                    testing::Pair("abc", 30)));
 }
 
 }  // namespace

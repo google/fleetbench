@@ -16,12 +16,21 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <string>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/functional/function_ref.h"
 #include "absl/log/check.h"
 #include "absl/random/discrete_distribution.h"
 #include "absl/random/uniform_int_distribution.h"
+#include "absl/random/uniform_real_distribution.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 #include "benchmark/benchmark.h"
+#include "fleetbench/common/common.h"
 
 // Implementations of functions.
 namespace fleetbench {
@@ -349,6 +358,38 @@ std::vector<EmpiricalData::Entry> EmpiricalData::Actual() const {
                     static_cast<double>(s.objs.size())});
   }
   return data;
+}
+
+std::vector<EmpiricalData::Entry> GetEmpiricalDataEntries(
+    absl::string_view file) {
+  std::vector<EmpiricalData::Entry> distribution;
+  auto lines = ReadCsv(file, ',');
+  for (const auto& line : lines) {
+    QCHECK_EQ(line.size(), 3);
+    size_t size = 0;
+    double alloc_rate, num_live;
+    QCHECK(absl::SimpleAtoi(line[0], &size) &&
+           absl::SimpleAtod(line[1], &alloc_rate) &&
+           absl::SimpleAtod(line[2], &num_live));
+    distribution.push_back(
+        {.size = size, .alloc_rate = alloc_rate, .num_live = num_live});
+  }
+  return distribution;
+}
+
+absl::flat_hash_map<std::string, uint32_t> GetHeapSizes(
+    absl::string_view file) {
+  absl::flat_hash_map<std::string, uint32_t> heap_sizes;
+  auto lines = ReadCsv(file, ',');
+  for (const auto& line : lines) {
+    QCHECK_EQ(line.size(), 2);
+    int heap_size = 0;
+    QCHECK(absl::SimpleAtoi(line[1], &heap_size));
+    QCHECK(!heap_sizes.contains(line[0]));
+    heap_sizes[line[0]] = heap_size;
+  }
+  QCHECK(!heap_sizes.empty());
+  return heap_sizes;
 }
 
 }  // namespace tcmalloc
