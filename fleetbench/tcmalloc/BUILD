@@ -37,18 +37,6 @@ cc_test(
 )
 
 cc_library(
-    name = "empirical_distributions",
-    testonly = 1,
-    srcs = ["empirical_distributions.cc"],
-    hdrs = ["empirical_distributions.h"],
-    copts = TCMALLOC_DEFAULT_COPTS,
-    deps = [
-        ":empirical",
-        "@com_google_absl//absl/types:span",
-    ],
-)
-
-cc_library(
     name = "empirical_driver_lib",
     testonly = 1,
     hdrs = ["empirical_driver.h"],
@@ -84,18 +72,6 @@ cc_test(
         "@com_google_absl//absl/strings",
         "@com_google_benchmark//:benchmark",
         "@com_google_tcmalloc//tcmalloc:malloc_extension",
-    ],
-)
-
-cc_test(
-    name = "empirical_distributions_test",
-    srcs = ["empirical_distributions_test.cc"],
-    deps = [
-        ":empirical",
-        ":empirical_distributions",
-        "@com_google_absl//absl/random",
-        "@com_google_absl//absl/strings:str_format",
-        "@com_google_googletest//:gtest_main",
     ],
 )
 
