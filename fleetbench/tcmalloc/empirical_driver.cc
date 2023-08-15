@@ -20,21 +20,25 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>  //NOLINT
 #include <map>
 #include <memory>
 #include <optional>
+#include <string>
 #include <thread>  // NOLINT(build/c++11)
 #include <vector>
 
 #include "absl/base/attributes.h"
 #include "absl/base/internal/spinlock.h"
 #include "absl/log/check.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_replace.h"
+#include "absl/strings/string_view.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/common/common.h"
 #include "fleetbench/dynamic_registrar.h"
 #include "fleetbench/tcmalloc/empirical.h"
-#include "fleetbench/tcmalloc/empirical_distributions.h"
-#include "fleetbench/tcmalloc/empirical_heap_size.h"
 #include "tcmalloc/malloc_extension.h"
 
 namespace fleetbench {
@@ -57,34 +61,6 @@ static constexpr size_t kRecordAndReplayBufferSize = 1'000'000;
 // Number of bytes to try to release from the page heap per second.
 static constexpr int64_t kEmpiricalMallocReleaseBytesPerSec = 0;
 
-// Which source of profiled allocation to use for the base load.
-// This can be beta, bravo, charlie, delta, echo, foxtrot, merced, sierra,
-// sigma, or uniform.
-const EmpiricalProfile& Profile(DistributionProfile profile) {
-  static const auto* choices = []() {
-    return new std::map<DistributionProfile, const EmpiricalProfile>{
-        {DistributionProfile::kBeta, Beta()},
-        {DistributionProfile::kBravo, Bravo()},
-        {DistributionProfile::kCharlie, Charlie()},
-        {DistributionProfile::kDelta, Delta()},
-        {DistributionProfile::kEcho, Echo()},
-        {DistributionProfile::kFoxtrot, Foxtrot()},
-        {DistributionProfile::kMerced, Merced()},
-        {DistributionProfile::kSierra, Sierra()},
-        {DistributionProfile::kSigma, Sigma()},
-        {DistributionProfile::kUniform, Uniform()}};
-  }();
-
-  auto i = choices->find(profile);
-  CHECK(i != choices->end());
-  return i->second;
-}
-
-const EmpiricalProfile& TransientProfile(
-    const DistributionProfile& transient_profile) {
-  return Profile(transient_profile);
-}
-
 class SequenceNumber {
  public:
   constexpr SequenceNumber() : value_(0) {}
@@ -99,19 +75,18 @@ class SequenceNumber {
 
 ABSL_CONST_INIT StatsCounter reps;
 
-
 class SimThread {
  public:
   SimThread(int n, absl::Span<const std::unique_ptr<SimThread>> siblings,
-            size_t bytes, size_t transient, DistributionProfile profile)
+            size_t bytes, size_t transient, absl::string_view profile)
       : n_(n),
         thread_is_done_(false),
         siblings_(siblings),
         bytes_(bytes),
         transient_(transient),
         nthreads_(siblings.size()),
-        profile_(profile),
-        load_(GetRNG()(), Profile(profile_), bytes_, alloc, sized_delete),
+        profile_((GetEmpiricalDataEntries(profile))),
+        load_(GetRNG()(), profile_, bytes_, alloc, sized_delete),
         done_recording_(false) {
     if (n == 0) {
       run_release_each_bytes_ =
@@ -150,8 +125,8 @@ class SimThread {
     }
 
     CHECK_GT(transient_, 0);
-    auto transient = std::make_unique<EmpiricalData>(
-        n_, TransientProfile(profile_), transient_, alloc, sized_delete);
+    auto transient = std::make_unique<EmpiricalData>(n_, profile_, transient_,
+                                                     alloc, sized_delete);
     transient.reset(nullptr);
 
     RecordBirthsAndDeaths(&load_);
@@ -185,7 +160,7 @@ class SimThread {
   const absl::Span<const std::unique_ptr<SimThread>> siblings_;
   size_t bytes_, transient_;
   uint64_t nthreads_;
-  DistributionProfile profile_;
+  std::vector<EmpiricalData::Entry> profile_;
   std::atomic<size_t> load_bytes_allocated_{0};
   std::atomic<size_t> load_allocations_{0};
   std::atomic<size_t> load_usage_{0};
@@ -217,12 +192,38 @@ std::vector<std::unique_ptr<SimThread>>& GetSimThreads() {
   return *sim_threads;
 }
 
-template <DistributionProfile kProfile>
+// Gets a list of distribution file paths.
+static std::vector<std::filesystem::path> GetDistributionFilesPath() {
+  return GetMatchingFiles(GetFleetbenchRuntimePath("tcmalloc/distributions"),
+                          "Tcmalloc");
+}
+
+// Gets a single file that matches the input file key word
+static std::filesystem::path GetFilePath(absl::string_view file_key_word) {
+  return GetMatchingFiles(GetFleetbenchRuntimePath("tcmalloc/distributions"),
+                          file_key_word)[0];
+}
+
 void BM_TCMalloc_Empirical_Driver_Setup(const benchmark::State& state) {
+  // Gets distribution name
+  std::string distribution_name = state.name();
+  std::string prefix = "BM_Tcmalloc_";
+  QCHECK(absl::StrContains(distribution_name, prefix));
+  distribution_name.replace(0, prefix.size(), "");
+
+  // Gets distribution profile
+  std::string profile_path =
+      GetFilePath(absl::StrCat("Tcmalloc_", distribution_name));
+
+  // Gets heap size
+  std::string heap_size_file = GetFilePath("heap_size");
+
   const size_t nthreads = state.threads();
   GetSimThreads().resize(nthreads);
+
   // Total size of base heap
-  uint64_t base_heap_size = ProfileConstant(kProfile);
+  uint64_t base_heap_size =
+      uint64_t{GetHeapSizes(heap_size_file)[distribution_name]} << 20;
   const size_t per_thread_size = base_heap_size / nthreads;
 
   // Additional size of data allocated at program start, then freed before
@@ -237,7 +238,7 @@ void BM_TCMalloc_Empirical_Driver_Setup(const benchmark::State& state) {
   for (size_t i = 0; i < nthreads; ++i) {
     auto& sim_threads = GetSimThreads();
     sim_threads[i] = std::make_unique<SimThread>(
-        i, sim_threads, per_thread_size, per_thread_transient, kProfile);
+        i, sim_threads, per_thread_size, per_thread_transient, profile_path);
   }
 }
 
@@ -245,7 +246,6 @@ void BM_TCMalloc_Empirical_Driver_Teardown(const benchmark::State& state) {
   GetSimThreads().clear();
 }
 
-template <DistributionProfile kProfile>
 static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
   const size_t thread_idx = state.thread_index();
   auto& sim_threads = GetSimThreads();
@@ -298,8 +298,9 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
 }
 
 #ifdef EMPIRICAL_DRIVER_SMOKETEST
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kBeta>)
+BENCHMARK(BM_TCMalloc_Empirical_Driver)
+    ->Name("BM_Tcmalloc_5")
+    ->Setup(BM_TCMalloc_Empirical_Driver_Setup)
     ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
     ->Threads(4);
 #else
@@ -311,73 +312,32 @@ BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta)
 // `RateAllocation`. The rate values will increase as thread number grows,
 // otherwise, we will see flat rate, and even decreased values when more threads
 // introduce contention.
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBeta)
-    ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kBeta>)
-    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
-    ->ThreadRange(1, std::thread::hardware_concurrency())
-    ->UseRealTime();
+void RegisterBenchmarks() {
+  const auto& files = GetDistributionFilesPath();
 
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kBravo)
-    ->MinWarmUpTime(2)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kBravo>)
-    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
-    ->ThreadRange(1, std::thread::hardware_concurrency())
-    ->UseRealTime();
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kCharlie)
-    ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kCharlie>)
-    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
-    ->ThreadRange(1, std::thread::hardware_concurrency())
-    ->UseRealTime();
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kDelta)
-    ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kDelta>)
-    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
-    ->ThreadRange(1, std::thread::hardware_concurrency())
-    ->UseRealTime();
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kEcho)
-    ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kEcho>)
-    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
-    ->ThreadRange(1, std::thread::hardware_concurrency())
-    ->UseRealTime();
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kFoxtrot)
-    ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kFoxtrot>)
-    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
-    ->ThreadRange(1, std::thread::hardware_concurrency())
-    ->UseRealTime();
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kMerced)
-    ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kMerced>)
-    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
-    ->ThreadRange(1, std::thread::hardware_concurrency())
-    ->UseRealTime();
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kSierra)
-    ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kSierra>)
-    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
-    ->ThreadRange(1, std::thread::hardware_concurrency())
-    ->UseRealTime();
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kSigma)
-    ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kSigma>)
-    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
-    ->ThreadRange(1, std::thread::hardware_concurrency())
-    ->UseRealTime();
-BENCHMARK_TEMPLATE(BM_TCMalloc_Empirical_Driver, DistributionProfile::kUniform)
-    ->MinWarmUpTime(0.5)
-    ->Setup(BM_TCMalloc_Empirical_Driver_Setup<DistributionProfile::kUniform>)
-    ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
-    ->ThreadRange(1, std::thread::hardware_concurrency())
-    ->UseRealTime();
+  for (size_t i = 0; i < files.size(); ++i) {
+    auto distribution_name = files[i].filename().string();
+    distribution_name.erase(distribution_name.find(".csv"));
+
+    auto* benchmark = benchmark::RegisterBenchmark(
+        absl::StrCat("BM_", distribution_name).c_str(),
+        BM_TCMalloc_Empirical_Driver);
+    benchmark->MinWarmUpTime(0.5)
+        ->Setup(BM_TCMalloc_Empirical_Driver_Setup)
+        ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
+        ->ThreadRange(1, std::thread::hardware_concurrency())
+        ->UseRealTime();
+  }
+}
 #endif
 
 class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
-    DynamicRegistrar::Get()->AddDefaultFilter(".*kFoxtrot.*/threads:1$");
+#ifndef EMPIRICAL_DRIVER_SMOKETEST
+    DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
+#endif
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_Tcmalloc_5.*/threads:1$");
   }
 };
 
