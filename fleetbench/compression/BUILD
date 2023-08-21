@@ -106,10 +106,10 @@ cc_test(
     srcs = ["compression_benchmark.cc"],
     # Just run a single benchmark to reduce the test runtime.
     args = ["--benchmark_filter=(BM_Snappy-COMPRESS-Fleet|" +
-            "BM_ZSTD-COMPRESS-B/compression_level:1/window_log:15|" +
-            "BM_Flate-COMPRESS-Fleet/compression_level:1/window_log:15|" +
-            "BM_Flate-COMPRESS-Fleet_internal/compression_level:1/window_log:15|" +
-            "BM_Brotli-COMPRESS-Fleet/compression_level:1/window_log:18)"],
+            "BM_ZSTD_COMPRESS_Fleet/compression_level:1/window_log:15|" +
+            "BM_Flate_COMPRESS_Fleet/compression_level:1/window_log:15|" +
+            "BM_Flate_COMPRESS_Fleet_internal/compression_level:1/window_log:15|" +
+            "BM_Brotli_COMPRESS_Fleet/compression_level:1/window_log:18)"],
     data = [":generate_data"],
     linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",

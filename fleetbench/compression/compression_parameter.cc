@@ -35,8 +35,8 @@ GetCompressionLevelsMap() {
       compression_levels_map;
 
   std::string path =
-      "fleetbench/compression/compression_parameters/"
-      "compression_level.csv";
+     "fleetbench/compression/compression_parameters/"
+     "compression_level_external.csv";
 
   std::string line;
   std::fstream file(path, std::ios_base::in);

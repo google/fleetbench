@@ -86,7 +86,7 @@ def main(argv: Sequence[str]) -> None:
     raise app.ValueError(f"{JSON_PATH.value} does not exist.")
   filename = os.path.split(JSON_PATH.value)[1]
   filename_without_extension = os.path.splitext(filename)[0]
-  algorithm, operation, name = filename_without_extension.split("-")
+  algorithm, operation, name = filename_without_extension.split("_", 2)
 
   with open(JSON_PATH.value, "r") as openfile:
     json_distribution = json.load(openfile)
@@ -103,6 +103,7 @@ def main(argv: Sequence[str]) -> None:
       name,
       OUTPUT_DIR.value,
   )
+
 
 if __name__ == "__main__":
   app.run(main)

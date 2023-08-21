@@ -80,11 +80,16 @@ static std::vector<std::filesystem::path> GetMatchingDirectories(
   return directories;
 }
 
-// Parse the given directory_name string, which like `ZSTD-COMPRESS-A`, to get
-// the binary name, i.e, A.
+// Parse the given directory_name string, which like `ZSTD_COMPRESS_A-B-C`, to
+// get the binary name, i.e, A-B-C.
 std::string GetBinary(std::string directory_name) {
-  std::vector<std::string> v = absl::StrSplit(directory_name, '-');
-  return v.back();
+  std::vector<std::string> v = absl::StrSplit(directory_name, '_');
+  QCHECK_GE(v.size(), 3);
+  std::string binary_name = v[2];
+  for (int i = 3; i < v.size(); i++) {
+    absl::StrAppend(&binary_name, "_", v[i]);
+  }
+  return binary_name;
 }
 
 namespace CompressorFactory {
@@ -117,7 +122,8 @@ static constexpr absl::string_view kCorporaPath = "compression/corpora/";
 
 static void BM_Compress(benchmark::State& state,
                         absl::string_view compressor_type,
-                        std::filesystem::path dir_path) {
+                        std::filesystem::path dir_path,
+                        const std::string& distribution_name) {
   auto compressor =
       CompressorFactory::CreateCompressor(compressor_type, state,
                                           /* is_compress= */ true);
@@ -141,11 +147,14 @@ static void BM_Compress(benchmark::State& state,
     compressor->Decompress(compressed[i], &decompressed[i]);
     CHECK_EQ(corpora[i], decompressed[i]);
   }
+
+  if (!distribution_name.empty()) state.SetLabel(distribution_name);
 }
 
 static void BM_Decompress(benchmark::State& state,
                           absl::string_view compressor_type,
-                          std::filesystem::path dir_path) {
+                          std::filesystem::path dir_path,
+                          const std::string& distribution_name) {
   auto compressor = CompressorFactory::CreateCompressor(
       compressor_type, state, /* is_compress= */ false);
 
@@ -171,6 +180,8 @@ static void BM_Decompress(benchmark::State& state,
   for (size_t i = 0; i < decompressed.size(); i++) {
     CHECK_EQ(corpora[i], decompressed[i]);
   }
+
+  if (!distribution_name.empty()) state.SetLabel(distribution_name);
 }
 
 namespace {
@@ -188,7 +199,7 @@ void RegisterBenchmarks() {
       algorithms_entry("Brotli", "Brotli", "", {18}, 18, 2),
   };
 
-  for (const auto& [algorithm, compressor_type, name_suffix,
+  for (const auto& [algorithm, compressor_type, compressor_suffix,
                     compress_window_sizes, default_window_size,
                     default_compression_level] : algorithms) {
     for (const auto& operation : operations) {
@@ -197,23 +208,25 @@ void RegisterBenchmarks() {
         benchmark_fn = fleetbench::compression::BM_Decompress;
 
       // Gets the a list of directory paths that stores compression corpus
-      std::string directory_prefix = absl::StrCat(algorithm, "-", operation);
+      std::string directory_prefix = absl::StrCat(algorithm, "_", operation);
       const auto& directories = fleetbench::compression::GetMatchingDirectories(
           path, directory_prefix);
 
+      std::string external_name_suffix = "";
       for (const auto& directory : directories) {
-        // Binary names, i.e, A, B,..
+        // Binary names
         std::string directory_name = directory.filename().string();
         std::string benchmark_name =
-            absl::StrCat("BM_", directory_name, name_suffix);
+            absl::StrCat("BM_", directory_name, compressor_suffix);
+        std::string binary = GetBinary(directory_name);
 
         auto* benchmark = benchmark::RegisterBenchmark(
-            benchmark_name.c_str(), benchmark_fn, compressor_type, directory);
+            benchmark_name.c_str(), benchmark_fn, compressor_type, directory,
+            external_name_suffix);
 
         if (compression_levels_map.contains(algorithm)) {
           benchmark->ArgNames({"compression_level", "window_log"});
           if (operation == "COMPRESS") {
-            std::string binary = GetBinary(directory_name);
             for (auto level : compression_levels_map[algorithm][binary]) {
               for (auto window_log : compress_window_sizes) {
                 benchmark->Args({level, window_log});
@@ -233,13 +246,13 @@ class BenchmarkRegisterer {
   BenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
     DynamicRegistrar::Get()->AddDefaultFilter(
-        ".*Brotli-COMPRESS.*Fleet.*level:2/window_log:18");
+        ".*Brotli_COMPRESS_Fleet.*level:2/window_log:18");
     DynamicRegistrar::Get()->AddDefaultFilter(
-        ".*Flate-COMPRESS.*Fleet/.*level:6/window_log:15");
-    DynamicRegistrar::Get()->AddDefaultFilter(".*Snappy-COMPRESS.*Fleet.*");
+        ".*Flate_COMPRESS_Fleet/.*level:6/window_log:15");
+    DynamicRegistrar::Get()->AddDefaultFilter(".*Snappy_COMPRESS_Fleet.*");
     DynamicRegistrar::Get()->AddDefaultFilter(
-        ".*ZSTD-COMPRESS.*Fleet.*level:-1/window_log:15");
-    DynamicRegistrar::Get()->AddDefaultFilter(".*DECOMPRESS.*Fleet.*");
+        ".*ZSTD_COMPRESS_Fleet.*level:-1/window_log:15");
+    DynamicRegistrar::Get()->AddDefaultFilter(".*DECOMPRESS_Fleet.*");
   }
 };
 

@@ -537,7 +537,7 @@ class CorpusChunkManager:
     self.generate_corpus_chunks_lookup()
 
     file_directory = os.path.join(
-        output_dir, f"{self.algorithm}-{self.operation}-{name}"
+        output_dir, f"{self.algorithm}_{self.operation}_{name}"
     )
     if not os.path.exists(file_directory):
       os.makedirs(file_directory)
