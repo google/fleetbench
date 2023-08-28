@@ -45,14 +45,6 @@ cc_library(
     deps = ["@com_google_benchmark//:benchmark"],
 )
 
-cc_library(
-    name = "empirical_heap_size",
-    testonly = 1,
-    srcs = ["empirical_heap_size.cc"],
-    hdrs = ["empirical_heap_size.h"],
-    deps = ["@com_google_absl//absl/log:check"],
-)
-
 cc_test(
     name = "empirical_driver",
     srcs = ["empirical_driver.cc"],
