@@ -52,6 +52,7 @@ cc_library(
     hdrs = ["compression_parameter.h"],
     data = glob(["compression_parameters/**"]),
     deps = [
+        "//fleetbench/common",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings",
@@ -119,7 +120,6 @@ cc_test(
         "//fleetbench:benchmark_main",
         "//fleetbench:dynamic_registrar",
         "//fleetbench/common",
-        "@bazel_tools//tools/cpp/runfiles",
         "@com_google_absl//absl/log",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings",
