@@ -66,10 +66,10 @@ http_archive(
 
 # Google benchmark.
 http_archive(
-    name = "com_google_benchmark", # 2023-02-22
-    urls = ["https://github.com/google/benchmark/archive/3b19d7222db7babfdc9b3949408b2294c3bbb540.zip"],
-    strip_prefix = "benchmark-3b19d7222db7babfdc9b3949408b2294c3bbb540",
-    sha256 = "ec8e71da8139f7f19baa187b605eba0348d8b7a9a155c0f89c1de211a47d55dc",
+    name = "com_google_benchmark", # 2023-09-05
+    urls = ["https://github.com/google/benchmark/archive/v1.8.3.zip"],
+    strip_prefix = "benchmark-1.8.3",
+    sha256 = "abfc22e33e3594d0edf8eaddaf4d84a2ffc491ad74b6a7edc6e7a608f690e691",
 )
 
 # GoogleTest/GoogleMock framework. Used by most unit tests.
