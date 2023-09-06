@@ -102,8 +102,15 @@ cc_test(
     ],
 )
 
+JSON_FILES_FLEET = [json.split("/")[-1] for json in glob(["distributions/*Fleet.json"])]
+
+filegroup(
+    name = "generate_data_fleet",
+    srcs = ["generate_data_%s" % json for json in JSON_FILES_FLEET],
+)
+
 cc_test(
-    name = "compression_smoketest",
+    name = "compression_benchmark_fleet",
     srcs = ["compression_benchmark.cc"],
     # Just run a single benchmark to reduce the test runtime.
     args = ["--benchmark_filter=(BM_Snappy-COMPRESS-Fleet|" +
@@ -111,7 +118,7 @@ cc_test(
             "BM_Flate_COMPRESS_Fleet/compression_level:1/window_log:15|" +
             "BM_Flate_COMPRESS_Fleet_internal/compression_level:1/window_log:15|" +
             "BM_Brotli_COMPRESS_Fleet/compression_level:1/window_log:18)"],
-    data = [":generate_data"],
+    data = [":generate_data_fleet"],
     linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
