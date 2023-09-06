@@ -50,11 +50,12 @@ py_repositories()
 
 # Abseil
 http_archive(
-    name = "com_google_absl", # 2023-02-14
-    urls = ["https://github.com/abseil/abseil-cpp/archive/8aa88cd11caa8dbfd5966e5e2f391b892cfd1c35.zip"],
-    strip_prefix = "abseil-cpp-8aa88cd11caa8dbfd5966e5e2f391b892cfd1c35",
-    sha256 = "22b9561f4ed324dba5a9c3b45b988df1ca57c018de608da5de9b4b6eab68dca9",
+    name = "com_google_absl", # 2023-09-05
+    urls = ["https://github.com/abseil/abseil-cpp/archive/415a1d1cb90bfd86ca08d5bcece210c4babe6e0e.zip"],
+    strip_prefix = "abseil-cpp-415a1d1cb90bfd86ca08d5bcece210c4babe6e0e",
+    sha256 = "8f90566113a51654fbeb89c17c9ca37a3886dfee9722505de00e2f25734a4140",
 )
+
 # Abseil-Python
 http_archive(
     name = "com_google_absl_py", # 2023-05-24
