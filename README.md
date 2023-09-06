@@ -24,9 +24,10 @@ always use its version at `HEAD`.
 
 For more information, see:
 
+*   [Workloads coverage](#workloads-coverage) for latest suite coverage.
 *   [Versioning](#versioning) on the details of Fleetbench's releases.
+*   [Running Benchmarks](#running-benchmarks) for how to run the benchmark.
 *   [Future Work](#future-work) section on all that we plan to add.
-*   [Setup](#setup) for how to run the benchmark.
 
 ## Benchmark fidelity
 
@@ -48,7 +49,22 @@ run at any version of the tag.
 If you're starting out, authors recommend you always use the latest version at
 HEAD only.
 
-## Setup
+## Workloads coverage
+
+As of Q3'23, Fleetbench provides coverage for several major hot functions.
+
+Benchmark   | Description
+----------- | -----------
+Proto       | Instruction-focused.
+Swissmap    | Data-focused.
+Libc        | Data-focused.
+TCMalloc    | Data-focused.
+Compression | Data-focused. Covers [Snappy](https://github.com/google/snappy), [ZSTD](https://facebook.github.io/zstd/), [Brotli](https://github.com/google/brotli), and Zlib.
+Hashing     | Data-focused. Supports algorithms [CRC32](https://github.com/abseil/abseil-cpp/tree/master/absl/crc) and [absl::Hash](https://github.com/abseil/abseil-cpp/tree/master/absl/hash).
+
+## Running Benchmarks
+
+### Setup
 
 [Bazel](https://bazel.build) is the official build system for Fleetbench.
 
@@ -62,6 +78,63 @@ bazel run --config=opt fleetbench/swissmap:hot_swissmap_benchmark
 
 Important: Always run benchmarks with `--config=opt` to apply essential compiler
 optimizations.
+
+### Run commands
+
+Replacing the `$WORK_LOAD` and `$BUILD_TARGET` with one of the entry in the
+table to build and run the benchmark. The reasons why we add each build flag are
+explained in the next few sections.
+
+```
+GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel build --config=clang --config=opt --config=haswell fleetbench/WORK_LOAD:BUILD_TARGET
+bazel-bin/fleetbench/WORK_LOAD/BUILD_TARGET
+```
+
+Or combining build and run together:
+
+```
+GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel run --config=clang --config=opt --config=haswell fleetbench/WORK_LOAD:BUILD_TARGET
+```
+
+Benchmark                 | WORKLOAD    | BUILD_TARGET            | Binary run flags
+------------------------- | ----------- | ----------------------- | ----------------
+Proto                     | proto       | proto_benchmark         | `--benchmark_min_time=3s`
+Swissmap hot environment  | swissmap    | hot_swissmap_benchmark  |
+Swissmap cold environment | swissmap    | cold_swissmap_benchmark |
+Libc memory               | libc        | mem_benchmark           | `--benchmark_counters_tabular=true`
+TCMalloc                  | tcmalloc    | empirical_driver        | `--benchmark_min_time=10s`. Check `--benchmark_filter` below.
+Compression               | compression | compression_benchmark   | `--benchmark_counters_tabular=true`
+Hashing                   | hashing     | hashing_benchmark       | `--benchmark_counters_tabular=true`
+
+NOTE: By default, each benchmark only runs a minimal set of tests that we have
+selected as the most representative. To see the default lists, please check
+`BenchmarkRegisterer::BenchmarkRegisterer()`of each benchmark. You can add
+`--benchmark_filter=all` when running the target to see the exhaustive list.
+
+You can also specify a regex in `--benchmark_filter` flag to specify a subset of
+benchmarks to run
+([more info](https://github.com/google/benchmark/blob/main/docs/user_guide.md#running-a-subset-of-benchmarks)).
+The TCMalloc Empirical Driver benchmark can take ~1hr to run all benchmarks, so
+running a subset may be advised.
+
+Example to run for only sets of `16` and `64` element of cold swissmap:
+
+```
+bazel run --config=opt fleetbench/swissmap:cold_swissmap_benchmark -- \
+--benchmark_filter=".*set_size:(16|64).*"
+```
+
+To extend the runtime of a benchmark, e.g. to collect more profile samples, use
+`--benchmark_min_time`.
+
+```
+bazel run --config=opt fleetbench/proto:proto_benchmark -- --benchmark_min_time=30s
+```
+
+Some benchmarks also provide counter reports after completion. Adding
+`--benchmark_counters_tabular=true`
+([doc](https://github.com/google/benchmark/blob/main/docs/user_guide.md#counter-reporting))
+can help print counters as table columns for improved layout.
 
 ### Ensuring TCMalloc per-CPU Mode
 
@@ -78,12 +151,6 @@ it.
 Set the environment variable: `GLIBC_TUNABLES=glibc.pthread.rseq=0` to prevent
 glibc from doing this registration. This will allow TCMalloc to operate in
 per-CPU mode.
-
-For example:
-
-```
-GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel run --config=opt fleetbench/swissmap:hot_swissmap_benchmark
-```
 
 ### Clang Toolchain
 
@@ -111,40 +178,6 @@ If running on an x86 Haswell or above machine, we suggest adding
 `--config=haswell` for consistency with our compiler flags.
 
 Use `--config=westmere` for Westmere-era processors.
-
-### Running Benchmarks
-
-Swissmap benchmark for cold access setup takes a long time to run to completion.
-We suggest using the `--benchmark_filter` flag to narrow down to smaller set
-sizes of e.g. `16` and `64` elements:
-
-```
-bazel run --config=opt fleetbench/swissmap:cold_swissmap_benchmark -- \
---benchmark_filter=".*set_size:(16|64).*"
-```
-
-To change this filter, you can specify a regex in `--benchmark_filter` flag
-([more info](https://github.com/google/benchmark/blob/main/docs/user_guide.md#running-a-subset-of-benchmarks)).
-Example to run for only sets of `16` and `512` elements:
-
-```
-bazel run --config=opt fleetbench/swissmap:cold_swissmap_benchmark -- \
---benchmark_filter=".*set_size:(16|512).*"
-```
-
-To extend the runtime of a benchmark, e.g. to collect more profile samples, use
---benchmark_min_time.
-
-```
-bazel run --config=opt fleetbench/proto:proto_benchmark -- --benchmark_min_time=30s
-```
-
-The TCMalloc Empirical Driver benchmark can take ~1hr to run all benchmarks, so
-running a subset may be advised.
-
-```
-bazel run --config=opt fleetbench/tcmalloc:empirical_driver -- --benchmark_counters_tabular=true
-```
 
 ### Reducing run-to-run variance
 
