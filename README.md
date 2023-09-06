@@ -107,9 +107,9 @@ Compression               | compression | compression_benchmark   | `--benchmark
 Hashing                   | hashing     | hashing_benchmark       | `--benchmark_counters_tabular=true`
 
 NOTE: By default, each benchmark only runs a minimal set of tests that we have
-selected as the most representative. To see the default lists, please check
-`BenchmarkRegisterer::BenchmarkRegisterer()`of each benchmark. You can add
-`--benchmark_filter=all` when running the target to see the exhaustive list.
+selected as the most representative. To see the default lists, you can use the
+`--benchmark_list_tests` flag when running the target. You can add
+`--benchmark_filter=all` to see the exhaustive list.
 
 You can also specify a regex in `--benchmark_filter` flag to specify a subset of
 benchmarks to run
