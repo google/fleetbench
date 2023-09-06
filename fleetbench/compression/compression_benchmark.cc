@@ -142,11 +142,25 @@ static void BM_Compress(benchmark::State& state,
       benchmark::DoNotOptimize(res);
     }
   }
-  // Decompress file and check correctness
+  // Decompress file and check correctness, and also compute compression_ratio,
+  // which is defined as the ratio of the uncompressed size to the compressed
+  // size.
+  double total_compression_ratio = 0.0;
   for (size_t i = 0; i < compressed.size(); i++) {
     compressor->Decompress(compressed[i], &decompressed[i]);
     CHECK_EQ(corpora[i], decompressed[i]);
+    total_compression_ratio += (corpora[i].size() / compressed[i].size());
   }
+
+  state.counters["avg_compression_ratio"] =
+      benchmark::Counter(total_compression_ratio / corpora.size());
+
+  // Compute compression byte rate
+  size_t corpora_size = 0;
+  for (auto& corpus : corpora) corpora_size += corpus.size();
+  state.counters["compression_byte_rate"] = benchmark::Counter(
+      state.iterations() * corpora_size, benchmark::Counter::kIsRate,
+      benchmark::Counter::OneK::kIs1024);
 
   if (!distribution_name.empty()) state.SetLabel(distribution_name);
 }
@@ -176,10 +190,22 @@ static void BM_Decompress(benchmark::State& state,
     }
   }
 
-  // Check correctness
+  // Check correctness, and also compute compression_ratio, which is defined as
+  // the ratio of the uncompressed size to the compressed size.
+  double total_compression_ratio = 0.0;
   for (size_t i = 0; i < decompressed.size(); i++) {
     CHECK_EQ(corpora[i], decompressed[i]);
+    total_compression_ratio += (corpora[i].size() / compressed[i].size());
   }
+  state.counters["avg_compression_ratio"] =
+      benchmark::Counter(total_compression_ratio / corpora.size());
+
+  // Compute compression byte rate
+  size_t corpora_size = 0;
+  for (auto& corpus : corpora) corpora_size += corpus.size();
+  state.counters["decompression_byte_rate"] = benchmark::Counter(
+      state.iterations() * corpora_size, benchmark::Counter::kIsRate,
+      benchmark::Counter::OneK::kIs1024);
 
   if (!distribution_name.empty()) state.SetLabel(distribution_name);
 }
