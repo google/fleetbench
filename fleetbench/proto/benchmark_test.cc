@@ -16,21 +16,22 @@
 
 #include "gtest/gtest.h"
 #include "fleetbench/proto/lifecycle.h"
+#include "google/protobuf/arena.h"
 
-namespace fleetbench {
-
+namespace fleetbench::proto {
 TEST(ProtoBenchmarkTest, Arena) {
   ProtoLifecycle lifecycle(1);
   google::protobuf::Arena arena;
   lifecycle.Init(&arena);
   lifecycle.Run();
-  EXPECT_EQ(1, lifecycle.GetWorkingSetSize());
+  EXPECT_EQ(lifecycle.GetWorkingSetSize(), 1);
 }
 
 TEST(ProtoBenchmarkTest, NoArena) {
   ProtoLifecycle lifecycle(1);
   lifecycle.Init(nullptr);
   lifecycle.Run();
-  EXPECT_EQ(1, lifecycle.GetWorkingSetSize());
+  EXPECT_EQ(lifecycle.GetWorkingSetSize(), 1);
 }
-}  // namespace fleetbench
+
+}  // namespace fleetbench::proto

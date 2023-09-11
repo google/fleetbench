@@ -146,6 +146,7 @@ cc_library(
         ":representative9_cc_proto",
         "//fleetbench/common",
         "@com_google_benchmark//:benchmark",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -155,6 +156,7 @@ cc_test(
     deps = [
         ":benchmark_lib",
         "@com_google_googletest//:gtest_main",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -170,8 +172,7 @@ cc_test(
         "//fleetbench:benchmark_main",
         "//fleetbench:dynamic_registrar",
         "//fleetbench/common",
-        "@com_google_absl//absl/random",
         "@com_google_benchmark//:benchmark",
-        "@com_google_protobuf//:protobuf_lite",
+        "@com_google_protobuf//:protobuf",
     ],
 )

@@ -16,10 +16,13 @@
 
 #include "benchmark/benchmark.h"
 
+#include <cstdint>
+
 #include "fleetbench/dynamic_registrar.h"
 #include "fleetbench/proto/lifecycle.h"
+#include "google/protobuf/arena.h"
 
-namespace fleetbench {
+namespace fleetbench::proto {
 
 void BM_Protogen_Arena(benchmark::State& state) {
   const int32_t kIterations = 10;
@@ -55,5 +58,4 @@ class BenchmarkRegisterer {
 };
 
 BenchmarkRegisterer br;
-
-}  // namespace fleetbench
+}  // namespace fleetbench::proto

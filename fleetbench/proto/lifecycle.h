@@ -16,6 +16,8 @@
 #define THIRD_PARTY_FLEETBENCH_PROTO_LIFECYCLE_H_
 
 #include <cstdint>
+#include <string>
+#include <vector>
 
 #include "fleetbench/proto/representative1.pb.h"
 #include "fleetbench/proto/representative10.pb.h"
@@ -28,7 +30,7 @@
 #include "fleetbench/proto/representative8.pb.h"
 #include "fleetbench/proto/representative9.pb.h"
 
-namespace fleetbench {
+namespace fleetbench::proto {
 
 const int kMaxValueStringSize = 1 << 20;
 
@@ -115,6 +117,6 @@ class ProtoLifecycle {
   std::vector<std::string> m493_strings_;
 };
 
-}  // namespace fleetbench
+}  // namespace fleetbench::proto
 
 #endif  // THIRD_PARTY_FLEETBENCH_PROTO_LIFECYCLE_H_

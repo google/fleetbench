@@ -16,6 +16,8 @@
 #define THIRD_PARTY_FLEETBENCH_PROTO_POPULATE_PROTOS_H_
 
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <string>
 
 #include "benchmark/benchmark.h"
@@ -30,7 +32,7 @@
 #include "fleetbench/proto/representative8.pb.h"
 #include "fleetbench/proto/representative9.pb.h"
 
-namespace fleetbench {
+namespace fleetbench::proto {
 
 // The Receiver struct is a set of circular buffers, one for each of the C++
 // native proto2 types. A set of Receive<type>() functions add values to a
@@ -40013,5 +40015,5 @@ inline int M95_Set_F2(M95* message, std::string* s) {
   return 0;
 }
 
-}  // namespace fleetbench
+}  // namespace fleetbench::proto
 #endif  // THIRD_PARTY_FLEETBENCH_PROTO_POPULATE_PROTOS_H_

@@ -14,22 +14,16 @@
 
 #include "fleetbench/proto/lifecycle.h"
 
-#include <cstdint>
+#include <algorithm>
+#include <cstddef>
+#include <string>
+#include <vector>
 
 #include "fleetbench/common/common.h"
 #include "fleetbench/proto/populate_protos.h"
-#include "fleetbench/proto/representative1.pb.h"
-#include "fleetbench/proto/representative10.pb.h"
-#include "fleetbench/proto/representative2.pb.h"
-#include "fleetbench/proto/representative3.pb.h"
-#include "fleetbench/proto/representative4.pb.h"
-#include "fleetbench/proto/representative5.pb.h"
-#include "fleetbench/proto/representative6.pb.h"
-#include "fleetbench/proto/representative7.pb.h"
-#include "fleetbench/proto/representative8.pb.h"
-#include "fleetbench/proto/representative9.pb.h"
+#include "google/protobuf/arena.h"
 
-namespace fleetbench {
+namespace fleetbench::proto {
 
 void ProtoLifecycle::Init(google::protobuf::Arena* arena) {
   std::string s_(kMaxValueStringSize, 'a');
@@ -681,4 +675,4 @@ void ProtoLifecycle::Run() {
   }
 }
 
-}  // namespace fleetbench
+}  // namespace fleetbench::proto
