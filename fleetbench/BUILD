@@ -29,6 +29,7 @@ cc_library(
     deps = [
         ":dynamic_registrar",
         ":maybe_llvmlibc",
+        "@com_google_absl//absl/log",
         "@com_google_benchmark//:benchmark",
         "@com_google_tcmalloc//tcmalloc:malloc_extension",
     ],

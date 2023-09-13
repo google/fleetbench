@@ -16,14 +16,16 @@
 
 #include <string>
 #include <thread>
+#include <vector>
 
+#include "absl/log/log.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/dynamic_registrar.h"
 #include "tcmalloc/malloc_extension.h"
 
 int main(int argc, char* argv[]) {
   benchmark::Initialize(&argc, argv);
-  static auto* background =
+  static auto* background ABSL_ATTRIBUTE_UNUSED =
     tcmalloc::MallocExtension::NeedsProcessBackgroundActions() ?
     new std::thread([]() {
       tcmalloc::MallocExtension::ProcessBackgroundActions();
