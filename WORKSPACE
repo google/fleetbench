@@ -106,6 +106,14 @@ http_archive(
     urls = ["https://github.com/google/brotli/archive/0300be36ba019c55d2edc48353270fa18008d49c.zip"],
 )
 
+# Flate
+http_archive(
+    name = "chromium_zlib", # 2023-08-11
+    build_file = "//fleetbench/compression:zlib.BUILD",
+    # sha256 is not stable for googlesource.com
+    urls = ["https://chromium.googlesource.com/chromium/src/third_party/zlib/+archive/f5fd0ad2663e239a31184ad4c9919991dda16f46.tar.gz"],
+)
+
 # libpfm4, for perf counters
 http_archive(
     name = "libpfm", # 2023-01-12

@@ -1,4 +1,5 @@
 load("@rules_python//python:py_test.bzl", "py_test")
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
 package(default_visibility = ["//visibility:private"])
 
@@ -20,6 +21,61 @@ cc_library(
         "//fleetbench:llvm": ["@llvm-project//:llvmlibc"],
         "//conditions:default": [],
     }),
+)
+
+selects.config_setting_group(
+    name = "clang_or_gcc_x86_64",
+    match_all = [
+        ":compiler_clang_or_gcc",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+selects.config_setting_group(
+    name = "clang_or_gcc_arm64",
+    match_all = [
+        ":compiler_clang_or_gcc",
+        "@platforms//cpu:arm64",
+    ],
+)
+
+selects.config_setting_group(
+    name = "compiler_clang_or_gcc",
+    match_any = [
+        ":compiler_clang",
+        ":compiler_gcc",
+    ],
+)
+
+config_setting(
+    name = "compiler_clang",
+    flag_values = {
+        "@bazel_tools//tools/cpp:compiler": "clang",
+    },
+)
+
+config_setting(
+    name = "compiler_regular_gcc",
+    flag_values = {
+        "@bazel_tools//tools/cpp:compiler": "gcc",
+    },
+)
+
+config_setting(
+    name = "compiler_unknown",
+    flag_values = {
+        "@bazel_tools//tools/cpp:compiler": "compiler",
+    },
+)
+
+selects.config_setting_group(
+    name = "compiler_gcc",
+    match_any = [
+        ":compiler_regular_gcc",
+        # To workaround https://github.com/bazelbuild/bazel/issues/17794, assume
+        # any unknown compiler is GCC.
+        ":compiler_unknown",
+    ],
 )
 
 cc_library(

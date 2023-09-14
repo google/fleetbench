@@ -39,10 +39,10 @@ cc_library(
         "zlibwrapper.h",
     ],
     deps = [
+        "@chromium_zlib//:zlib",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/log",
         "@com_google_absl//absl/log:check",
-        "@zlib",
     ],
 )
 
