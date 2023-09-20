@@ -552,7 +552,10 @@ class CorpusChunkManager:
       with open(filename, "wb") as f:
         f.write(result)
       benchmark_id += 1
-    print(
-        f"Wrote {self.algorithm} {self.operation} {name} corpus to"
-        f" {file_directory}"
+    logging.debug(
+        "Wrote %s %s %s corpus to %s",
+        self.algorithm,
+        self.operation,
+        name,
+        file_directory,
     )
