@@ -57,35 +57,6 @@ static void BM_FindMiss_Cold(benchmark::State& state) {
   }
 }
 
-BENCHMARK_TEMPLATE(BM_FindMiss_Cold, ::absl::flat_hash_set, 4)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_FindMiss_Cold, ::absl::flat_hash_set, 64)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_FindMiss_Cold, ::absl::node_hash_set, 4)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_FindMiss_Cold, ::absl::node_hash_set, 64)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-
 // Helper function used to implement two similar benchmarks defined below.
 template <template <class...> class SetT, size_t kValueSizeT, class Lookup>
 void LookupHit_Cold(benchmark::State& state, Lookup lookup) {
@@ -125,35 +96,6 @@ static void BM_FindHit_Cold(benchmark::State& state) {
   });
 }
 
-BENCHMARK_TEMPLATE(BM_FindHit_Cold, ::absl::flat_hash_set, 4)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_FindHit_Cold, ::absl::flat_hash_set, 64)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_FindHit_Cold, ::absl::node_hash_set, 4)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_FindHit_Cold, ::absl::node_hash_set, 64)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-
 // Measures the time it takes to `insert` an existent element.
 //
 //   assert(!set.insert(key).second);
@@ -167,35 +109,6 @@ static void BM_InsertHit_Cold(benchmark::State& state) {
     DoNotOptimize(res);
   });
 }
-
-BENCHMARK_TEMPLATE(BM_InsertHit_Cold, ::absl::flat_hash_set, 4)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_InsertHit_Cold, ::absl::flat_hash_set, 64)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_InsertHit_Cold, ::absl::node_hash_set, 4)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_InsertHit_Cold, ::absl::node_hash_set, 64)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
 
 // Measures the time it takes to iterate over a set and read its every element.
 // The reported time is per element. In other words, the pseudo code below
@@ -258,35 +171,6 @@ static void BM_Iterate_Cold(benchmark::State& state) {
   }
 }
 
-BENCHMARK_TEMPLATE(BM_Iterate_Cold, ::absl::flat_hash_set, 4)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_Iterate_Cold, ::absl::flat_hash_set, 64)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_Iterate_Cold, ::absl::node_hash_set, 4)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_Iterate_Cold, ::absl::node_hash_set, 64)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-
 // Microbenchmarks below exercise behavior in pathological conditions.
 
 // Measures the time it takes to `erase` an existent element and then `insert`
@@ -339,27 +223,6 @@ static void BM_EraseInsert_Cold(benchmark::State& state) {
   }
 }
 
-BENCHMARK_TEMPLATE(BM_EraseInsert_Cold, ::absl::flat_hash_set, 4)
-    ->ArgNames({"set_size"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-    });
-BENCHMARK_TEMPLATE(BM_EraseInsert_Cold, ::absl::flat_hash_set, 64)
-    ->ArgNames({"set_size"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-    });
-BENCHMARK_TEMPLATE(BM_EraseInsert_Cold, ::absl::node_hash_set, 4)
-    ->ArgNames({"set_size"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-    });
-BENCHMARK_TEMPLATE(BM_EraseInsert_Cold, ::absl::node_hash_set, 64)
-    ->ArgNames({"set_size"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-    });
-
 // Measures the time it takes to `clear` a set and then `insert` the same
 // elements in the order they were in the set. The reported time is per
 // element. In other words, the pseudo code below counts as N iterations.
@@ -400,35 +263,6 @@ static void BM_InsertManyOrdered_Cold(benchmark::State& state) {
     }
   }
 }
-
-BENCHMARK_TEMPLATE(BM_InsertManyOrdered_Cold, ::absl::flat_hash_set, 4)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_InsertManyOrdered_Cold, ::absl::flat_hash_set, 64)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_InsertManyOrdered_Cold, ::absl::node_hash_set, 4)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_InsertManyOrdered_Cold, ::absl::node_hash_set, 64)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
 
 // Measures the time it takes to `clear` a set and then `insert` the same
 // elements back in random order. The reported time is per element. In other
@@ -471,38 +305,46 @@ static void BM_InsertManyUnordered_Cold(benchmark::State& state) {
   }
 }
 
-BENCHMARK_TEMPLATE(BM_InsertManyUnordered_Cold, ::absl::flat_hash_set, 4)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_InsertManyUnordered_Cold, ::absl::flat_hash_set, 64)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_InsertManyUnordered_Cold, ::absl::node_hash_set, 4)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
-BENCHMARK_TEMPLATE(BM_InsertManyUnordered_Cold, ::absl::node_hash_set, 64)
-    ->ArgNames({"set_size", "density"})
-    ->Ranges({
-        {1 << 4, 1 << 20},
-        {static_cast<int64_t>(Density::kMin),
-         static_cast<int64_t>(Density::kMax)},
-    });
+void RegisterBenchmarks() {
+  std::vector<benchmark::internal::Benchmark*> benchmarks;
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_FindMiss_Cold, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_FindMiss_Cold, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_FindHit_Cold, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_FindHit_Cold, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertHit_Cold, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertHit_Cold, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_Iterate_Cold, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_Iterate_Cold, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertManyOrdered_Cold, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertManyOrdered_Cold, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertManyUnordered_Cold, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertManyUnordered_Cold, 64);
+  for (auto* benchmark : benchmarks) {
+    benchmark->ArgNames({"set_size", "density"})
+        ->Ranges({
+            {1 << 4, 1 << 20},
+            {static_cast<int64_t>(Density::kMin),
+             static_cast<int64_t>(Density::kMax)},
+        });
+  }
+
+  std::vector<benchmark::internal::Benchmark*> erase_insert_benchmarks;
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(erase_insert_benchmarks, BM_EraseInsert_Cold,
+                                  4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(erase_insert_benchmarks, BM_EraseInsert_Cold,
+                                  64);
+  for (auto* benchmark : erase_insert_benchmarks) {
+    benchmark->ArgNames({"set_size"})
+        ->Ranges({
+            {1 << 4, 1 << 20},
+        });
+  }
+}
 
 class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
+    DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
     DynamicRegistrar::Get()->AddDefaultFilter(
         "BM_InsertHit_Cold.*::absl::flat_hash_set.*64.*set_size:64.*density:0");
   }

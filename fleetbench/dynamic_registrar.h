@@ -21,6 +21,10 @@
 
 namespace fleetbench {
 
+#define REGISTER_BENCHMARK(n) benchmark::RegisterBenchmark(#n, n)
+#define REGISTER_BENCHMARK_TEMPLATE(n, ...) \
+  benchmark::RegisterBenchmark(#n "<" #__VA_ARGS__ ">", n<__VA_ARGS__>)
+
 // DynamicRegistrar is a singleton to allow fleetbench benchmarks to
 // hook into the benchmark discovery process. They can register a callback
 // that will run during main().

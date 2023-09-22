@@ -359,6 +359,12 @@ struct Eq {
   bool operator()(uint32_t x, uint32_t y) const { return x == y; }
 };
 
+#define ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, function, kValueSizeT) \
+  benchmarks.push_back(REGISTER_BENCHMARK_TEMPLATE(                        \
+      function, ::absl::flat_hash_set, kValueSizeT));                      \
+  benchmarks.push_back(REGISTER_BENCHMARK_TEMPLATE(                        \
+      function, ::absl::node_hash_set, kValueSizeT));
+
 }  // namespace fleetbench
 
 #endif  // THIRD_PARTY_FLEETBENCH_SWISSMAP_SWISSMAP_BENCHMARK_H_
