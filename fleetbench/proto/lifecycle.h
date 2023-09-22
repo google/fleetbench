@@ -46,9 +46,7 @@ struct Message {
 class ProtoLifecycle {
  public:
   explicit ProtoLifecycle(uint32_t working_set_size)
-      : working_set_size_(working_set_size),
-        s_(kMaxValueStringSize, 'a'),
-        indices_(working_set_size) {
+      : working_set_size_(working_set_size), s_(kMaxValueStringSize, 'a') {
     Resize(message0_);
     Resize(message1_);
     Resize(message2_);
@@ -59,11 +57,6 @@ class ProtoLifecycle {
     Resize(message7_);
     Resize(message8_);
     Resize(message9_);
-
-    // Initialize an array of integers to use indices_ in working sets.
-    for (size_t i = 0; i < indices_.size(); ++i) {
-      indices_[i] = i;
-    }
   }
   // Messages are allocated on the arena, and are freed automatically when
   // arena goes out of scope, so no need to `delete` them explicitly.
@@ -86,7 +79,6 @@ class ProtoLifecycle {
 
   uint32_t working_set_size_;
   std::string s_;
-  std::vector<int> indices_;
 
   Message<M1> message0_;
   Message<M37> message1_;
