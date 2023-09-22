@@ -36,7 +36,6 @@ void BM_Protogen_Arena(benchmark::State& state) {
     lifecycle.Run();
   }
 }
-BENCHMARK(BM_Protogen_Arena);
 
 void BM_Protogen_NoArena(benchmark::State& state) {
   const int32_t kIterations = 10;
@@ -48,11 +47,16 @@ void BM_Protogen_NoArena(benchmark::State& state) {
     lifecycle.Run();
   }
 }
-BENCHMARK(BM_Protogen_NoArena);
+
+void RegisterBenchmarks() {
+  REGISTER_BENCHMARK(BM_Protogen_Arena);
+  REGISTER_BENCHMARK(BM_Protogen_NoArena);
+}
 
 class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
+    DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
     DynamicRegistrar::Get()->AddDefaultFilter("BM_Protogen_Arena");
   }
 };
