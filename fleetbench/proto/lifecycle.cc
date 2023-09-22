@@ -26,71 +26,65 @@
 namespace fleetbench::proto {
 
 void ProtoLifecycle::Init(google::protobuf::Arena* arena) {
-  std::string s_(kMaxValueStringSize, 'a');
-
-  // Initialize an array of integers to use indices_ in working sets.
-  for (size_t i = 0; i < indices_.size(); ++i) {
-    indices_[i] = i;
-  }
   // Declare variables for M1 lifecycles.
-  InitMessages(m1_messages_, m1_other_messages_, arena);
+  InitMessages(message0_.message, message0_.other_message, arena);
   // Initialize other_message instance of M1.
   for (const auto& i : indices_) {
-    M1_Set_F1(m1_other_messages_[i], &s_);
+    M1_Set_F1(message0_.other_message[i], &s_);
   }
   // Declare variables for M37 lifecycles.
-  InitMessages(m37_messages_, m37_other_messages_, arena);
+  InitMessages(message1_.message, message1_.other_message, arena);
   // Initialize other_message instance of M37.
   for (const auto& i : indices_) {
-    M37_Set_F1(m37_other_messages_[i], &s_);
+    M37_Set_F1(message1_.other_message[i], &s_);
   }
   // Declare variables for M95 lifecycles.
-  InitMessages(m95_messages_, m95_other_messages_, arena);
+  InitMessages(message2_.message, message2_.other_message, arena);
   // Initialize other_message instance of M95.
   for (const auto& i : indices_) {
-    M95_Set_F1(m95_other_messages_[i], &s_);
+    M95_Set_F1(message2_.other_message[i], &s_);
   }
   // Declare variables for M151 lifecycles.
-  InitMessages(m151_messages_, m151_other_messages_, arena);
+  InitMessages(message3_.message, message3_.other_message, arena);
   // Initialize other_message instance of M151.
   for (const auto& i : indices_) {
-    M151_Set_F1(m151_other_messages_[i], &s_);
+    M151_Set_F1(message3_.other_message[i], &s_);
   }
   // Declare variables for M204 lifecycles.
-  InitMessages(m204_messages_, m204_other_messages_, arena);
+  InitMessages(message4_.message, message4_.other_message, arena);
   // Initialize other_message instance of M204.
   for (const auto& i : indices_) {
-    M204_Set_F1(m204_other_messages_[i], &s_);
+    M204_Set_F1(message4_.other_message[i], &s_);
   }
   // Declare variables for M238 lifecycles.
-  InitMessages(m238_messages_, m238_other_messages_, arena);
+  InitMessages(message5_.message, message5_.other_message, arena);
   // Initialize other_message instance of M238.
   for (const auto& i : indices_) {
-    M238_Set_F1(m238_other_messages_[i], &s_);
+    M238_Set_F1(message5_.other_message[i], &s_);
   }
   // Declare variables for M305 lifecycles.
-  InitMessages(m305_messages_, m305_other_messages_, arena);
+  InitMessages(message6_.message, message6_.other_message, arena);
   // Initialize other_message instance of M305.
   for (const auto& i : indices_) {
-    M305_Set_F1(m305_other_messages_[i], &s_);
+    M305_Set_F1(message6_.other_message[i], &s_);
   }
   // Declare variables for M378 lifecycles.
-  InitMessages(m378_messages_, m378_other_messages_, arena);
+  InitMessages(message7_.message, message7_.other_message, arena);
   // Initialize other_message instance of M378.
   for (const auto& i : indices_) {
-    M378_Set_F1(m378_other_messages_[i], &s_);
+    M378_Set_F1(message7_.other_message[i], &s_);
   }
   // Declare variables for M437 lifecycles.
-  InitMessages(m437_messages_, m437_other_messages_, arena);
+  InitMessages(message8_.message, message8_.other_message, arena);
   // Initialize other_message instance of M437.
   for (const auto& i : indices_) {
-    M437_Set_F1(m437_other_messages_[i], &s_);
+    M437_Set_F1(message8_.other_message[i], &s_);
   }
   // Declare local variables for M493 lifecycles.
-  InitMessages(m493_messages_, m493_other_messages_, arena);
+  InitMessages(message9_.message, message9_.other_message, arena);
   // Initialize other_message instance of M493.
   for (const auto& i : indices_) {
-    M493_Set_F1(m493_other_messages_[i], &s_);
+    M493_Set_F1(message9_.other_message[i], &s_);
   }
 }
 
@@ -107,571 +101,571 @@ void ProtoLifecycle::InitMessages(std::vector<T*>& messages,
 void ProtoLifecycle::Run() {
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Create(m493_messages_[i]);
+    Create(message9_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Create(m151_messages_[i]);
+    Create(message3_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Create(m238_messages_[i]);
+    Create(message5_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Create(m437_messages_[i]);
+    Create(message8_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Create(m378_messages_[i]);
+    Create(message7_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Create(m305_messages_[i]);
+    Create(message6_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Create(m95_messages_[i]);
+    Create(message2_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Copy(m305_messages_[i], m305_other_messages_[i]);
+    Copy(message6_.message[i], message6_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Copy(m437_messages_[i], m437_other_messages_[i]);
+    Copy(message8_.message[i], message8_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Copy(m95_messages_[i], m95_other_messages_[i]);
+    Copy(message2_.message[i], message2_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Serialize(m305_messages_[i], &m305_strings_[i]);
+    Serialize(message6_.message[i], &message6_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    ByteSize(m95_messages_[i]);
+    ByteSize(message2_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Reflection(m437_messages_[i]);
+    Reflection(message8_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Create(m1_messages_[i]);
+    Create(message0_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M493_Set_F2(m493_messages_[i], &s_);
+    M493_Set_F2(message9_.message[i], &s_);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Reflection(m95_messages_[i]);
+    Reflection(message2_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Copy(m378_messages_[i], m378_other_messages_[i]);
+    Copy(message7_.message[i], message7_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Swap(m238_messages_[i], m238_other_messages_[i]);
+    Swap(message5_.message[i], message5_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Create(m204_messages_[i]);
+    Create(message4_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Serialize(m493_messages_[i], &m493_strings_[i]);
+    Serialize(message9_.message[i], &message9_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m493_messages_[i], &m493_strings_[i]);
+    Deserialize(message9_.message[i], &message9_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Copy(m1_messages_[i], m1_other_messages_[i]);
+    Copy(message0_.message[i], message0_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Serialize(m378_messages_[i], &m378_strings_[i]);
+    Serialize(message7_.message[i], &message7_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Serialize(m437_messages_[i], &m437_strings_[i]);
+    Serialize(message8_.message[i], &message8_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m305_messages_[i], &m305_strings_[i]);
+    Deserialize(message6_.message[i], &message6_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m437_messages_[i], &m437_strings_[i]);
+    Deserialize(message8_.message[i], &message8_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m305_other_messages_[i], &m305_strings_[i]);
+    Deserialize(message6_.other_message[i], &message6_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m378_messages_[i], &m378_strings_[i]);
+    Deserialize(message7_.message[i], &message7_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M493_Get_F1(m493_messages_[i]);
+    M493_Get_F1(message9_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m204_messages_[i], m204_other_messages_[i]);
+    Merge(message4_.message[i], message4_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    ByteSize(m493_messages_[i]);
+    ByteSize(message9_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Serialize(m204_messages_[i], &m204_strings_[i]);
+    Serialize(message4_.message[i], &message4_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m204_messages_[i], m204_other_messages_[i]);
+    Merge(message4_.message[i], message4_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Reflection(m493_messages_[i]);
+    Reflection(message9_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Serialize(m95_messages_[i], &m95_strings_[i]);
+    Serialize(message2_.message[i], &message2_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Copy(m493_messages_[i], m493_other_messages_[i]);
+    Copy(message9_.message[i], message9_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    ByteSize(m437_messages_[i]);
+    ByteSize(message8_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Create(m37_messages_[i]);
+    Create(message1_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m204_messages_[i], &m204_strings_[i]);
+    Deserialize(message4_.message[i], &message4_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m151_messages_[i], m151_other_messages_[i]);
+    Merge(message3_.message[i], message3_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Copy(m37_messages_[i], m37_other_messages_[i]);
+    Copy(message1_.message[i], message1_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Descriptor(m437_messages_[i]);
+    Descriptor(message8_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    EnumDescriptor(m37_messages_[i]);
+    EnumDescriptor(message1_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m151_messages_[i], m151_other_messages_[i]);
+    Merge(message3_.message[i], message3_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M378_Get_F1(m378_messages_[i]);
+    M378_Get_F1(message7_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Serialize(m238_messages_[i], &m238_strings_[i]);
+    Serialize(message5_.message[i], &message5_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M437_Get_F1(m437_messages_[i]);
+    M437_Get_F1(message8_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M305_Get_F1(m305_messages_[i]);
+    M305_Get_F1(message6_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M204_Get_F1(m204_messages_[i]);
+    M204_Get_F1(message4_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Serialize(m151_messages_[i], &m151_strings_[i]);
+    Serialize(message3_.message[i], &message3_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m238_messages_[i], &m238_strings_[i]);
+    Deserialize(message5_.message[i], &message5_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m95_messages_[i], &m95_strings_[i]);
+    Deserialize(message2_.message[i], &message2_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Clear(m437_messages_[i]);
+    Clear(message8_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m437_messages_[i], m437_other_messages_[i]);
+    Merge(message8_.message[i], message8_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m151_messages_[i], &m151_strings_[i]);
+    Deserialize(message3_.message[i], &message3_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m437_messages_[i], m437_other_messages_[i]);
+    Merge(message8_.message[i], message8_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m437_messages_[i]);
+    Destroy(message8_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m437_other_messages_[i]);
+    Destroy(message8_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M95_Get_F1(m95_messages_[i]);
+    M95_Get_F1(message2_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M238_Get_F1(m238_messages_[i]);
+    M238_Get_F1(message5_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Serialize(m37_messages_[i], &m37_strings_[i]);
+    Serialize(message1_.message[i], &message1_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m37_messages_[i], &m37_strings_[i]);
+    Deserialize(message1_.message[i], &message1_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Serialize(m1_messages_[i], &m1_strings_[i]);
+    Serialize(message0_.message[i], &message0_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    ByteSize(m37_messages_[i]);
+    ByteSize(message1_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M95_Set_F2(m95_messages_[i], &s_);
+    M95_Set_F2(message2_.message[i], &s_);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m1_messages_[i], &m1_strings_[i]);
+    Deserialize(message0_.message[i], &message0_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    SpaceUsed(m305_messages_[i]);
+    SpaceUsed(message6_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Reflection(m37_messages_[i]);
+    Reflection(message1_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M1_Get_F1(m1_messages_[i]);
+    M1_Get_F1(message0_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m305_messages_[i], m305_other_messages_[i]);
+    Merge(message6_.message[i], message6_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m378_messages_[i], &m378_strings_[i]);
+    Deserialize(message7_.message[i], &message7_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m305_messages_[i], m305_other_messages_[i]);
+    Merge(message6_.message[i], message6_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m305_messages_[i]);
+    Destroy(message6_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m305_other_messages_[i]);
+    Destroy(message6_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m95_other_messages_[i], &m95_strings_[i]);
+    Deserialize(message2_.other_message[i], &message2_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m95_messages_[i], &m95_strings_[i]);
+    Deserialize(message2_.message[i], &message2_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M378_Get_F2(m378_messages_[i]);
+    M378_Get_F2(message7_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m238_messages_[i], m238_other_messages_[i]);
+    Merge(message5_.message[i], message5_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M37_Get_F1(m37_messages_[i]);
+    M37_Get_F1(message1_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    ByteSize(m238_messages_[i]);
+    ByteSize(message5_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m238_messages_[i], m238_other_messages_[i]);
+    Merge(message5_.message[i], message5_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    ByteSize(m378_messages_[i]);
+    ByteSize(message7_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Reflection(m238_messages_[i]);
+    Reflection(message5_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m238_messages_[i]);
+    Destroy(message5_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m238_other_messages_[i]);
+    Destroy(message5_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Reflection(m378_messages_[i]);
+    Reflection(message7_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Copy(m204_messages_[i], m204_other_messages_[i]);
+    Copy(message4_.message[i], message4_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m1_messages_[i], m1_other_messages_[i]);
+    Merge(message0_.message[i], message0_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M151_Get_F1(m151_messages_[i]);
+    M151_Get_F1(message3_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Clear(m1_messages_[i]);
+    Clear(message0_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m1_messages_[i], m1_other_messages_[i]);
+    Merge(message0_.message[i], message0_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m1_messages_[i]);
+    Destroy(message0_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m1_other_messages_[i]);
+    Destroy(message0_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m493_other_messages_[i], &m493_strings_[i]);
+    Deserialize(message9_.other_message[i], &message9_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m493_messages_[i], &m493_strings_[i]);
+    Deserialize(message9_.message[i], &message9_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m378_messages_[i], &m378_strings_[i]);
+    Deserialize(message7_.message[i], &message7_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M95_Get_F2(m95_messages_[i]);
+    M95_Get_F2(message2_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m95_messages_[i], m95_other_messages_[i]);
+    Merge(message2_.message[i], message2_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m95_messages_[i], m95_other_messages_[i]);
+    Merge(message2_.message[i], message2_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m95_messages_[i]);
+    Destroy(message2_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m95_other_messages_[i]);
+    Destroy(message2_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Copy(m151_messages_[i], m151_other_messages_[i]);
+    Copy(message3_.message[i], message3_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M493_Get_F2(m493_messages_[i]);
+    M493_Get_F2(message9_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m493_messages_[i], m493_other_messages_[i]);
+    Merge(message9_.message[i], message9_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m493_messages_[i], m493_other_messages_[i]);
+    Merge(message9_.message[i], message9_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m493_messages_[i]);
+    Destroy(message9_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m493_other_messages_[i]);
+    Destroy(message9_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M37_Set_F2(m37_messages_[i], &s_);
+    M37_Set_F2(message1_.message[i], &s_);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M378_Get_F3(m378_messages_[i]);
+    M378_Get_F3(message7_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m37_messages_[i], &m37_strings_[i]);
+    Deserialize(message1_.message[i], &message1_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m204_other_messages_[i], &m204_strings_[i]);
+    Deserialize(message4_.other_message[i], &message4_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m204_messages_[i], &m204_strings_[i]);
+    Deserialize(message4_.message[i], &message4_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Clear(m37_messages_[i]);
+    Clear(message1_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M37_Set_F3(m37_messages_[i], m37_other_messages_[i], &s_);
+    M37_Set_F3(message1_.message[i], message1_.other_message[i], &s_);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m37_messages_[i], &m37_strings_[i]);
+    Deserialize(message1_.message[i], &message1_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M37_Get_F2(m37_messages_[i]);
+    M37_Get_F2(message1_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M204_Get_F2(m204_other_messages_[i]);
+    M204_Get_F2(message4_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m204_messages_[i]);
+    Destroy(message4_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m204_other_messages_[i]);
+    Destroy(message4_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m37_messages_[i], m37_other_messages_[i]);
+    Merge(message1_.message[i], message1_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m378_messages_[i], &m378_strings_[i]);
+    Deserialize(message7_.message[i], &message7_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M378_Get_F4(m378_messages_[i]);
+    M378_Get_F4(message7_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M37_Get_F3(m37_messages_[i]);
+    M37_Get_F3(message1_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m151_other_messages_[i], &m151_strings_[i]);
+    Deserialize(message3_.other_message[i], &message3_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m37_messages_[i], m37_other_messages_[i]);
+    Merge(message1_.message[i], message1_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m151_messages_[i], &m151_strings_[i]);
+    Deserialize(message3_.message[i], &message3_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m37_messages_[i]);
+    Destroy(message1_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m37_other_messages_[i]);
+    Destroy(message1_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M151_Get_F2(m151_other_messages_[i]);
+    M151_Get_F2(message3_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m378_messages_[i], &m378_strings_[i]);
+    Deserialize(message7_.message[i], &message7_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Clear(m151_messages_[i]);
+    Clear(message3_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m151_messages_[i]);
+    Destroy(message3_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m151_other_messages_[i]);
+    Destroy(message3_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M378_Get_F5(m378_messages_[i]);
+    M378_Get_F5(message7_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m378_messages_[i], &m378_strings_[i]);
+    Deserialize(message7_.message[i], &message7_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M378_Get_F6(m378_messages_[i]);
+    M378_Get_F6(message7_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Deserialize(m378_messages_[i], &m378_strings_[i]);
+    Deserialize(message7_.message[i], &message7_.string[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m378_messages_[i], m378_other_messages_[i]);
+    Merge(message7_.message[i], message7_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    M378_Get_F7(m378_messages_[i]);
+    M378_Get_F7(message7_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Merge(m378_messages_[i], m378_other_messages_[i]);
+    Merge(message7_.message[i], message7_.other_message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m378_messages_[i]);
+    Destroy(message7_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    Destroy(m378_other_messages_[i]);
+    Destroy(message7_.other_message[i]);
   }
 }
 

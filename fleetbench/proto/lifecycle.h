@@ -15,6 +15,7 @@
 #ifndef THIRD_PARTY_FLEETBENCH_PROTO_LIFECYCLE_H_
 #define THIRD_PARTY_FLEETBENCH_PROTO_LIFECYCLE_H_
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -29,48 +30,43 @@
 #include "fleetbench/proto/representative7.pb.h"
 #include "fleetbench/proto/representative8.pb.h"
 #include "fleetbench/proto/representative9.pb.h"
+#include "google/protobuf/arena.h"
 
 namespace fleetbench::proto {
 
 const int kMaxValueStringSize = 1 << 20;
 
+template <typename MessageType>
+struct Message {
+  std::vector<MessageType*> message;
+  std::vector<MessageType*> other_message;
+  std::vector<std::string> string;
+};
+
 class ProtoLifecycle {
  public:
-  ProtoLifecycle(uint32_t working_set_size)
+  explicit ProtoLifecycle(uint32_t working_set_size)
       : working_set_size_(working_set_size),
-        indices_(working_set_size),
-        m1_messages_(working_set_size),
-        m1_other_messages_(working_set_size),
-        m1_strings_(working_set_size),
-        m37_messages_(working_set_size),
-        m37_other_messages_(working_set_size),
-        m37_strings_(working_set_size),
-        m95_messages_(working_set_size),
-        m95_other_messages_(working_set_size),
-        m95_strings_(working_set_size),
-        m151_messages_(working_set_size),
-        m151_other_messages_(working_set_size),
-        m151_strings_(working_set_size),
-        m204_messages_(working_set_size),
-        m204_other_messages_(working_set_size),
-        m204_strings_(working_set_size),
-        m238_messages_(working_set_size),
-        m238_other_messages_(working_set_size),
-        m238_strings_(working_set_size),
-        m305_messages_(working_set_size),
-        m305_other_messages_(working_set_size),
-        m305_strings_(working_set_size),
-        m378_messages_(working_set_size),
-        m378_other_messages_(working_set_size),
-        m378_strings_(working_set_size),
-        m437_messages_(working_set_size),
-        m437_other_messages_(working_set_size),
-        m437_strings_(working_set_size),
-        m493_messages_(working_set_size),
-        m493_other_messages_(working_set_size),
-        m493_strings_(working_set_size) {}
-  // Messages are allocated on the arena, and are freed automatically when arena
-  // goes out of scope, so no need to `delete` them explicitly.
+        s_(kMaxValueStringSize, 'a'),
+        indices_(working_set_size) {
+    Resize(message0_);
+    Resize(message1_);
+    Resize(message2_);
+    Resize(message3_);
+    Resize(message4_);
+    Resize(message5_);
+    Resize(message6_);
+    Resize(message7_);
+    Resize(message8_);
+    Resize(message9_);
+
+    // Initialize an array of integers to use indices_ in working sets.
+    for (size_t i = 0; i < indices_.size(); ++i) {
+      indices_[i] = i;
+    }
+  }
+  // Messages are allocated on the arena, and are freed automatically when
+  // arena goes out of scope, so no need to `delete` them explicitly.
   ~ProtoLifecycle() {}
   void Init(google::protobuf::Arena* arena);
   void Run();
@@ -81,40 +77,27 @@ class ProtoLifecycle {
   void InitMessages(std::vector<T*>& messages, std::vector<T*>& other_messages,
                     google::protobuf::Arena* arena);
 
+  template <typename T>
+  void Resize(T& messages) {
+    messages.message.resize(working_set_size_);
+    messages.other_message.resize(working_set_size_);
+    messages.string.resize(working_set_size_);
+  }
+
   uint32_t working_set_size_;
   std::string s_;
   std::vector<int> indices_;
 
-  std::vector<M1*> m1_messages_;
-  std::vector<M1*> m1_other_messages_;
-  std::vector<std::string> m1_strings_;
-  std::vector<M37*> m37_messages_;
-  std::vector<M37*> m37_other_messages_;
-  std::vector<std::string> m37_strings_;
-  std::vector<M95*> m95_messages_;
-  std::vector<M95*> m95_other_messages_;
-  std::vector<std::string> m95_strings_;
-  std::vector<M151*> m151_messages_;
-  std::vector<M151*> m151_other_messages_;
-  std::vector<std::string> m151_strings_;
-  std::vector<M204*> m204_messages_;
-  std::vector<M204*> m204_other_messages_;
-  std::vector<std::string> m204_strings_;
-  std::vector<M238*> m238_messages_;
-  std::vector<M238*> m238_other_messages_;
-  std::vector<std::string> m238_strings_;
-  std::vector<M305*> m305_messages_;
-  std::vector<M305*> m305_other_messages_;
-  std::vector<std::string> m305_strings_;
-  std::vector<M378*> m378_messages_;
-  std::vector<M378*> m378_other_messages_;
-  std::vector<std::string> m378_strings_;
-  std::vector<M437*> m437_messages_;
-  std::vector<M437*> m437_other_messages_;
-  std::vector<std::string> m437_strings_;
-  std::vector<M493*> m493_messages_;
-  std::vector<M493*> m493_other_messages_;
-  std::vector<std::string> m493_strings_;
+  Message<M1> message0_;
+  Message<M37> message1_;
+  Message<M95> message2_;
+  Message<M151> message3_;
+  Message<M204> message4_;
+  Message<M238> message5_;
+  Message<M305> message6_;
+  Message<M378> message7_;
+  Message<M437> message8_;
+  Message<M493> message9_;
 };
 
 }  // namespace fleetbench::proto
