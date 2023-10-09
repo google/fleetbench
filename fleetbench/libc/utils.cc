@@ -15,14 +15,18 @@
 #include "fleetbench/libc/utils.h"
 
 #include <cstddef>
+#include <cstdlib>
+#include <numeric>
 
 namespace fleetbench {
 namespace libc {
 
 MemoryBuffers::MemoryBuffers(const size_t size, const size_t alignment)
     : size_(size),
-      src_(reinterpret_cast<char*>(aligned_alloc(alignment, size_))),
-      dst_(reinterpret_cast<char*>(aligned_alloc(alignment, size_))) {
+      src_(reinterpret_cast<char*>(
+          aligned_alloc(alignment, std::lcm(size_, alignment)))),
+      dst_(reinterpret_cast<char*>(
+          aligned_alloc(alignment, std::lcm(size_, alignment)))) {
   memset(src_, 0xFF, size);
   memset(dst_, 0xFF, size);
 }
