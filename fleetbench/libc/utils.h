@@ -15,11 +15,10 @@
 #ifndef THIRD_PARTY_FLEETBENCH_MEM_UTILS_H_
 #define THIRD_PARTY_FLEETBENCH_MEM_UTILS_H_
 
+#include <cstddef>
 #include <cstdint>
-#include <optional>
 
 #include "absl/log/check.h"
-#include "absl/random/random.h"
 
 namespace fleetbench {
 namespace libc {
@@ -41,19 +40,12 @@ class MemoryBuffers {
   explicit MemoryBuffers(const size_t size, const size_t alignment = 512);
   ~MemoryBuffers();
 
-  size_t get_offset() const;
-  void set_offset(size_t offset);
-
-  // A pointer in the source buffer at the specified offset. If there is no
-  // input 'offset' argument, we use member variable `offset_` to calculate the
-  // pointer.
+  // A pointer in the source buffer at the specified offset.
   char *src();
   char *src(size_t offset);
   const char *src(size_t offset) const;
 
-  // A pointer in the destination buffer at the specified offset.  If there is
-  // no input 'offset' argument, we use member variable `offset_` to calculate
-  // the pointer.
+  // A pointer in the destination buffer at the specified offset.
   char *dst();
   char *dst(size_t offset);
   const char *dst(size_t offset) const;
@@ -64,23 +56,19 @@ class MemoryBuffers {
   // that `mismatch_pos` should be a non-negative, less than buffer size value.
   // If it is zero, two buffers are equal. After comparison, we reset the buffer
   // to make it ready for the next iteration.
-  void mark_dst(size_t mismatch_pos);
-  void reset_dst(size_t mismatch_pos);
+  void mark_dst(size_t offset, size_t mismatch_pos);
+  void reset_dst(size_t offset, size_t mismatch_pos);
 
   // The size of the source and destination buffers.
   size_t size() const { return size_; }
 
  private:
   const size_t size_;
-  size_t offset_ = 0;
   char *src_ = nullptr;
   char *dst_ = nullptr;
 };
 
-inline char *MemoryBuffers::src() {
-  DCHECK_LT(offset_, size_);
-  return src_ + offset_;
-}
+inline char *MemoryBuffers::src() { return src_; }
 
 inline char *MemoryBuffers::src(size_t offset) {
   DCHECK_LT(offset, size_);
@@ -92,10 +80,7 @@ inline const char *MemoryBuffers::src(size_t offset) const {
   return src_ + offset;
 }
 
-inline char *MemoryBuffers::dst() {
-  DCHECK_LT(offset_, size_);
-  return dst_ + offset_;
-}
+inline char *MemoryBuffers::dst() { return dst_; }
 
 inline char *MemoryBuffers::dst(size_t offset) {
   DCHECK_LT(offset, size_);
@@ -107,16 +92,13 @@ inline const char *MemoryBuffers::dst(size_t offset) const {
   return dst_ + offset;
 }
 
-inline void MemoryBuffers::mark_dst(size_t mismatch_pos) {
-  if (mismatch_pos > 0) dst_[offset_ + mismatch_pos - 1] = 0x00;
+inline void MemoryBuffers::mark_dst(size_t offset, size_t mismatch_pos) {
+  if (mismatch_pos > 0) dst_[offset + mismatch_pos - 1] = 0x00;
 }
 
-inline void MemoryBuffers::reset_dst(size_t mismatch_pos) {
-  if (mismatch_pos > 0) dst_[offset_ + mismatch_pos - 1] = 0xFF;
+inline void MemoryBuffers::reset_dst(size_t offset, size_t mismatch_pos) {
+  if (mismatch_pos > 0) dst_[offset + mismatch_pos - 1] = 0xFF;
 }
-
-inline size_t MemoryBuffers::get_offset() const { return offset_; }
-inline void MemoryBuffers::set_offset(size_t offset) { offset_ = offset; }
 
 }  // namespace libc
 }  // namespace fleetbench

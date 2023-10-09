@@ -133,10 +133,10 @@ void MemcmpFunction(benchmark::State &state,
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
       UpdateOffset(p, buffer_size, offset);
-      buffers.mark_dst(p.offset);
+      buffers.mark_dst(offset, p.offset);
       auto res = memcmp(dst + offset, src, p.size_bytes);
       benchmark::DoNotOptimize(res);
-      buffers.reset_dst(p.offset);
+      buffers.reset_dst(offset, p.offset);
     }
   }
 }
@@ -153,10 +153,10 @@ void BcmpFunction(benchmark::State &state,
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
       UpdateOffset(p, buffer_size, offset);
-      buffers.mark_dst(p.offset);
+      buffers.mark_dst(offset, p.offset);
       auto res = bcmp(dst + offset, src, p.size_bytes);
       benchmark::DoNotOptimize(res);
-      buffers.reset_dst(p.offset);
+      buffers.reset_dst(offset, p.offset);
     }
   }
 }
