@@ -61,25 +61,25 @@ static constexpr int64_t kPrecomputeParametersBytes = 4 * kKiB;
 // Helper function to create non cache resident benchmark.
 // By keeping incrementing the offset, we explore all the memory of a given
 // buffer, which increases the cache miss chance of the previous cache level.
-// The function updates the `offset_` value stored in `buffer`.
-void CalculateSpan(MemoryBuffers *buffer, const BM_Mem_Parameters &parameters,
-                   const size_t buffer_size) {
-  size_t offset = buffer->get_offset();
+inline void UpdateOffset(const BM_Mem_Parameters &parameters,
+                         const size_t buffer_size, size_t &offset) {
   offset += parameters.offset + parameters.size_bytes;
   if (offset + parameters.size_bytes >= buffer_size) offset = 0;
-  buffer->set_offset(offset);
 }
 
 void MemcpyFunction(benchmark::State &state,
                     std::vector<BM_Mem_Parameters> &parameters,
                     const size_t buffer_size) {
-  MemoryBuffers buffers(buffer_size);
   size_t batch_size = parameters.size();
+  MemoryBuffers buffers(buffer_size);
+  char *dst = buffers.dst();
+  char *src = buffers.src(0);
+  size_t offset = 0;
   // Run benchmark and call memcpy function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      CalculateSpan(&buffers, p, buffer_size);
-      auto res = memcpy(buffers.dst(), buffers.src(0), p.size_bytes);
+      UpdateOffset(p, buffer_size, offset);
+      auto res = memcpy(dst + offset, src, p.size_bytes);
       benchmark::DoNotOptimize(res);
     }
   }
@@ -106,14 +106,16 @@ void MemmoveFunction(benchmark::State &state,
   // src will fall into one of the three regions: src1 corresponds to case 1
   // above, src2 to case 2, src3 to case 3. The number of bytes to be moved is
   // always smaller than buffer_size.
-  MemoryBuffers buffers(buffer_size * 3);
   size_t batch_size = parameters.size();
+  MemoryBuffers buffers(buffer_size * 3);
+  char *dst = buffers.dst(buffers.size() / 3);
+  char *src = buffers.dst();
+  size_t offset = 0;
   // Run benchmark and call memmove function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      CalculateSpan(&buffers, p, buffer_size);
-      auto res =
-          memmove(buffers.dst(buffers.size() / 3), buffers.dst(), p.size_bytes);
+      UpdateOffset(p, buffer_size, offset);
+      auto res = memmove(dst, src + offset, p.size_bytes);
       benchmark::DoNotOptimize(res);
     }
   }
@@ -122,14 +124,17 @@ void MemmoveFunction(benchmark::State &state,
 void MemcmpFunction(benchmark::State &state,
                     std::vector<BM_Mem_Parameters> &parameters,
                     const size_t buffer_size) {
-  MemoryBuffers buffers(buffer_size);
   size_t batch_size = parameters.size();
+  MemoryBuffers buffers(buffer_size);
+  char *dst = buffers.dst();
+  char *src = buffers.src(0);
+  size_t offset = 0;
   // Run benchmark and call memcmp function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      CalculateSpan(&buffers, p, buffer_size);
+      UpdateOffset(p, buffer_size, offset);
       buffers.mark_dst(p.offset);
-      auto res = memcmp(buffers.dst(), buffers.src(0), p.size_bytes);
+      auto res = memcmp(dst + offset, src, p.size_bytes);
       benchmark::DoNotOptimize(res);
       buffers.reset_dst(p.offset);
     }
@@ -139,14 +144,17 @@ void MemcmpFunction(benchmark::State &state,
 void BcmpFunction(benchmark::State &state,
                   std::vector<BM_Mem_Parameters> &parameters,
                   const size_t buffer_size) {
-  MemoryBuffers buffers(buffer_size);
   size_t batch_size = parameters.size();
+  MemoryBuffers buffers(buffer_size);
+  char *dst = buffers.dst();
+  char *src = buffers.src(0);
+  size_t offset = 0;
   // Run benchmark and call bcmp function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      CalculateSpan(&buffers, p, buffer_size);
+      UpdateOffset(p, buffer_size, offset);
       buffers.mark_dst(p.offset);
-      auto res = bcmp(buffers.dst(), buffers.src(0), p.size_bytes);
+      auto res = bcmp(dst + offset, src, p.size_bytes);
       benchmark::DoNotOptimize(res);
       buffers.reset_dst(p.offset);
     }
@@ -156,13 +164,15 @@ void BcmpFunction(benchmark::State &state,
 void MemsetFunction(benchmark::State &state,
                     std::vector<BM_Mem_Parameters> &parameters,
                     const size_t buffer_size) {
-  MemoryBuffers buffers(buffer_size);
   size_t batch_size = parameters.size();
+  MemoryBuffers buffers(buffer_size);
+  char *dst = buffers.dst();
+  size_t offset = 0;
   // Run benchmark and call memset function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      CalculateSpan(&buffers, p, buffer_size);
-      auto res = memset(buffers.dst(), p.offset % 0xFF, p.size_bytes);
+      UpdateOffset(p, buffer_size, offset);
+      auto res = memset(dst + offset, p.offset % 0xFF, p.size_bytes);
       benchmark::DoNotOptimize(res);
     }
   }
