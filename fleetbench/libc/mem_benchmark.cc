@@ -211,16 +211,16 @@ static void BM_Memory(benchmark::State &state,
   // Max buffer size can be stored in current cache.
   const size_t buffer_size = available_bytes / buffer_count;
 
+  // For reproducibility, we compute all size_bytes fields before the offsets,
+  // as the call to absl::Uniform may perform a different number of calls to the
+  // random number generator, depending on the value of offset_upper_bound,
+  // which depends on the cache size.
   for (auto &p : parameters) {
     // Size_bytes is sampled from collected prod distribution.
     p.size_bytes = size_bytes_sampler(GetRNG());
+  }
 
-    // Once we have size_bytes, we can sample the offsets from a discrete
-    // uniform distribution in interval [0, offset_upper_bound), where
-    // 'offset_upper_bound' is calculated by subtracting size_bytes from
-    // maximum buffer size to avoid accessing past the end of the buffer.
-    const size_t offset_upper_bound = buffer_size - p.size_bytes;
-
+  for (auto &p : parameters) {
     if (is_compare == IsCompare::YES) {
       // For memcmp/bcmp, the offset indicates the position of the first
       // mismatch char between the two buffers. The value of offset indicates:
@@ -237,6 +237,12 @@ static void BM_Memory(benchmark::State &state,
         CHECK_LT(p.offset, buffer_size) << "May result in buffer overflow";
       }
     } else {
+      // Once we have size_bytes, we can sample the offsets from a discrete
+      // uniform distribution in interval [0, offset_upper_bound), where
+      // 'offset_upper_bound' is calculated by subtracting size_bytes from
+      // maximum buffer size to avoid accessing past the end of the buffer.
+      const size_t offset_upper_bound = buffer_size - p.size_bytes;
+
       // For non-comparison operation, offset is used to calculate the starting
       // position of the memory block.
       p.offset = absl::Uniform<uint16_t>(GetRNG(), 0, offset_upper_bound);
