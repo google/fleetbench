@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -62,23 +63,26 @@ static constexpr int64_t kPrecomputeParametersBytes = 4 * kKiB;
 // By keeping incrementing the offset, we explore all the memory of a given
 // buffer, which increases the cache miss chance of the previous cache level.
 inline void UpdateOffset(const BM_Mem_Parameters &parameters,
-                         const size_t buffer_size, size_t &offset) {
-  offset += parameters.offset + parameters.size_bytes;
-  if (offset + parameters.size_bytes >= buffer_size) offset = 0;
+                         const size_t buffer_size,
+                         LinearFeedbackShiftRegister &lfsr, size_t &offset) {
+  uint16_t rand = lfsr.Next();
+  offset += (rand & 0xFFF);
+  if (offset + parameters.size_bytes >= buffer_size) offset = (rand & 0xFFF);
 }
 
 void MemcpyFunction(benchmark::State &state,
                     std::vector<BM_Mem_Parameters> &parameters,
-                    const size_t buffer_size) {
+                    const size_t buffer_size, const uint16_t lfsr_start_state) {
   size_t batch_size = parameters.size();
   MemoryBuffers buffers(buffer_size);
   char *dst = buffers.dst();
   char *src = buffers.src(0);
   size_t offset = 0;
+  LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call memcpy function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      UpdateOffset(p, buffer_size, offset);
+      UpdateOffset(p, buffer_size, lfsr, offset);
       auto res = memcpy(dst + offset, src, p.size_bytes);
       benchmark::DoNotOptimize(res);
     }
@@ -87,7 +91,8 @@ void MemcpyFunction(benchmark::State &state,
 
 void MemmoveFunction(benchmark::State &state,
                      std::vector<BM_Mem_Parameters> &parameters,
-                     const size_t buffer_size) {
+                     const size_t buffer_size,
+                     const uint16_t lfsr_start_state) {
   // |----------|----------|----------|
   // |<--src1-->|<--src2-->|<--src3-->|
   //            ↑
@@ -111,10 +116,11 @@ void MemmoveFunction(benchmark::State &state,
   char *dst = buffers.dst(buffers.size() / 3);
   char *src = buffers.dst();
   size_t offset = 0;
+  LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call memmove function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      UpdateOffset(p, buffer_size, offset);
+      UpdateOffset(p, buffer_size, lfsr, offset);
       auto res = memmove(dst, src + offset, p.size_bytes);
       benchmark::DoNotOptimize(res);
     }
@@ -123,16 +129,17 @@ void MemmoveFunction(benchmark::State &state,
 
 void MemcmpFunction(benchmark::State &state,
                     std::vector<BM_Mem_Parameters> &parameters,
-                    const size_t buffer_size) {
+                    const size_t buffer_size, const uint16_t lfsr_start_state) {
   size_t batch_size = parameters.size();
   MemoryBuffers buffers(buffer_size);
   char *dst = buffers.dst();
   char *src = buffers.src(0);
   size_t offset = 0;
+  LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call memcmp function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      UpdateOffset(p, buffer_size, offset);
+      UpdateOffset(p, buffer_size, lfsr, offset);
       buffers.mark_dst(offset, p.offset);
       auto res = memcmp(dst + offset, src, p.size_bytes);
       benchmark::DoNotOptimize(res);
@@ -143,16 +150,17 @@ void MemcmpFunction(benchmark::State &state,
 
 void BcmpFunction(benchmark::State &state,
                   std::vector<BM_Mem_Parameters> &parameters,
-                  const size_t buffer_size) {
+                  const size_t buffer_size, const uint16_t lfsr_start_state) {
   size_t batch_size = parameters.size();
   MemoryBuffers buffers(buffer_size);
   char *dst = buffers.dst();
   char *src = buffers.src(0);
   size_t offset = 0;
+  LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call bcmp function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      UpdateOffset(p, buffer_size, offset);
+      UpdateOffset(p, buffer_size, lfsr, offset);
       buffers.mark_dst(offset, p.offset);
       auto res = bcmp(dst + offset, src, p.size_bytes);
       benchmark::DoNotOptimize(res);
@@ -163,15 +171,16 @@ void BcmpFunction(benchmark::State &state,
 
 void MemsetFunction(benchmark::State &state,
                     std::vector<BM_Mem_Parameters> &parameters,
-                    const size_t buffer_size) {
+                    const size_t buffer_size, const uint16_t lfsr_start_state) {
   size_t batch_size = parameters.size();
   MemoryBuffers buffers(buffer_size);
   char *dst = buffers.dst();
   size_t offset = 0;
+  LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call memset function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      UpdateOffset(p, buffer_size, offset);
+      UpdateOffset(p, buffer_size, lfsr, offset);
       auto res = memset(dst + offset, p.offset % 0xFF, p.size_bytes);
       benchmark::DoNotOptimize(res);
     }
@@ -191,7 +200,7 @@ static void BM_Memory(benchmark::State &state,
                       size_t buffer_count,
                       void (*memory_call)(benchmark::State &,
                                           std::vector<BM_Mem_Parameters> &,
-                                          const size_t),
+                                          const size_t, const uint16_t),
                       const IsCompare &is_compare, const size_t cache_size,
                       const std::string &distribution_name) {
   // Remaining available memory size in current cache for needed parameters to
@@ -210,6 +219,10 @@ static void BM_Memory(benchmark::State &state,
 
   // Max buffer size can be stored in current cache.
   const size_t buffer_size = available_bytes / buffer_count;
+
+  // Initial state of the linear-feedback shift register. Must be nonzero.
+  uint16_t lfsr_start_state = GetRNG()();
+  lfsr_start_state = std::max((uint16_t)1, lfsr_start_state);
 
   // For reproducibility, we compute all size_bytes fields before the offsets,
   // as the call to absl::Uniform may perform a different number of calls to the
@@ -236,24 +249,10 @@ static void BM_Memory(benchmark::State &state,
         p.offset += 1;
         CHECK_LT(p.offset, buffer_size) << "May result in buffer overflow";
       }
-    } else {
-      // Once we have size_bytes, we can sample the offsets from a discrete
-      // uniform distribution in interval [0, offset_upper_bound), where
-      // 'offset_upper_bound' is calculated by subtracting size_bytes from
-      // maximum buffer size to avoid accessing past the end of the buffer.
-      const size_t offset_upper_bound = buffer_size - p.size_bytes;
-
-      // For non-comparison operation, offset is used to calculate the starting
-      // position of the memory block.
-      p.offset = absl::Uniform<uint16_t>(GetRNG(), 0, offset_upper_bound);
-
-      // Check offset is valid.
-      CHECK_LT(p.offset + p.size_bytes, buffer_size)
-          << "May result in src buffer overflow";
     }
   }
 
-  memory_call(state, parameters, buffer_size);
+  memory_call(state, parameters, buffer_size, lfsr_start_state);
 
   // Make each benchmark repetition reproducible, if using a fixed seed.
   Random::instance().Reset();
@@ -279,7 +278,7 @@ void RegisterBenchmarks() {
   using operation_entry =
       std::tuple<std::string, size_t,
                  void (*)(benchmark::State &, std::vector<BM_Mem_Parameters> &,
-                          const size_t),
+                          const size_t, const uint16_t),
                  IsCompare>;
   auto memory_operations = {
       operation_entry("Memcpy", kMemcpyBufferCount, &MemcpyFunction,

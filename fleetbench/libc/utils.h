@@ -24,10 +24,7 @@ namespace fleetbench {
 namespace libc {
 
 // Parameters to store memory operations data and it consumes 4B.
-// NOTE: Ideally we would store 2 offsets, one for src, and one dst. However, it
-// will require at least 6B, which is not great as unaligned loads may become
-// expensive on some platforms. Therefore, we encode the memory operation
-// arguments into 32 bits here.
+// NOTE: offset is only used for memcmp/bcmp.
 struct BM_Mem_Parameters {
   unsigned offset : 16;      // max: 16 KiB - 1
   unsigned size_bytes : 16;  // max: 16 KiB - 1
@@ -99,6 +96,33 @@ inline void MemoryBuffers::mark_dst(size_t offset, size_t mismatch_pos) {
 inline void MemoryBuffers::reset_dst(size_t offset, size_t mismatch_pos) {
   if (mismatch_pos > 0) dst_[offset + mismatch_pos - 1] = 0xFF;
 }
+
+// To generate pseudo-random numbers efficiently, we use a 16-bit Xorshift
+// linear-feedback shift register
+// (https://en.wikipedia.org/wiki/Linear-feedback_shift_register#Xorshift_LFSRs).
+class LinearFeedbackShiftRegister {
+ public:
+  // The default constructor assumes a starting seed of 1.
+  LinearFeedbackShiftRegister() { Reset(1); }
+
+  // Constructor that specifies the starting seed. The seed must be non-zero.
+  explicit LinearFeedbackShiftRegister(uint32_t seed) { Reset(seed); }
+
+  // Reset starting from a specific seed. The seed must be non-zero.
+  void Reset(uint16_t seed) { reg_ = seed; }
+
+  // Advance to the next value.
+  inline uint16_t Next() {
+    DCHECK_NE(reg_, 0);
+    reg_ ^= reg_ >> 7;
+    reg_ ^= reg_ << 9;
+    reg_ ^= reg_ >> 13;
+    return reg_;
+  }
+
+ private:
+  uint16_t reg_;
+};
 
 }  // namespace libc
 }  // namespace fleetbench
