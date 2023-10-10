@@ -24,6 +24,7 @@ cc_library(
     hdrs = [
         "lifecycle.h",
         "populate_protos.h",
+        "receiver.h",
     ],
     deps = [
         ":representative%d_cc_proto" % id
