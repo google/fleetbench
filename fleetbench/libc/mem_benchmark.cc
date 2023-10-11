@@ -59,6 +59,9 @@ static constexpr int64_t kReservedBenchmarkBytes = 1 * kKiB;
 // Reserved space for precomputed parameters for memory operation.
 static constexpr int64_t kPrecomputeParametersBytes = 4 * kKiB;
 
+// Maximum value of size_bytes.
+static constexpr size_t kMaxSizeBytes = 4096;
+
 // Helper function to create non cache resident benchmark.
 // By keeping incrementing the offset, we explore all the memory of a given
 // buffer, which increases the cache miss chance of the previous cache level.
@@ -76,15 +79,19 @@ void MemcpyFunction(benchmark::State &state,
   size_t batch_size = parameters.size();
   MemoryBuffers buffers(buffer_size);
   char *dst = buffers.dst();
-  char *src = buffers.src(0);
-  size_t offset = 0;
+  char *src = buffers.src();
+  size_t dst_offset = 0;
+  size_t src_offset = 0;
   LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call memcpy function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      UpdateOffset(p, buffer_size, lfsr, offset);
-      auto res = memcpy(dst + offset, src, p.size_bytes);
+      UpdateOffset(p, buffer_size, lfsr, dst_offset);
+      UpdateOffset(p, buffer_size, lfsr, src_offset);
+      auto res = memcpy(dst + dst_offset, src + src_offset, p.size_bytes);
       benchmark::DoNotOptimize(res);
+      dst_offset += p.size_bytes;
+      src_offset += p.size_bytes;
     }
   }
 }
@@ -123,6 +130,7 @@ void MemmoveFunction(benchmark::State &state,
       UpdateOffset(p, buffer_size, lfsr, offset);
       auto res = memmove(dst, src + offset, p.size_bytes);
       benchmark::DoNotOptimize(res);
+      offset += p.size_bytes;
     }
   }
 }
@@ -134,16 +142,20 @@ void MemcmpFunction(benchmark::State &state,
   MemoryBuffers buffers(buffer_size);
   char *dst = buffers.dst();
   char *src = buffers.src(0);
-  size_t offset = 0;
+  size_t dst_offset = 0;
+  size_t src_offset = 0;
   LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call memcmp function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      UpdateOffset(p, buffer_size, lfsr, offset);
-      buffers.mark_dst(offset, p.offset);
-      auto res = memcmp(dst + offset, src, p.size_bytes);
+      UpdateOffset(p, buffer_size, lfsr, dst_offset);
+      UpdateOffset(p, buffer_size, lfsr, src_offset);
+      buffers.mark_dst(dst_offset, p.offset);
+      auto res = memcmp(dst + dst_offset, src + src_offset, p.size_bytes);
       benchmark::DoNotOptimize(res);
-      buffers.reset_dst(offset, p.offset);
+      buffers.reset_dst(dst_offset, p.offset);
+      dst_offset += p.size_bytes;
+      src_offset += p.size_bytes;
     }
   }
 }
@@ -155,16 +167,20 @@ void BcmpFunction(benchmark::State &state,
   MemoryBuffers buffers(buffer_size);
   char *dst = buffers.dst();
   char *src = buffers.src(0);
-  size_t offset = 0;
+  size_t dst_offset = 0;
+  size_t src_offset = 0;
   LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call bcmp function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      UpdateOffset(p, buffer_size, lfsr, offset);
-      buffers.mark_dst(offset, p.offset);
-      auto res = bcmp(dst + offset, src, p.size_bytes);
+      UpdateOffset(p, buffer_size, lfsr, dst_offset);
+      UpdateOffset(p, buffer_size, lfsr, src_offset);
+      buffers.mark_dst(dst_offset, p.offset);
+      auto res = bcmp(dst + dst_offset, src + src_offset, p.size_bytes);
       benchmark::DoNotOptimize(res);
-      buffers.reset_dst(offset, p.offset);
+      buffers.reset_dst(dst_offset, p.offset);
+      dst_offset += p.size_bytes;
+      src_offset += p.size_bytes;
     }
   }
 }
@@ -183,6 +199,7 @@ void MemsetFunction(benchmark::State &state,
       UpdateOffset(p, buffer_size, lfsr, offset);
       auto res = memset(dst + offset, p.offset % 0xFF, p.size_bytes);
       benchmark::DoNotOptimize(res);
+      offset += p.size_bytes;
     }
   }
 }
@@ -216,9 +233,12 @@ static void BM_Memory(benchmark::State &state,
   // Convert prod size distribution to a discrete distribution.
   std::discrete_distribution<uint16_t> size_bytes_sampler(
       memory_size_distribution.begin(), memory_size_distribution.end());
+  CHECK_LE(size_bytes_sampler.max(), kMaxSizeBytes)
+      << "Maximum of the distribution larger than expected";
 
   // Max buffer size can be stored in current cache.
   const size_t buffer_size = available_bytes / buffer_count;
+  CHECK_LT(memory_size_distribution.size(), buffer_size) << "Buffer too small";
 
   // Initial state of the linear-feedback shift register. Must be nonzero.
   uint16_t lfsr_start_state = GetRNG()();
@@ -291,10 +311,19 @@ void RegisterBenchmarks() {
       operation_entry("Memset", kMemsetBufferCount, &MemsetFunction,
                       IsCompare::NO),
   };
+  // For a benchmark whose data should be resident in cache level x, we use a
+  // buffer of size CacheSize(x)/2. This is usually significantly larger than
+  // CacheSize(x-1), which means that the buffer does not fit in the
+  // higher-level caches. Using a value even larger than CacheSize(x)/2 would
+  // increase the risk conflict misses in level x, in particular in the
+  // lower-level caches, which are often physically indexed. For the L1 cache
+  // (which is typically virtually indexed), we use 3/4*CacheSize(1), as for a
+  // 32kB L1 cache, CacheSize(1)/2 = 16kB would be too small for the memmove
+  // benchmark.
   auto cache_resident_info = {
-      std::make_pair("L1", GetCacheSize(1, "Data")),
-      std::make_pair("L2", GetCacheSize(2)),
-      std::make_pair("LLC", GetCacheSize(3)),
+      std::make_pair("L1", GetCacheSize(1, "Data") * 3 / 4),
+      std::make_pair("L2", GetCacheSize(2) / 2),
+      std::make_pair("LLC", GetCacheSize(3) / 2),
       std::make_pair("Cold", 2 * GetCacheSize(3)),
   };
   auto memory_benchmark = fleetbench::libc::BM_Memory;
