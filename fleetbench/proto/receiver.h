@@ -132,6 +132,12 @@ void EnumDescriptor(M* message) {
 }
 
 template <typename M>
+void IsInitialized(M* message) {
+  auto initialized = message->IsInitialized();
+  benchmark::DoNotOptimize(initialized);
+}
+
+template <typename M>
 void Merge(M* message, M* other_message) {
   message->MergeFrom(*other_message);
   benchmark::ClobberMemory();
