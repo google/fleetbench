@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>  // NOLINT
 #include <random>
@@ -36,7 +37,7 @@ namespace fleetbench {
 namespace libc {
 // Number of needed buffer of memory operators.
 static constexpr size_t kMemcpyBufferCount = 2;
-static constexpr size_t kMemmoveBufferCount = 3;
+static constexpr size_t kMemmoveBufferCount = 1;
 static constexpr size_t kMemsetBufferCount = 1;
 static constexpr size_t kMemcmpBufferCount = 2;
 static constexpr size_t kBcmpBufferCount = 2;
@@ -65,12 +66,20 @@ static constexpr size_t kMaxSizeBytes = 4096;
 // Helper function to create non cache resident benchmark.
 // By keeping incrementing the offset, we explore all the memory of a given
 // buffer, which increases the cache miss chance of the previous cache level.
-inline void UpdateOffset(const BM_Mem_Parameters &parameters,
-                         const size_t buffer_size,
+inline void UpdateOffset(const size_t buffer_size, const size_t left_margin,
+                         const size_t right_margin,
                          LinearFeedbackShiftRegister &lfsr, size_t &offset) {
   uint16_t rand = lfsr.Next();
   offset += (rand & 0xFFF);
-  if (offset + parameters.size_bytes >= buffer_size) offset = (rand & 0xFFF);
+  if (offset + right_margin >= buffer_size) {
+    offset = left_margin + (rand & 0xFFF);
+  }
+}
+
+// Overload for the case where left_margin = 0
+inline void UpdateOffset(const size_t buffer_size, const size_t right_margin,
+                         LinearFeedbackShiftRegister &lfsr, size_t &offset) {
+  return UpdateOffset(buffer_size, 0, right_margin, lfsr, offset);
 }
 
 void MemcpyFunction(benchmark::State &state,
@@ -86,8 +95,8 @@ void MemcpyFunction(benchmark::State &state,
   // Run benchmark and call memcpy function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      UpdateOffset(p, buffer_size, lfsr, dst_offset);
-      UpdateOffset(p, buffer_size, lfsr, src_offset);
+      UpdateOffset(buffer_size, p.size_bytes, lfsr, dst_offset);
+      UpdateOffset(buffer_size, p.size_bytes, lfsr, src_offset);
       auto res = memcpy(dst + dst_offset, src + src_offset, p.size_bytes);
       benchmark::DoNotOptimize(res);
       dst_offset += p.size_bytes;
@@ -100,35 +109,19 @@ void MemmoveFunction(benchmark::State &state,
                      std::vector<BM_Mem_Parameters> &parameters,
                      const size_t buffer_size,
                      const uint16_t lfsr_start_state) {
-  // |----------|----------|----------|
-  // |<--src1-->|<--src2-->|<--src3-->|
-  //            ↑
-  //           dst
-  // The memmove function allows the src and dst buffers to overlap. To
-  // reproduce this behavior we will use only one of the two buffers allocated
-  // by MemoryBuffers below. Both src and dst pointers will be selected from the
-  // dst() member.
-  // We want to exercise three configurations :
-  //    1. src and dst overlap, src is before dst
-  //    2. src and dst overlap, src is after dst
-  //    3. src and dst do not overlap
-  // To do so, we allocate a memory region of size '3 * buffer_size' and we pin
-  // the dst pointer to a third of the buffer. Then we allow src to be anywhere
-  // in the buffer as long as it doesn't read past allocated memory. This way
-  // src will fall into one of the three regions: src1 corresponds to case 1
-  // above, src2 to case 2, src3 to case 3. The number of bytes to be moved is
-  // always smaller than buffer_size.
   size_t batch_size = parameters.size();
-  MemoryBuffers buffers(buffer_size * 3);
-  char *dst = buffers.dst(buffers.size() / 3);
-  char *src = buffers.dst();
+  MemoryBuffers buffers(buffer_size);
+  char *buffer = buffers.src();
   size_t offset = 0;
   LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call memmove function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      UpdateOffset(p, buffer_size, lfsr, offset);
-      auto res = memmove(dst, src + offset, p.size_bytes);
+      UpdateOffset(buffer_size, std::abs(std::min(int16_t{0}, p.offset)),
+                   std::max(int16_t{0}, p.offset) + p.size_bytes, lfsr, offset);
+      char *src = buffer + offset;
+      char *dst = buffer + offset + p.offset;
+      auto res = memmove(dst, src, p.size_bytes);
       benchmark::DoNotOptimize(res);
       offset += p.size_bytes;
     }
@@ -148,8 +141,8 @@ void MemcmpFunction(benchmark::State &state,
   // Run benchmark and call memcmp function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      UpdateOffset(p, buffer_size, lfsr, dst_offset);
-      UpdateOffset(p, buffer_size, lfsr, src_offset);
+      UpdateOffset(buffer_size, p.size_bytes, lfsr, dst_offset);
+      UpdateOffset(buffer_size, p.size_bytes, lfsr, src_offset);
       buffers.mark_dst(dst_offset, p.offset);
       auto res = memcmp(dst + dst_offset, src + src_offset, p.size_bytes);
       benchmark::DoNotOptimize(res);
@@ -173,8 +166,8 @@ void BcmpFunction(benchmark::State &state,
   // Run benchmark and call bcmp function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      UpdateOffset(p, buffer_size, lfsr, dst_offset);
-      UpdateOffset(p, buffer_size, lfsr, src_offset);
+      UpdateOffset(buffer_size, p.size_bytes, lfsr, dst_offset);
+      UpdateOffset(buffer_size, p.size_bytes, lfsr, src_offset);
       buffers.mark_dst(dst_offset, p.offset);
       auto res = bcmp(dst + dst_offset, src + src_offset, p.size_bytes);
       benchmark::DoNotOptimize(res);
@@ -196,7 +189,7 @@ void MemsetFunction(benchmark::State &state,
   // Run benchmark and call memset function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      UpdateOffset(p, buffer_size, lfsr, offset);
+      UpdateOffset(buffer_size, p.size_bytes, lfsr, offset);
       auto res = memset(dst + offset, p.offset % 0xFF, p.size_bytes);
       benchmark::DoNotOptimize(res);
       offset += p.size_bytes;
@@ -238,7 +231,14 @@ static void BM_Memory(benchmark::State &state,
 
   // Max buffer size can be stored in current cache.
   const size_t buffer_size = available_bytes / buffer_count;
-  CHECK_LT(memory_size_distribution.size(), buffer_size) << "Buffer too small";
+  CHECK_LT(memory_size_distribution.size() * 2, buffer_size)
+      << "Buffer too small";
+  if (memory_call == &MemmoveFunction) {
+    // Memmove needs a larger buffer to allow for differents kinds of overlap
+    // between src and dst.
+    CHECK_LT(memory_size_distribution.size() * 3, buffer_size)
+        << "Buffer too small";
+  }
 
   // Initial state of the linear-feedback shift register. Must be nonzero.
   uint16_t lfsr_start_state = GetRNG()();
@@ -268,6 +268,28 @@ static void BM_Memory(benchmark::State &state,
         p.offset = absl::Uniform<uint16_t>(GetRNG(), 0, p.size_bytes);
         p.offset += 1;
         CHECK_LT(p.offset, buffer_size) << "May result in buffer overflow";
+      }
+    } else if (memory_call == &MemmoveFunction) {
+      // The memmove function allows the src and dst buffers to overlap. To
+      // reproduce this behavior, we will use the same buffer for src and dst.
+      // We want to exercise three configurations:
+      //    1. src and dst overlap, dst < src
+      //    2. src and dst overlap, dst >= src
+      //    3. src and dst do not overlap
+      // To do so, we sample an offset from the range (-size_bytes, 2 *
+      // kMaxSizeBytes), and set dst = src + offset. Thus, an offset < 0
+      // corresponds to case 1 above, 0 <= offset < size_bytes to case 2, and
+      // an offset >= size_bytes to case 3.
+
+      // Probability that src and dst overlap, i.e., that we are in case 1 or 2.
+      const float kOverlap = 0.04;
+      const bool does_overlap = absl::Bernoulli(GetRNG(), kOverlap);
+      if (does_overlap) {
+        p.offset = absl::Uniform<int16_t>(absl::IntervalOpenOpen, GetRNG(),
+                                          -p.size_bytes, p.size_bytes);
+      } else {
+        p.offset =
+            absl::Uniform<int16_t>(GetRNG(), p.size_bytes, 2 * kMaxSizeBytes);
       }
     }
   }

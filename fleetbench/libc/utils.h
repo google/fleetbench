@@ -24,10 +24,10 @@ namespace fleetbench {
 namespace libc {
 
 // Parameters to store memory operations data and it consumes 4B.
-// NOTE: offset is only used for memcmp/bcmp.
+// NOTE: offset is only used for memcmp/bcmp and memmove.
 struct BM_Mem_Parameters {
-  unsigned offset : 16;      // max: 16 KiB - 1
-  unsigned size_bytes : 16;  // max: 16 KiB - 1
+  int16_t offset;
+  uint16_t size_bytes;
 } __attribute__((__packed__));
 static_assert(sizeof(BM_Mem_Parameters) == sizeof(uint32_t));
 
