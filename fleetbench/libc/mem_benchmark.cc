@@ -45,11 +45,6 @@ static constexpr size_t kBcmpBufferCount = 2;
 // The chance that two memory buffers are exactly same -- memcmp/bcmp only.
 static constexpr float kComparisonEqual = 0.4;
 
-// Whether a memory function is to be considered as "comparing bytes"
-// (memcmp/bcmp only). This is useful when generating buffers so we can test
-// effect of buffers comparing equal or different.
-enum class IsCompare : bool { YES = true, NO = false };
-
 // KibiByte. 1kKiB = 1024 bytes
 static constexpr int64_t kKiB = 1024;
 
@@ -211,7 +206,7 @@ static void BM_Memory(benchmark::State &state,
                       void (*memory_call)(benchmark::State &,
                                           std::vector<BM_Mem_Parameters> &,
                                           const size_t, const uint16_t),
-                      const IsCompare &is_compare, const size_t cache_size,
+                      const size_t cache_size,
                       const std::string &distribution_name) {
   // Remaining available memory size in current cache for needed parameters to
   // run benchmark.
@@ -254,7 +249,7 @@ static void BM_Memory(benchmark::State &state,
   }
 
   for (auto &p : parameters) {
-    if (is_compare == IsCompare::YES) {
+    if (memory_call == &MemcmpFunction || memory_call == &BcmpFunction) {
       // For memcmp/bcmp, the offset indicates the position of the first
       // mismatch char between the two buffers. The value of offset indicates:
       //  0 : Buffers always compare equal,
@@ -320,18 +315,13 @@ void RegisterBenchmarks() {
   using operation_entry =
       std::tuple<std::string, size_t,
                  void (*)(benchmark::State &, std::vector<BM_Mem_Parameters> &,
-                          const size_t, const uint16_t),
-                 IsCompare>;
+                          const size_t, const uint16_t)>;
   auto memory_operations = {
-      operation_entry("Memcpy", kMemcpyBufferCount, &MemcpyFunction,
-                      IsCompare::NO),
-      operation_entry("Memmove", kMemmoveBufferCount, &MemmoveFunction,
-                      IsCompare::NO),
-      operation_entry("Memcmp", kMemcmpBufferCount, &MemcmpFunction,
-                      IsCompare::YES),
-      operation_entry("Bcmp", kBcmpBufferCount, &BcmpFunction, IsCompare::YES),
-      operation_entry("Memset", kMemsetBufferCount, &MemsetFunction,
-                      IsCompare::NO),
+      operation_entry("Memcpy", kMemcpyBufferCount, &MemcpyFunction),
+      operation_entry("Memmove", kMemmoveBufferCount, &MemmoveFunction),
+      operation_entry("Memcmp", kMemcmpBufferCount, &MemcmpFunction),
+      operation_entry("Bcmp", kBcmpBufferCount, &BcmpFunction),
+      operation_entry("Memset", kMemsetBufferCount, &MemsetFunction),
   };
   // For a benchmark whose data should be resident in cache level x, we use a
   // buffer of size CacheSize(x)/2. This is usually significantly larger than
@@ -349,8 +339,8 @@ void RegisterBenchmarks() {
       std::make_pair("Cold", 2 * GetCacheSize(3)),
   };
   auto memory_benchmark = fleetbench::libc::BM_Memory;
-  for (const auto &[distribution_file_prefix, buffer_counter, memory_function,
-                    is_compare] : memory_operations) {
+  for (const auto &[distribution_file_prefix, buffer_counter, memory_function] :
+       memory_operations) {
     const auto &files = GetDistributionFiles(distribution_file_prefix);
     std::string suffix_name = "";
     for (const auto &file : files) {
@@ -364,8 +354,7 @@ void RegisterBenchmarks() {
             absl::StrCat("BM_", distribution_name, "_", cache_name);
         benchmark::RegisterBenchmark(benchmark_name.c_str(), memory_benchmark,
                                      memory_size_distribution, buffer_counter,
-                                     memory_function, is_compare, cache_size,
-                                     suffix_name);
+                                     memory_function, cache_size, suffix_name);
       }
     }
   }
