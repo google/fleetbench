@@ -399,7 +399,7 @@ void BM_StrDestructor(benchmark::State& state) {
   }
 }
 
-void RegisterBenchmarks() {
+void RegisterHotBenchmarks() {
   std::vector<benchmark::internal::Benchmark*> benchmarks;
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_FindMiss_Hot, 4);
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_FindMiss_Hot, 64);
@@ -441,15 +441,15 @@ void RegisterBenchmarks() {
   REGISTER_BENCHMARK(BM_StrDestructor);
 }
 
-class BenchmarkRegisterer {
+class HotBenchmarkRegisterer {
  public:
-  BenchmarkRegisterer() {
-    DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
+  HotBenchmarkRegisterer() {
+    DynamicRegistrar::Get()->AddCallback(RegisterHotBenchmarks);
     DynamicRegistrar::Get()->AddDefaultFilter(
         "BM_InsertHit_Hot.*::absl::flat_hash_set.*64.*set_size:64.*density:0");
   }
 };
 
-BenchmarkRegisterer br;
+HotBenchmarkRegisterer hbr;
 
 }  // namespace fleetbench

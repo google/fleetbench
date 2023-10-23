@@ -70,10 +70,10 @@ Hashing     | Data-focused. Supports algorithms [CRC32](https://github.com/absei
 
 Bazel 6 is our supported version.
 
-As an example, to run the 'hot' Swissmap benchmark:
+As an example, to run the Swissmap benchmarks:
 
 ```
-bazel run --config=opt fleetbench/swissmap:hot_swissmap_benchmark
+bazel run --config=opt fleetbench/swissmap:swissmap_benchmark
 ```
 
 Important: Always run benchmarks with `--config=opt` to apply essential compiler
@@ -96,15 +96,14 @@ Or combining build and run together:
 GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel run --config=clang --config=opt --config=haswell fleetbench/WORK_LOAD:BUILD_TARGET
 ```
 
-Benchmark                 | WORKLOAD    | BUILD_TARGET            | Binary run flags
-------------------------- | ----------- | ----------------------- | ----------------
-Proto                     | proto       | proto_benchmark         | `--benchmark_min_time=3s`
-Swissmap hot environment  | swissmap    | hot_swissmap_benchmark  |
-Swissmap cold environment | swissmap    | cold_swissmap_benchmark |
-Libc memory               | libc        | mem_benchmark           | `--benchmark_counters_tabular=true`
-TCMalloc                  | tcmalloc    | empirical_driver        | `--benchmark_min_time=10s`. Check `--benchmark_filter` below.
-Compression               | compression | compression_benchmark   | `--benchmark_counters_tabular=true`
-Hashing                   | hashing     | hashing_benchmark       | `--benchmark_counters_tabular=true`
+Benchmark   | WORKLOAD    | BUILD_TARGET          | Binary run flags
+----------- | ----------- | --------------------- | ----------------
+Proto       | proto       | proto_benchmark       | `--benchmark_min_time=3s`
+Swissmap    | swissmap    | swissmap_benchmark    |
+Libc memory | libc        | mem_benchmark         | `--benchmark_counters_tabular=true`
+TCMalloc    | tcmalloc    | empirical_driver      | `--benchmark_min_time=10s`. Check `--benchmark_filter` below.
+Compression | compression | compression_benchmark | `--benchmark_counters_tabular=true`
+Hashing     | hashing     | hashing_benchmark     | `--benchmark_counters_tabular=true`
 
 NOTE: By default, each benchmark only runs a minimal set of tests that we have
 selected as the most representative. To see the default lists, you can use the
@@ -117,10 +116,10 @@ benchmarks to run
 The TCMalloc Empirical Driver benchmark can take ~1hr to run all benchmarks, so
 running a subset may be advised.
 
-Example to run for only sets of `16` and `64` element of cold swissmap:
+Example to run for only sets of `16` and `64` elements of swissmap:
 
 ```
-bazel run --config=opt fleetbench/swissmap:cold_swissmap_benchmark -- \
+bazel run --config=opt fleetbench/swissmap:swissmap_benchmark -- \
 --benchmark_filter=".*set_size:(16|64).*"
 ```
 
@@ -230,18 +229,18 @@ Potential areas of future work include:
 
     A: Note that Clang and the LLVM tools are required for FDO builds.
 
-    Take fleetbench/swissmap/hot_swissmap_benchmark as an example.
+    Take fleetbench/swissmap/swissmap_benchmark as an example.
 
 ```
 # Instrument.
-bazel build --config=clang --config=opt --fdo_instrument=.fdo fleetbench/swissmap:hot_swissmap_benchmark
+bazel build --config=clang --config=opt --fdo_instrument=.fdo fleetbench/swissmap:swissmap_benchmark
 # Run to generate instrumentation.
-bazel-bin/fleetbench/swissmap/hot_swissmap_benchmark --benchmark_filter=all
+bazel-bin/fleetbench/swissmap/swissmap_benchmark --benchmark_filter=all
 # There should be a file with a .profraw extension in $PWD/.fdo/.
 # Build an optimized binary.
-bazel build --config=clang --config=opt --fdo_optimize=.fdo/<filename>.profraw fleetbench/swissmap:hot_swissmap_benchmark
+bazel build --config=clang --config=opt --fdo_optimize=.fdo/<filename>.profraw fleetbench/swissmap:swissmap_benchmark
 # Run the FDO-optimized binary.
-bazel-bin/fleetbench/swissmap/hot_swissmap_benchmark --benchmark_filter=all
+bazel-bin/fleetbench/swissmap/swissmap_benchmark --benchmark_filter=all
 ```
 
 1.  Q: How do I build the benchmark with ThinLTO?

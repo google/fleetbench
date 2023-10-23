@@ -305,7 +305,7 @@ static void BM_InsertManyUnordered_Cold(benchmark::State& state) {
   }
 }
 
-void RegisterBenchmarks() {
+void RegisterColdBenchmarks() {
   std::vector<benchmark::internal::Benchmark*> benchmarks;
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_FindMiss_Cold, 4);
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_FindMiss_Cold, 64);
@@ -341,15 +341,15 @@ void RegisterBenchmarks() {
   }
 }
 
-class BenchmarkRegisterer {
+class ColdBenchmarkRegisterer {
  public:
-  BenchmarkRegisterer() {
-    DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
+  ColdBenchmarkRegisterer() {
+    DynamicRegistrar::Get()->AddCallback(RegisterColdBenchmarks);
     DynamicRegistrar::Get()->AddDefaultFilter(
         "BM_InsertHit_Cold.*::absl::flat_hash_set.*64.*set_size:64.*density:0");
   }
 };
 
-BenchmarkRegisterer br;
+ColdBenchmarkRegisterer cbr;
 
 }  // namespace fleetbench
