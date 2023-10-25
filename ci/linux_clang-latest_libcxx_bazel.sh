@@ -68,7 +68,8 @@ stop_docker() {
 trap stop_docker EXIT
 
 # Install additional dependencies
-docker exec fleetbench  apt-get install pip python3-numpy -y
+docker exec fleetbench apt-get update
+docker exec fleetbench apt-get install pip python3-numpy -y
 docker exec fleetbench pip install zstandard
 docker exec fleetbench pip install python-snappy
 docker exec fleetbench pip install brotli
