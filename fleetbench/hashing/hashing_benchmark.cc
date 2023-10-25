@@ -17,6 +17,7 @@
 #include <cstring>
 #include <filesystem>  // NOLINT
 #include <iterator>
+#include <numeric>
 #include <random>
 #include <string>
 #include <tuple>
@@ -44,7 +45,8 @@ struct BM_Hashing_Parameters {
 
 void ExtendCrc32cFunction(benchmark::State &state,
                           BM_Hashing_Parameters &parameters) {
-  size_t batch_size = parameters.str_lengths.size();
+  size_t batch_size = std::accumulate(parameters.str_lengths.begin(),
+                                      parameters.str_lengths.end(), 0);
   absl::crc32c_t v0{0};
   size_t start = 0;
   // Run benchmark and call ExtendCrc32c
@@ -76,7 +78,8 @@ void ExtendCrc32cFunction(benchmark::State &state,
 
 void ComputeCrc32cFunction(benchmark::State &state,
                            BM_Hashing_Parameters &parameters) {
-  size_t batch_size = parameters.str_lengths.size();
+  size_t batch_size = std::accumulate(parameters.str_lengths.begin(),
+                                      parameters.str_lengths.end(), 0);
   size_t start = 0;
   // Run benchmark and call ComputeCrc32c
   while (state.KeepRunningBatch(batch_size)) {
@@ -100,7 +103,8 @@ void ComputeCrc32cFunction(benchmark::State &state,
 
 void CombineContiguousFunction(benchmark::State &state,
                                BM_Hashing_Parameters &parameters) {
-  size_t batch_size = parameters.str_lengths.size();
+  size_t batch_size = std::accumulate(parameters.str_lengths.begin(),
+                                      parameters.str_lengths.end(), 0);
   size_t start = 0;
   // Run benchmark and call combine_contiguous
   while (state.KeepRunningBatch(batch_size)) {
@@ -180,14 +184,8 @@ static void BM_Hashing(benchmark::State &state,
   // Make each benchmark repetition reproducible, if using a fixed seed.
   Random::instance().Reset();
 
-  // Computes the total_bytes throughput.
-  size_t batch_bytes = 0;
-  for (auto &p : str_lengths) {
-    batch_bytes += p;
-  }
-
-  const size_t total_bytes = (state.iterations() * batch_bytes) / batch_size;
-
+  // Each iteration processes one byte of data.
+  const size_t total_bytes = state.iterations();
   state.SetBytesProcessed(total_bytes);
   state.counters["bytes_per_cycle"] = benchmark::Counter(
       total_bytes / benchmark::CPUInfo::Get().cycles_per_second,

@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>  // NOLINT
+#include <numeric>
 #include <random>
 #include <string>
 #include <tuple>
@@ -77,10 +78,17 @@ inline void UpdateOffset(const size_t buffer_size, const size_t right_margin,
   return UpdateOffset(buffer_size, 0, right_margin, lfsr, offset);
 }
 
+// Returns the sum of the size_bytes fields of a BM_Mem_Parameters vector.
+int ComputeTotalNumBytes(const std::vector<BM_Mem_Parameters> &parameters) {
+  return std::accumulate(
+      parameters.begin(), parameters.end(), 0,
+      [](int sum, const auto &cur) { return sum + cur.size_bytes; });
+}
+
 void MemcpyFunction(benchmark::State &state,
                     std::vector<BM_Mem_Parameters> &parameters,
                     const size_t buffer_size, const uint16_t lfsr_start_state) {
-  size_t batch_size = parameters.size();
+  size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
   char *dst = buffers.dst();
   char *src = buffers.src();
@@ -104,7 +112,7 @@ void MemmoveFunction(benchmark::State &state,
                      std::vector<BM_Mem_Parameters> &parameters,
                      const size_t buffer_size,
                      const uint16_t lfsr_start_state) {
-  size_t batch_size = parameters.size();
+  size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
   char *buffer = buffers.src();
   size_t offset = 0;
@@ -126,7 +134,7 @@ void MemmoveFunction(benchmark::State &state,
 void MemcmpFunction(benchmark::State &state,
                     std::vector<BM_Mem_Parameters> &parameters,
                     const size_t buffer_size, const uint16_t lfsr_start_state) {
-  size_t batch_size = parameters.size();
+  size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
   char *dst = buffers.dst();
   char *src = buffers.src(0);
@@ -151,7 +159,7 @@ void MemcmpFunction(benchmark::State &state,
 void BcmpFunction(benchmark::State &state,
                   std::vector<BM_Mem_Parameters> &parameters,
                   const size_t buffer_size, const uint16_t lfsr_start_state) {
-  size_t batch_size = parameters.size();
+  size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
   char *dst = buffers.dst();
   char *src = buffers.src(0);
@@ -176,7 +184,7 @@ void BcmpFunction(benchmark::State &state,
 void MemsetFunction(benchmark::State &state,
                     std::vector<BM_Mem_Parameters> &parameters,
                     const size_t buffer_size, const uint16_t lfsr_start_state) {
-  size_t batch_size = parameters.size();
+  size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
   char *dst = buffers.dst();
   size_t offset = 0;
@@ -300,8 +308,8 @@ static void BM_Memory(benchmark::State &state,
     batch_bytes += P.size_bytes;
   }
 
-  const size_t total_bytes = (state.iterations() * batch_bytes) / batch_size;
-
+  // Each iteration processes one byte of data.
+  const size_t total_bytes = state.iterations();
   state.SetBytesProcessed(total_bytes);
   state.counters["bytes_per_cycle"] = benchmark::Counter(
       total_bytes / benchmark::CPUInfo::Get().cycles_per_second,

@@ -20,6 +20,7 @@
 #include <ios>
 #include <iterator>
 #include <memory>
+#include <numeric>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -118,6 +119,13 @@ std::unique_ptr<Compressor> CreateCompressor(
 
 }  // namespace
 
+// Returns the total number of characters in a vector of strings.
+static int ComputeTotalNumChars(const std::vector<std::string>& strings) {
+  return std::accumulate(
+      strings.begin(), strings.end(), 0,
+      [](int sum, const auto& cur) { return sum + cur.size(); });
+}
+
 static constexpr absl::string_view kCorporaPath = "compression/corpora/";
 
 static void BM_Compress(benchmark::State& state,
@@ -135,7 +143,8 @@ static void BM_Compress(benchmark::State& state,
   std::vector<std::string> compressed(corpora.size()),
       decompressed(corpora.size());
 
-  for (auto _ : state) {
+  size_t batch_size = ComputeTotalNumChars(corpora);
+  while (state.KeepRunningBatch(batch_size)) {
     //  Compress file
     for (size_t i = 0; i < corpora.size(); i++) {
       auto res = compressor->Compress(corpora[i], &compressed[i]);
@@ -156,11 +165,9 @@ static void BM_Compress(benchmark::State& state,
       benchmark::Counter(total_compression_ratio / corpora.size());
 
   // Compute compression byte rate
-  size_t corpora_size = 0;
-  for (auto& corpus : corpora) corpora_size += corpus.size();
-  state.counters["compression_byte_rate"] = benchmark::Counter(
-      state.iterations() * corpora_size, benchmark::Counter::kIsRate,
-      benchmark::Counter::OneK::kIs1024);
+  state.counters["compression_byte_rate"] =
+      benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate,
+                         benchmark::Counter::OneK::kIs1024);
 
   if (!distribution_name.empty()) state.SetLabel(distribution_name);
 }
@@ -183,7 +190,8 @@ static void BM_Decompress(benchmark::State& state,
     compressor->Compress(corpora[i], &compressed[i]);
   }
 
-  for (auto _ : state) {
+  size_t batch_size = ComputeTotalNumChars(corpora);
+  while (state.KeepRunningBatch(batch_size)) {
     for (size_t i = 0; i < compressed.size(); i++) {
       auto res = compressor->Decompress(compressed[i], &decompressed[i]);
       benchmark::DoNotOptimize(res);
@@ -200,12 +208,10 @@ static void BM_Decompress(benchmark::State& state,
   state.counters["avg_compression_ratio"] =
       benchmark::Counter(total_compression_ratio / corpora.size());
 
-  // Compute compression byte rate
-  size_t corpora_size = 0;
-  for (auto& corpus : corpora) corpora_size += corpus.size();
-  state.counters["decompression_byte_rate"] = benchmark::Counter(
-      state.iterations() * corpora_size, benchmark::Counter::kIsRate,
-      benchmark::Counter::OneK::kIs1024);
+  // Compute decompression byte rate
+  state.counters["decompression_byte_rate"] =
+      benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate,
+                         benchmark::Counter::OneK::kIs1024);
 
   if (!distribution_name.empty()) state.SetLabel(distribution_name);
 }
