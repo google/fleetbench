@@ -210,7 +210,7 @@ static std::vector<std::filesystem::path> GetDistributionFiles(
 
 static void BM_Memory(benchmark::State &state,
                       const std::vector<double> &memory_size_distribution,
-                      size_t buffer_count,
+                      const double overlap_probability, size_t buffer_count,
                       void (*memory_call)(benchmark::State &,
                                           std::vector<BM_Mem_Parameters> &,
                                           const size_t, const uint16_t),
@@ -284,10 +284,9 @@ static void BM_Memory(benchmark::State &state,
       // corresponds to case 1 above, 0 <= offset < size_bytes to case 2, and
       // an offset >= size_bytes to case 3.
 
-      // Probability that src and dst overlap, i.e., that we are in case 1 or 2.
-      const float kOverlap = 0.04;
-      const bool does_overlap = absl::Bernoulli(GetRNG(), kOverlap);
+      const bool does_overlap = absl::Bernoulli(GetRNG(), overlap_probability);
       if (does_overlap) {
+        // src and dst overlap, i.e., we are in case 1 or 2.
         p.offset = absl::Uniform<int16_t>(absl::IntervalOpenOpen, GetRNG(),
                                           -p.size_bytes, p.size_bytes);
       } else {
@@ -355,13 +354,14 @@ void RegisterBenchmarks() {
       auto distribution_name = file.filename().string();
       distribution_name.erase(distribution_name.find(".csv"));
 
-      const std::vector<double> memory_size_distribution =
-          ReadDistributionFile(file);
+      const auto [memory_size_distribution, overlap_probability] =
+          ReadDistributionFileWithOverlapProbability(file);
       for (const auto &[cache_name, cache_size] : cache_resident_info) {
         std::string benchmark_name =
             absl::StrCat("BM_", distribution_name, "_", cache_name);
         benchmark::RegisterBenchmark(benchmark_name.c_str(), memory_benchmark,
-                                     memory_size_distribution, buffer_counter,
+                                     memory_size_distribution,
+                                     overlap_probability, buffer_counter,
                                      memory_function, cache_size, suffix_name);
       }
     }

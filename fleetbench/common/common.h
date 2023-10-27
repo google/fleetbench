@@ -17,6 +17,7 @@
 #include <filesystem>  // NOLINT
 #include <random>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/strings/string_view.h"
@@ -51,6 +52,17 @@ std::vector<std::filesystem::path> GetMatchingFiles(absl::string_view dir,
 // input occurs. The function returns a vector whose entries correspond to the
 // columns in the CSV file.
 std::vector<double> ReadDistributionFile(std::filesystem::path file);
+
+struct DistributionOverlapProbabilityPair {
+  std::vector<double> distribution;
+  double overlap_probability;
+};
+
+// Similar to ReadDistributionFile(), but for a CSV file that additionally
+// contains the overlap probability in the last column. The function returns a
+// pair consisting of the distribution and the overlap probability.
+DistributionOverlapProbabilityPair ReadDistributionFileWithOverlapProbability(
+    std::filesystem::path file);
 
 // Similar to ReadDistributionFile, except this function accepts file that has
 // multiple lines. Each line converts to a vector of string, separated by the

@@ -98,6 +98,14 @@ std::vector<double> ReadDistributionFile(std::filesystem::path file) {
   return distribution;
 }
 
+DistributionOverlapProbabilityPair ReadDistributionFileWithOverlapProbability(
+    std::filesystem::path file) {
+  std::vector<double> columns = ReadDistributionFile(file);
+  double overlap_probability = columns.back();
+  columns.pop_back();
+  return DistributionOverlapProbabilityPair{columns, overlap_probability};
+}
+
 std::vector<std::vector<std::string>> ReadCsv(std::filesystem::path file,
                                               char delimiter) {
   std::vector<std::vector<std::string>> lines;
