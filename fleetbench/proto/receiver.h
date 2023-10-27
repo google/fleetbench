@@ -19,19 +19,25 @@
 #include <string>
 
 #include "absl/strings/cord.h"
+#include "absl/strings/string_view.h"
 #include "benchmark/benchmark.h"
 
 namespace fleetbench::proto {
-
-inline void ReceiveString(const std::string& val) {
-  const std::string* temp_str = &val;
-  benchmark::DoNotOptimize(temp_str);
-}
 
 inline void ReceiveCord(const absl::Cord& val) {
   absl::Cord temp_cord;
   temp_cord.Append(val);
   benchmark::DoNotOptimize(temp_cord);
+}
+
+inline void ReceiveStringView(absl::string_view val) {
+  absl::string_view temp_str_view = val;
+  benchmark::DoNotOptimize(temp_str_view);
+}
+
+inline void ReceiveString(const std::string& val) {
+  const std::string* temp_str = &val;
+  benchmark::DoNotOptimize(temp_str);
 }
 
 inline void ReceiveBool(const bool val) {

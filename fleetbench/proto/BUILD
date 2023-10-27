@@ -32,6 +32,7 @@ cc_library(
     ] + [
         "//fleetbench/common",
         "@com_google_absl//absl/strings:cord",
+        "@com_google_absl//absl/strings:string_view",
         "@com_google_benchmark//:benchmark",
         "@com_google_protobuf//:protobuf",
     ],
