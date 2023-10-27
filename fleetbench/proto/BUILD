@@ -31,6 +31,7 @@ cc_library(
         for id in range(1, 11)
     ] + [
         "//fleetbench/common",
+        "@com_google_absl//absl/strings:cord",
         "@com_google_benchmark//:benchmark",
         "@com_google_protobuf//:protobuf",
     ],

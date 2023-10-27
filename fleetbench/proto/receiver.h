@@ -15,78 +15,58 @@
 #ifndef THIRD_PARTY_FLEETBENCH_PROTO_RECEIVER_H_
 #define THIRD_PARTY_FLEETBENCH_PROTO_RECEIVER_H_
 
-#include <array>
-#include <cstddef>
 #include <cstdint>
 #include <string>
 
+#include "absl/strings/cord.h"
 #include "benchmark/benchmark.h"
 
 namespace fleetbench::proto {
-// The Receiver struct is a set of circular buffers, one for each of the C++
-// native proto2 types. A set of Receive<type>() functions add values to a
-// global instance of these buffers.
-const size_t kReceiverSize = 65536;
-
-struct Receiver {
-  std::array<const std::string*, kReceiverSize> string_r;
-  size_t string_i;
-  std::array<bool, kReceiverSize> bool_r;
-  size_t bool_i;
-  std::array<double, kReceiverSize> double_r;
-  size_t double_i;
-  std::array<float, kReceiverSize> float_r;
-  size_t float_i;
-  std::array<int32_t, kReceiverSize> int32_r;
-  size_t int32_i;
-  std::array<int64_t, kReceiverSize> int64_r;
-  size_t int64_i;
-  std::array<uint32_t, kReceiverSize> uint32_r;
-  size_t uint32_i;
-  std::array<uint64_t, kReceiverSize> uint64_r;
-  size_t uint64_i;
-};
-
-struct Receiver receiver;
 
 inline void ReceiveString(const std::string& val) {
-  receiver.string_i = (receiver.string_i + 1) % kReceiverSize;
-  benchmark::DoNotOptimize(receiver.string_r[receiver.string_i] = &val);
+  const std::string* temp_str = &val;
+  benchmark::DoNotOptimize(temp_str);
+}
+
+inline void ReceiveCord(const absl::Cord& val) {
+  absl::Cord temp_cord;
+  temp_cord.Append(val);
+  benchmark::DoNotOptimize(temp_cord);
 }
 
 inline void ReceiveBool(const bool val) {
-  receiver.bool_i = (receiver.bool_i + 1) % kReceiverSize;
-  benchmark::DoNotOptimize(receiver.bool_r[receiver.bool_i] = val);
+  bool temp_bool = val;
+  benchmark::DoNotOptimize(temp_bool);
 }
 
 inline void ReceiveDouble(const double val) {
-  receiver.double_i = (receiver.double_i + 1) % kReceiverSize;
-  benchmark::DoNotOptimize(receiver.double_r[receiver.double_i] = val);
+  double temp_double = val;
+  benchmark::DoNotOptimize(temp_double);
 }
 
 inline void ReceiveFloat(const float val) {
-  receiver.float_i = (receiver.float_i + 1) % kReceiverSize;
-  benchmark::DoNotOptimize(receiver.float_r[receiver.float_i] = val);
+  float temp_float = val;
+  benchmark::DoNotOptimize(temp_float);
 }
 
 inline void ReceiveInt32(const int32_t val) {
-  receiver.int32_i = (receiver.int32_i + 1) % kReceiverSize;
-  benchmark::DoNotOptimize(receiver.int32_r[receiver.int32_i] = val);
+  int32_t temp_int32 = val;
+  benchmark::DoNotOptimize(temp_int32);
 }
 
 inline void ReceiveInt64(const int64_t val) {
-  receiver.int64_i = (receiver.int64_i + 1) % kReceiverSize;
-  receiver.int64_r[receiver.int64_i] = val;
+  int64_t temp_int64 = val;
+  benchmark::DoNotOptimize(temp_int64);
 }
 
 inline void ReceiveUint32(const uint32_t val) {
-  receiver.uint32_i = (receiver.uint32_i + 1) % kReceiverSize;
-  receiver.uint32_r[receiver.uint32_i] = val;
+  uint32_t temp_uint32 = val;
+  benchmark::DoNotOptimize(temp_uint32);
 }
 
 inline void ReceiveUint64(const uint64_t val) {
-  receiver.uint64_i = (receiver.uint64_i + 1) % kReceiverSize;
-  receiver.uint64_r[receiver.uint64_i] = val;
+  uint64_t temp_uint64 = val;
+  benchmark::DoNotOptimize(temp_uint64);
 }
 
 template <typename M>
