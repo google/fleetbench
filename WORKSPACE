@@ -164,10 +164,10 @@ http_archive(
 
 # Proto rules for Bazel and Protobuf
 http_archive(
-    name = "com_google_protobuf",
-    sha256 = "8b28fdd45bab62d15db232ec404248901842e5340299a57765e48abe8a80d930",
-    strip_prefix = "protobuf-3.20.1",
-    urls = ["https://github.com/protocolbuffers/protobuf/archive/v3.20.1.tar.gz"],
+    name = "com_google_protobuf", # 2023-10-30
+    sha256 = "616bb3536ac1fff3fb1a141450fa28b875e985712170ea7f1bfe5e5fc41e2cd8",
+    strip_prefix = "protobuf-24.4",
+    urls = ["https://github.com/protocolbuffers/protobuf/archive/v24.4.tar.gz"],
 )
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 protobuf_deps()
