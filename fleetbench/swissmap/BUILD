@@ -54,11 +54,10 @@ cc_test(
     malloc = "@com_google_tcmalloc//tcmalloc",
     tags = ["manual"],
     deps = [
-        ":swissmap_benchmark",
+        ":swissmap_benchmark_lib",
         "//fleetbench:benchmark_main",
         "//fleetbench:dynamic_registrar",
         "//fleetbench/common",
-        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/container:node_hash_set",
         "@com_google_benchmark//:benchmark",
