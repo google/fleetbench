@@ -67,7 +67,7 @@ inline void UpdateOffset(const size_t buffer_size, const size_t left_margin,
                          LinearFeedbackShiftRegister &lfsr, size_t &offset) {
   uint16_t rand = lfsr.Next();
   offset += (rand & 0xFFF);
-  if (offset + right_margin >= buffer_size) {
+  if (offset + right_margin >= buffer_size || offset < left_margin) {
     offset = left_margin + (rand & 0xFFF);
   }
 }
