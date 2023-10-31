@@ -4,16 +4,16 @@ load("@rules_proto//proto:defs.bzl", "proto_library")
 package(default_visibility = ["//visibility:private"])
 
 [proto_library(
-    name = "representative%d_proto" % id,
+    name = "Message%d_proto" % id,
     testonly = True,
-    srcs = ["representative%d.proto" % id],
-) for id in range(1, 11)]
+    srcs = ["Message%d.proto" % id],
+) for id in range(0, 10)]
 
 [cc_proto_library(
-    name = "representative%d_cc_proto" % id,
+    name = "Message%d_cc_proto" % id,
     testonly = True,
-    deps = [":representative%d_proto" % id],
-) for id in range(1, 11)]
+    deps = [":Message%d_proto" % id],
+) for id in range(0, 10)]
 
 cc_library(
     name = "benchmark_lib",
@@ -22,13 +22,13 @@ cc_library(
         "lifecycle.cc",
     ],
     hdrs = [
+        "access_protos.h",
         "lifecycle.h",
-        "populate_protos.h",
         "receiver.h",
     ],
     deps = [
-        ":representative%d_cc_proto" % id
-        for id in range(1, 11)
+        ":Message%d_cc_proto" % id
+        for id in range(0, 10)
     ] + [
         "//fleetbench/common",
         "@com_google_absl//absl/strings:cord",

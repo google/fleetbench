@@ -30,7 +30,7 @@ inline void ReceiveCord(const absl::Cord& val) {
   benchmark::DoNotOptimize(temp_cord);
 }
 
-inline void ReceiveStringView(absl::string_view val) {
+inline void ReceiveString(absl::string_view val) {
   absl::string_view temp_str_view = val;
   benchmark::DoNotOptimize(temp_str_view);
 }

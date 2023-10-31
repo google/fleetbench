@@ -20,16 +20,16 @@
 #include <string>
 #include <vector>
 
-#include "fleetbench/proto/representative1.pb.h"
-#include "fleetbench/proto/representative10.pb.h"
-#include "fleetbench/proto/representative2.pb.h"
-#include "fleetbench/proto/representative3.pb.h"
-#include "fleetbench/proto/representative4.pb.h"
-#include "fleetbench/proto/representative5.pb.h"
-#include "fleetbench/proto/representative6.pb.h"
-#include "fleetbench/proto/representative7.pb.h"
-#include "fleetbench/proto/representative8.pb.h"
-#include "fleetbench/proto/representative9.pb.h"
+#include "fleetbench/proto/Message0.pb.h"
+#include "fleetbench/proto/Message1.pb.h"
+#include "fleetbench/proto/Message2.pb.h"
+#include "fleetbench/proto/Message3.pb.h"
+#include "fleetbench/proto/Message4.pb.h"
+#include "fleetbench/proto/Message5.pb.h"
+#include "fleetbench/proto/Message6.pb.h"
+#include "fleetbench/proto/Message7.pb.h"
+#include "fleetbench/proto/Message8.pb.h"
+#include "fleetbench/proto/Message9.pb.h"
 #include "google/protobuf/arena.h"
 
 namespace fleetbench::proto {
@@ -80,16 +80,16 @@ class ProtoLifecycle {
   uint32_t working_set_size_;
   std::string s_;
 
-  Message<M1> message0_;
-  Message<M37> message1_;
-  Message<M95> message2_;
-  Message<M151> message3_;
-  Message<M204> message4_;
-  Message<M238> message5_;
-  Message<M305> message6_;
-  Message<M378> message7_;
-  Message<M437> message8_;
-  Message<M493> message9_;
+  Message<Message0> message0_;
+  Message<Message1> message1_;
+  Message<Message2> message2_;
+  Message<Message3> message3_;
+  Message<Message4> message4_;
+  Message<Message5> message5_;
+  Message<Message6> message6_;
+  Message<Message7> message7_;
+  Message<Message8> message8_;
+  Message<Message9> message9_;
 };
 
 }  // namespace fleetbench::proto
