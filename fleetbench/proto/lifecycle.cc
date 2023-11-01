@@ -18,7 +18,16 @@
 #include <cstddef>
 #include <vector>
 
-#include "fleetbench/proto/access_protos.h"
+#include "fleetbench/proto/access_message0.h"
+#include "fleetbench/proto/access_message1.h"
+#include "fleetbench/proto/access_message2.h"
+#include "fleetbench/proto/access_message3.h"
+#include "fleetbench/proto/access_message4.h"
+#include "fleetbench/proto/access_message5.h"
+#include "fleetbench/proto/access_message6.h"
+#include "fleetbench/proto/access_message7.h"
+#include "fleetbench/proto/access_message8.h"
+#include "fleetbench/proto/access_message9.h"
 #include "fleetbench/proto/receiver.h"
 #include "google/protobuf/arena.h"
 namespace fleetbench::proto {

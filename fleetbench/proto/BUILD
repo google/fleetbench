@@ -18,18 +18,12 @@ package(default_visibility = ["//visibility:private"])
 cc_library(
     name = "benchmark_lib",
     testonly = True,
-    srcs = [
-        "lifecycle.cc",
-    ],
-    hdrs = [
-        "access_protos.h",
+    srcs = ["lifecycle.cc"],
+    hdrs = ["access_message%d.h" % id for id in range(0, 10)] + [
         "lifecycle.h",
         "receiver.h",
     ],
-    deps = [
-        ":Message%d_cc_proto" % id
-        for id in range(0, 10)
-    ] + [
+    deps = [":Message%d_cc_proto" % id for id in range(0, 10)] + [
         "//fleetbench/common",
         "@com_google_absl//absl/strings:cord",
         "@com_google_absl//absl/strings:string_view",
