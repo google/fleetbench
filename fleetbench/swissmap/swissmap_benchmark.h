@@ -15,6 +15,11 @@
 #ifndef THIRD_PARTY_FLEETBENCH_SWISSMAP_SWISSMAP_BENCHMARK_H_
 #define THIRD_PARTY_FLEETBENCH_SWISSMAP_SWISSMAP_BENCHMARK_H_
 
+#include <algorithm>
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -149,10 +154,11 @@ class SetsCache {
                                      Density density) {
     auto& sets = generated_sets_[min_size][min_total_size][density];
 
-    if (sets.empty()) {
-      sets = GenerateSets<Set>(min_size, min_total_size, density);
+    if (sets == nullptr) {
+      sets = std::make_unique<std::vector<Set>>(
+          GenerateSets<Set>(min_size, min_total_size, density));
     }
-    return sets;
+    return *sets;
   }
 
   // Returns a vector v such that v[i] is a vector containing the elements of
@@ -271,8 +277,10 @@ class SetsCache {
   SetsCache<Set>() {}
 
   using GeneratedSetsMap = absl::flat_hash_map<
-      size_t, absl::flat_hash_map<
-                  size_t, absl::flat_hash_map<Density, std::vector<Set>>>>;
+      size_t,
+      absl::flat_hash_map<
+          size_t,
+          absl::flat_hash_map<Density, std::unique_ptr<std::vector<Set>>>>>;
   GeneratedSetsMap generated_sets_;
 
   absl::flat_hash_map<std::vector<Set>*, std::vector<std::vector<uint32_t>>>
