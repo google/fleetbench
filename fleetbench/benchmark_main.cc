@@ -36,7 +36,6 @@ int main(int argc, char* argv[]) {
     benchmark::SetBenchmarkFilter(
         fleetbench::DynamicRegistrar::Get()->GetDefaultFilter());
   }
-
   fleetbench::DynamicRegistrar::Get()->Run();
 
   benchmark::RunSpecifiedBenchmarks();
