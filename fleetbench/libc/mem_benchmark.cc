@@ -218,8 +218,9 @@ static void BM_Memory(benchmark::State &state,
                       const std::string &distribution_name) {
   // Remaining available memory size in current cache for needed parameters to
   // run benchmark.
-  const size_t available_bytes =
+  const int available_bytes =
       cache_size - kPrecomputeParametersBytes - kReservedBenchmarkBytes;
+  CHECK_LT(0, available_bytes) << "Cache too small";
 
   const size_t batch_size = 1000;
 
