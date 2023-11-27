@@ -26,6 +26,7 @@
 
 #include "tools/cpp/runfiles/runfiles.h"
 #include "absl/flags/flag.h"
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -154,7 +155,10 @@ int GetCacheSize(int cache_level, absl::string_view cache_type) {
         return ci.size;
     }
   }
-  return -1;
+
+  LOG(FATAL) << "Cache size could not be detected. You can use the "
+                "--L1_data_size, --L2_size, and --L3_size flags to specify "
+                "the cache sizes (in bytes) manually.";
 }
 
 }  // namespace fleetbench
