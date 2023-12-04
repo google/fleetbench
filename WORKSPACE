@@ -50,10 +50,10 @@ py_repositories()
 
 # Abseil
 http_archive(
-    name = "com_google_absl", # 2023-09-05
-    urls = ["https://github.com/abseil/abseil-cpp/archive/415a1d1cb90bfd86ca08d5bcece210c4babe6e0e.zip"],
-    strip_prefix = "abseil-cpp-415a1d1cb90bfd86ca08d5bcece210c4babe6e0e",
-    sha256 = "8f90566113a51654fbeb89c17c9ca37a3886dfee9722505de00e2f25734a4140",
+    name = "com_google_absl", # 2023-12-04
+    urls = ["https://github.com/abseil/abseil-cpp/archive/8028a87c96df0fff5ab58daeec30c43ce6fb0d20.zip"],
+    strip_prefix = "abseil-cpp-8028a87c96df0fff5ab58daeec30c43ce6fb0d20",
+    sha256 = "33cab09e61d8fa1a87605d0003b9bd68e7bcce2cbb0abc266857b6067d5f6140",
 )
 
 # Abseil-Python
@@ -147,19 +147,19 @@ make(
 
 # TCMalloc
 http_archive(
-    name = "com_google_tcmalloc", # 2023-09-05
-    urls = ["https://github.com/google/tcmalloc/archive/89bb85c485ca2d8feeee7816142ff5d7a09a00a1.zip"],
-    strip_prefix = "tcmalloc-89bb85c485ca2d8feeee7816142ff5d7a09a00a1",
-    sha256 = "1a847296092ae81f69a7ebd3a0949e25cff7a65f6ce3482615847ddb583fcb22",
+    name = "com_google_tcmalloc", # 2023-12-04
+    urls = ["https://github.com/google/tcmalloc/archive/271e52a83f626827e00581460e4be75f5db43d16.zip"],
+    strip_prefix = "tcmalloc-271e52a83f626827e00581460e4be75f5db43d16",
+    sha256 = "c46c87f2062d5af99f866d6da7c1a3789301ecde58c61f7d82912054789daea7",
 )
 
 # Dependencies of TCMalloc
 # Fuzzing
 http_archive(
-    name = "rules_fuzzing",
-    sha256 = "a5734cb42b1b69395c57e0bbd32ade394d5c3d6afbfe782b24816a96da24660d",
-    strip_prefix = "rules_fuzzing-0.1.1",
-    urls = ["https://github.com/bazelbuild/rules_fuzzing/archive/v0.1.1.zip"],
+    name = "rules_fuzzing", # 2023-10-19
+    sha256 = "ff52ef4845ab00e95d29c02a9e32e9eff4e0a4c9c8a6bcf8407a2f19eb3f9190",
+    strip_prefix = "rules_fuzzing-0.4.1",
+    urls = ["https://github.com/bazelbuild/rules_fuzzing/releases/download/v0.4.1/rules_fuzzing-0.4.1.zip"],
 )
 
 # Proto rules for Bazel and Protobuf
