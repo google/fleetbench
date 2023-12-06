@@ -48,62 +48,11 @@ cc_test(
 )
 
 cc_test(
-    name = "cold_swissmap_benchmark",
-    srcs = ["cold_swissmap_benchmark.cc"],
-    linkstatic = 1,
-    malloc = "@com_google_tcmalloc//tcmalloc",
-    tags = ["manual"],
-    deps = [
-        ":swissmap_benchmark_lib",
-        "//fleetbench:benchmark_main",
-        "//fleetbench:dynamic_registrar",
-        "//fleetbench/common",
-        "@com_google_absl//absl/container:flat_hash_set",
-        "@com_google_absl//absl/container:node_hash_set",
-        "@com_google_benchmark//:benchmark",
+    name = "swissmap_smoketest",
+    srcs = [
+        "cold_swissmap_benchmark.cc",
+        "hot_swissmap_benchmark.cc",
     ],
-)
-
-cc_test(
-    name = "cold_swissmap_smoketest",
-    srcs = ["cold_swissmap_benchmark.cc"],
-    # Just run a single benchmark to reduce the test runtime.
-    args = ["--benchmark_filter=BM_.*::absl::flat_hash_set.*64.*set_size:64.*density:0"],
-    malloc = "@com_google_tcmalloc//tcmalloc",
-    deps = [
-        ":swissmap_benchmark_lib",
-        "//fleetbench:benchmark_main",
-        "//fleetbench:dynamic_registrar",
-        "//fleetbench/common",
-        "@com_google_absl//absl/container:flat_hash_set",
-        "@com_google_absl//absl/container:node_hash_set",
-        "@com_google_absl//absl/random",
-        "@com_google_benchmark//:benchmark",
-    ],
-)
-
-cc_test(
-    name = "hot_swissmap_benchmark",
-    srcs = ["hot_swissmap_benchmark.cc"],
-    linkstatic = 1,
-    malloc = "@com_google_tcmalloc//tcmalloc",
-    tags = ["manual"],
-    deps = [
-        ":swissmap_benchmark_lib",
-        "//fleetbench:benchmark_main",
-        "//fleetbench:dynamic_registrar",
-        "//fleetbench/common",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/container:flat_hash_set",
-        "@com_google_absl//absl/container:node_hash_set",
-        "@com_google_absl//absl/random",
-        "@com_google_benchmark//:benchmark",
-    ],
-)
-
-cc_test(
-    name = "hot_swissmap_smoketest",
-    srcs = ["hot_swissmap_benchmark.cc"],
     # Just run a single benchmark to reduce the test runtime.
     args = ["--benchmark_filter=BM_.*::absl::flat_hash_set.*64.*set_size:64.*density:0"],
     malloc = "@com_google_tcmalloc//tcmalloc",
@@ -115,7 +64,6 @@ cc_test(
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/container:node_hash_set",
-        "@com_google_absl//absl/random",
         "@com_google_benchmark//:benchmark",
     ],
 )
