@@ -17,7 +17,7 @@ collected in production.
 IMPORTANT: The benchmarking suite is not complete at this time. As described in
 [this paper](https://research.google/pubs/pub44271/), a significant portion of
 compute is spent in code common to many applications - the so-called ‘Data
-Center Tax’. This benchmark at `v0.3` represents subset of core libraries used
+Center Tax’. This benchmark at `v0.4` represents subset of core libraries used
 across the fleet. Future releases will continue to increase this coverage. The
 goal is to expand coverage iteratively and keep distributions up-to-date, so
 always use its version at `HEAD`.
@@ -36,7 +36,7 @@ are 3 levels of fidelity that we consider:
 
 1.  The suite exercises the same functionality as production.
 1.  The suite's performance counters match production.
-1.  An optimization's impact on the suite matches the impact on production.
+1.  An optimization impact on the suite matches the impact on production.
 
 ## Versioning
 
@@ -61,6 +61,7 @@ Libc        | Data-focused.
 TCMalloc    | Data-focused.
 Compression | Data-focused. Covers [Snappy](https://github.com/google/snappy), [ZSTD](https://facebook.github.io/zstd/), [Brotli](https://github.com/google/brotli), and Zlib.
 Hashing     | Data-focused. Supports algorithms [CRC32](https://github.com/abseil/abseil-cpp/tree/master/absl/crc) and [absl::Hash](https://github.com/abseil/abseil-cpp/tree/master/absl/hash).
+STL-Cord    | Instruction-focused.
 
 ## Running Benchmarks
 
@@ -104,6 +105,7 @@ Libc memory | libc        | mem_benchmark         | `--benchmark_counters_tabula
 TCMalloc    | tcmalloc    | empirical_driver      | `--benchmark_min_time=10s`. Check `--benchmark_filter` below.
 Compression | compression | compression_benchmark | `--benchmark_counters_tabular=true`
 Hashing     | hashing     | hashing_benchmark     | `--benchmark_counters_tabular=true`
+STL-Cord    | stl         | cord_benchmark        |
 
 NOTE: By default, each benchmark only runs a minimal set of tests that we have
 selected as the most representative. To see the default lists, you can use the
