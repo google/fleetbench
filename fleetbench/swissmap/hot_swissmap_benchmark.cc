@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -324,20 +325,37 @@ void BM_SizedConstructor(benchmark::State& state) {
   }
 }
 
+template <class T>
+class CustomAlloc : public std::allocator<T> {
+ public:
+  bool unused_ = true;  // Force it to not look like std::allocator.
+
+  // Default constructor
+  CustomAlloc() noexcept = default;
+
+  // Copy constructor
+  template <class U>
+  explicit CustomAlloc(const CustomAlloc<U>&) noexcept {}
+
+  // Add the rebind mechanism for the allocator to ensure the custom allocators
+  // with the correct value type can be used
+  template <class U>
+  struct rebind {
+    typedef CustomAlloc<U> other;
+  };
+};
+
 void BM_MoveConstructor(benchmark::State& state) {
   // For now just measure a small cheap hash table since we
   // are mostly interested in the overhead of type-erasure
-  // in resize(). We also use a custom allocator to disble
+  // in resize(). We also use a custom allocator to disable
   // leaking hashtable entries into /hashtablez since we
   // do not destroy hash tables.
   constexpr int kElements = 64;
-  class CustomAlloc : public std::allocator<int64_t> {
-   public:
-    bool unused_ = true;  // Force it to not look like std::allocator.
-  };
+
   using CheapTable =
-      absl::flat_hash_set<int64_t, typename IntTable::hasher,
-                          typename IntTable::key_equal, CustomAlloc>;
+      absl::flat_hash_set<int64_t, IntTable::hasher, IntTable::key_equal,
+                          CustomAlloc<int64_t>>;
 
   // We swap back and forth between two slots, exactly one of which
   // holds an CheapTable at any point.
