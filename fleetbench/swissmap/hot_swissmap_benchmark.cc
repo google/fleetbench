@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -390,11 +391,18 @@ ABSL_ATTRIBUTE_NOINLINE void FillInts(IntTable* t, int n) {
 }
 
 void BM_IntDestructor(benchmark::State& state) {
-  constexpr int kElements = 1;
-  for (auto unused : state) {
-    IntTable t;
-    FillInts(&t, kElements);
-    benchmark::DoNotOptimize(t);
+  int size = state.range(0);
+  int capacity = state.range(1);
+  size_t batch_size = 2048 / (capacity + 1) + 1;
+  while (state.KeepRunningBatch(batch_size)) {
+    state.PauseTiming();
+    std::vector<IntTable> tables(batch_size);
+    for (IntTable& t : tables) {
+      t.reserve(capacity);
+      FillInts(&t, size);
+    }
+    state.ResumeTiming();
+    benchmark::DoNotOptimize(tables);
   }
 }
 
@@ -409,11 +417,18 @@ ABSL_ATTRIBUTE_NOINLINE void FillStrings(StrTable* t, int n) {
 }
 
 void BM_StrDestructor(benchmark::State& state) {
-  constexpr int kElements = 1;
-  for (auto unused : state) {
-    StrTable t;
-    FillStrings(&t, kElements);
-    benchmark::DoNotOptimize(t);
+  int size = state.range(0);
+  int capacity = state.range(1);
+  size_t batch_size = 2048 / (capacity + 1) + 1;
+  while (state.KeepRunningBatch(batch_size)) {
+    state.PauseTiming();
+    std::vector<StrTable> tables(batch_size);
+    for (StrTable& t : tables) {
+      t.reserve(capacity);
+      FillStrings(&t, size);
+    }
+    state.ResumeTiming();
+    benchmark::DoNotOptimize(tables);
   }
 }
 
@@ -455,8 +470,25 @@ void RegisterHotBenchmarks() {
   REGISTER_BENCHMARK(BM_EmptyConstructor);
   REGISTER_BENCHMARK(BM_SizedConstructor);
   REGISTER_BENCHMARK(BM_MoveConstructor);
-  REGISTER_BENCHMARK(BM_IntDestructor);
-  REGISTER_BENCHMARK(BM_StrDestructor);
+
+  auto destructor_setup_fn = [](auto* b) {
+    b->ArgNames({"size", "capacity"})
+        // These values are determinated empirically and cover wide variety of
+        // capacity and sizes presented in the fleet.
+        ->ArgPair(0, 0)
+        ->ArgPair(0, 1)
+        ->ArgPair(1, 1)
+        ->ArgPair(1, 7)
+        ->ArgPair(6, 7)
+        ->ArgPair(0, 100)
+        ->ArgPair(1, 100)
+        ->ArgPair(13, 100)
+        ->ArgPair(70, 100)
+        ->ArgPair(255, 256);
+  };
+
+  REGISTER_BENCHMARK(BM_IntDestructor)->Apply(destructor_setup_fn);
+  REGISTER_BENCHMARK(BM_StrDestructor)->Apply(destructor_setup_fn);
 }
 
 class HotBenchmarkRegisterer {
