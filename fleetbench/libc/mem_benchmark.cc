@@ -131,9 +131,10 @@ void MemmoveFunction(benchmark::State &state,
   }
 }
 
-void MemcmpFunction(benchmark::State &state,
-                    std::vector<BM_Mem_Parameters> &parameters,
-                    const size_t buffer_size, const uint16_t lfsr_start_state) {
+template <int (*cmp)(const void *, const void *, size_t)>
+void CmpFunction(benchmark::State &state,
+                 std::vector<BM_Mem_Parameters> &parameters,
+                 const size_t buffer_size, const uint16_t lfsr_start_state) {
   size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
   char *dst = buffers.dst();
@@ -141,38 +142,13 @@ void MemcmpFunction(benchmark::State &state,
   size_t dst_offset = 0;
   size_t src_offset = 0;
   LinearFeedbackShiftRegister lfsr(lfsr_start_state);
-  // Run benchmark and call memcmp function
+  // Run benchmark and call cmp function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
       UpdateOffset(buffer_size, p.size_bytes, lfsr, dst_offset);
       UpdateOffset(buffer_size, p.size_bytes, lfsr, src_offset);
       buffers.mark_dst(dst_offset, p.offset);
-      auto res = memcmp(dst + dst_offset, src + src_offset, p.size_bytes);
-      benchmark::DoNotOptimize(res);
-      buffers.reset_dst(dst_offset, p.offset);
-      dst_offset += p.size_bytes;
-      src_offset += p.size_bytes;
-    }
-  }
-}
-
-void BcmpFunction(benchmark::State &state,
-                  std::vector<BM_Mem_Parameters> &parameters,
-                  const size_t buffer_size, const uint16_t lfsr_start_state) {
-  size_t batch_size = ComputeTotalNumBytes(parameters);
-  MemoryBuffers buffers(buffer_size);
-  char *dst = buffers.dst();
-  char *src = buffers.src(0);
-  size_t dst_offset = 0;
-  size_t src_offset = 0;
-  LinearFeedbackShiftRegister lfsr(lfsr_start_state);
-  // Run benchmark and call bcmp function
-  while (state.KeepRunningBatch(batch_size)) {
-    for (auto &p : parameters) {
-      UpdateOffset(buffer_size, p.size_bytes, lfsr, dst_offset);
-      UpdateOffset(buffer_size, p.size_bytes, lfsr, src_offset);
-      buffers.mark_dst(dst_offset, p.offset);
-      auto res = bcmp(dst + dst_offset, src + src_offset, p.size_bytes);
+      auto res = cmp(dst + dst_offset, src + src_offset, p.size_bytes);
       benchmark::DoNotOptimize(res);
       buffers.reset_dst(dst_offset, p.offset);
       dst_offset += p.size_bytes;
@@ -258,7 +234,8 @@ static void BM_Memory(benchmark::State &state,
   }
 
   for (auto &p : parameters) {
-    if (memory_call == &MemcmpFunction || memory_call == &BcmpFunction) {
+    if (memory_call == &CmpFunction<memcmp> ||
+        memory_call == &CmpFunction<bcmp>) {
       // For memcmp/bcmp, the offset indicates the position of the first
       // mismatch char between the two buffers. The value of offset indicates:
       //  0 : Buffers always compare equal,
@@ -327,8 +304,8 @@ void RegisterBenchmarks() {
   auto memory_operations = {
       operation_entry("Memcpy", kMemcpyBufferCount, &MemcpyFunction),
       operation_entry("Memmove", kMemmoveBufferCount, &MemmoveFunction),
-      operation_entry("Memcmp", kMemcmpBufferCount, &MemcmpFunction),
-      operation_entry("Bcmp", kBcmpBufferCount, &BcmpFunction),
+      operation_entry("Memcmp", kMemcmpBufferCount, &CmpFunction<memcmp>),
+      operation_entry("Bcmp", kBcmpBufferCount, &CmpFunction<bcmp>),
       operation_entry("Memset", kMemsetBufferCount, &MemsetFunction),
   };
   // For a benchmark whose data should be resident in cache level x, we use a
