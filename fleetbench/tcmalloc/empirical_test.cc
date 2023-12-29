@@ -138,8 +138,8 @@ TEST(GetEmpiricalDataEntries, EmpiricalDataEntry) {
 
   std::ofstream file(path, std::ofstream::out);
   if (file.is_open()) {
-    file << "1,1.1,2.2" << std::endl;
-    file << "2,3.3,4.4" << std::endl;
+    file << "1,1.1,2.2" << '\n';
+    file << "2,3.3,4.4" << '\n';
     file.close();
   }
   auto result = GetEmpiricalDataEntries(path);
@@ -159,9 +159,9 @@ TEST(GetHeapSizes, HeapSizeEntry) {
 
   std::ofstream file(path, std::ofstream::out);
   if (file.is_open()) {
-    file << "a,10" << std::endl;
-    file << "ab,20" << std::endl;
-    file << "abc,30" << std::endl;
+    file << "a,10" << '\n';
+    file << "ab,20" << '\n';
+    file << "abc,30" << '\n';
     file.close();
   }
   auto result = GetHeapSizes(path);
