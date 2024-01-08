@@ -40,8 +40,7 @@ namespace libc {
 static constexpr size_t kMemcpyBufferCount = 2;
 static constexpr size_t kMemmoveBufferCount = 1;
 static constexpr size_t kMemsetBufferCount = 1;
-static constexpr size_t kMemcmpBufferCount = 2;
-static constexpr size_t kBcmpBufferCount = 2;
+static constexpr size_t kCmpBufferCount = 1;
 
 // The chance that two memory buffers are exactly same -- memcmp/bcmp only.
 static constexpr float kComparisonEqual = 0.4;
@@ -137,22 +136,41 @@ void CmpFunction(benchmark::State &state,
                  const size_t buffer_size, const uint16_t lfsr_start_state) {
   size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
-  char *dst = buffers.dst();
-  char *src = buffers.src(0);
-  size_t dst_offset = 0;
-  size_t src_offset = 0;
+  char *buffer = buffers.src();
+  size_t offset = 0;
   LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call cmp function
   while (state.KeepRunningBatch(batch_size)) {
     for (auto &p : parameters) {
-      UpdateOffset(buffer_size, p.size_bytes, lfsr, dst_offset);
-      UpdateOffset(buffer_size, p.size_bytes, lfsr, src_offset);
-      buffers.mark_dst(dst_offset, p.offset);
-      auto res = cmp(dst + dst_offset, src + src_offset, p.size_bytes);
+      int16_t mismatch_pos = 0;
+      size_t src_offset = 0;
+      size_t dst_offset = 0;
+      bool does_overlap = p.offset & 1;
+      if (does_overlap) {
+        // For simplicity, and to keep the size of BM_Mem_Parameters small, if
+        // src and dst overlap, we only consider the case that the buffers
+        // compare equal.
+        int16_t overlap_offset = p.offset >> 1;
+        UpdateOffset(
+            buffer_size, std::abs(std::min(int16_t{0}, overlap_offset)),
+            std::max(int16_t{0}, overlap_offset) + p.size_bytes, lfsr, offset);
+        src_offset = offset;
+        dst_offset = offset + overlap_offset;
+      } else {
+        mismatch_pos = p.offset >> 1;
+        UpdateOffset(buffer_size, p.size_bytes, lfsr, offset);
+        src_offset = offset;
+        // We set dst to a location after the end of src to make sure they do
+        // not overlap.
+        offset += p.size_bytes;
+        UpdateOffset(buffer_size, p.size_bytes, lfsr, offset);
+        dst_offset = offset;
+      }
+      buffers.mark_dst(dst_offset, mismatch_pos);
+      auto res = cmp(buffer + dst_offset, buffer + src_offset, p.size_bytes);
       benchmark::DoNotOptimize(res);
-      buffers.reset_dst(dst_offset, p.offset);
-      dst_offset += p.size_bytes;
-      src_offset += p.size_bytes;
+      buffers.reset_dst(dst_offset, mismatch_pos);
+      offset += p.size_bytes;
     }
   }
 }
@@ -213,9 +231,10 @@ static void BM_Memory(benchmark::State &state,
   const size_t buffer_size = available_bytes / buffer_count;
   CHECK_LT(memory_size_distribution.size() * 2, buffer_size)
       << "Buffer too small";
-  if (memory_call == &MemmoveFunction) {
-    // Memmove needs a larger buffer to allow for differents kinds of overlap
-    // between src and dst.
+  if (memory_call == &MemmoveFunction || memory_call == &CmpFunction<memcmp> ||
+      memory_call == &CmpFunction<bcmp>) {
+    // Memmove and memcmp/bcmp need larger buffers to allow for differents kinds
+    // of overlap between src and dst.
     CHECK_LT(memory_size_distribution.size() * 3, buffer_size)
         << "Buffer too small";
   }
@@ -233,43 +252,67 @@ static void BM_Memory(benchmark::State &state,
     p.size_bytes = size_bytes_sampler(GetRNG());
   }
 
-  for (auto &p : parameters) {
-    if (memory_call == &CmpFunction<memcmp> ||
-        memory_call == &CmpFunction<bcmp>) {
-      // For memcmp/bcmp, the offset indicates the position of the first
-      // mismatch char between the two buffers. The value of offset indicates:
-      //  0 : Buffers always compare equal,
-      // >0 : Buffers compare different at 'byte = offset - 1'.
-      const bool is_identical = absl::Bernoulli(GetRNG(), kComparisonEqual);
-      if (is_identical) {
-        p.offset = 0;
-      } else {
-        // +1 is to make up the missing '0' used earlier to indicate equal
-        // buffers. That is, if p.offset = 1, the mismatch is at index 0.
-        p.offset = absl::Uniform<uint16_t>(GetRNG(), 0, p.size_bytes);
-        p.offset += 1;
-        CHECK_LT(p.offset, buffer_size) << "May result in buffer overflow";
+  if (memory_call == &MemmoveFunction || memory_call == &CmpFunction<memcmp> ||
+      memory_call == &CmpFunction<bcmp>) {
+    for (auto &p : parameters) {
+      int16_t mismatch_pos = 0;
+      if (memory_call == &CmpFunction<memcmp> ||
+          memory_call == &CmpFunction<bcmp>) {
+        // For memcmp/bcmp, mismatch_pos indicates the position of the first
+        // mismatch char between src and dst. The value of mismatch_pos
+        // indicates:
+        //  0 : Buffers always compare equal,
+        // >0 : Buffers compare different at 'byte = mismatch_pos - 1'.
+        const bool is_identical = absl::Bernoulli(GetRNG(), kComparisonEqual);
+        if (!is_identical) {
+          // +1 is to make up the missing '0' used earlier to indicate equal
+          // buffers. That is, if mismatch_pos = 1, the mismatch is at index 0.
+          mismatch_pos = absl::Uniform<uint16_t>(GetRNG(), 0, p.size_bytes);
+          mismatch_pos += 1;
+          CHECK_LT(mismatch_pos, buffer_size)
+              << "May result in buffer overflow";
+        }
       }
-    } else if (memory_call == &MemmoveFunction) {
-      // The memmove function allows the src and dst buffers to overlap. To
-      // reproduce this behavior, we will use the same buffer for src and dst.
-      // We want to exercise three configurations:
+
+      // The memmove and compare functions allow the src and dst buffers to
+      // overlap. To reproduce this behavior, we will use the same buffer for
+      // src and dst. We want to exercise three configurations:
       //    1. src and dst overlap, dst < src
       //    2. src and dst overlap, dst >= src
       //    3. src and dst do not overlap
-      // To do so, we sample an offset from the range (-size_bytes, 2 *
-      // kMaxSizeBytes), and set dst = src + offset. Thus, an offset < 0
-      // corresponds to case 1 above, 0 <= offset < size_bytes to case 2, and
-      // an offset >= size_bytes to case 3.
-
       const bool does_overlap = absl::Bernoulli(GetRNG(), overlap_probability);
+      int16_t offset = 0;
       if (does_overlap) {
         // src and dst overlap, i.e., we are in case 1 or 2.
-        p.offset = absl::Uniform<int16_t>(absl::IntervalOpenOpen, GetRNG(),
-                                          -p.size_bytes, p.size_bytes);
-      } else {
-        p.offset =
+        // We sample an offset from the range (-size_bytes, size_bytes),
+        // and set dst = src + offset. Thus, an offset < 0 corresponds to case 1
+        // above, and 0 <= offset < size_bytes to case 2.
+        offset = absl::Uniform<int16_t>(absl::IntervalOpenOpen, GetRNG(),
+                                        -p.size_bytes, p.size_bytes);
+      } else if (memory_call == &MemmoveFunction) {
+        // For memmove and case 3, we sample an offset from the range
+        // [size_bytes, 2 * kMaxSizeBytes).
+        // For memcmp/bcmp, we handle case 3 in CmpFunction() instead.
+        offset =
             absl::Uniform<int16_t>(GetRNG(), p.size_bytes, 2 * kMaxSizeBytes);
+      }
+
+      if (memory_call == &MemmoveFunction) {
+        p.offset = offset;
+      } else {
+        // For simplicity, and to keep the size of BM_Mem_Parameters small, we
+        // assume that for memcmp/bcmp, the buffers always compare equal if src
+        // and dst overlap. Thus, we can use the p.offset field to store the
+        // offset if they overlap, and mismatch_pos if they do not overlap. We
+        // use the rightmost bit of p.offset to indicate which of the two values
+        // the field contains.
+        if (does_overlap) {
+          p.offset = (offset << 1) | 1;
+          CHECK_EQ(p.offset >> 1, offset);
+        } else {
+          p.offset = mismatch_pos << 1;
+          CHECK_EQ(p.offset >> 1, mismatch_pos);
+        }
       }
     }
   }
@@ -304,8 +347,8 @@ void RegisterBenchmarks() {
   auto memory_operations = {
       operation_entry("Memcpy", kMemcpyBufferCount, &MemcpyFunction),
       operation_entry("Memmove", kMemmoveBufferCount, &MemmoveFunction),
-      operation_entry("Memcmp", kMemcmpBufferCount, &CmpFunction<memcmp>),
-      operation_entry("Bcmp", kBcmpBufferCount, &CmpFunction<bcmp>),
+      operation_entry("Memcmp", kCmpBufferCount, &CmpFunction<memcmp>),
+      operation_entry("Bcmp", kCmpBufferCount, &CmpFunction<bcmp>),
       operation_entry("Memset", kMemsetBufferCount, &MemsetFunction),
   };
   // For a benchmark whose data should be resident in cache level x, we use a
