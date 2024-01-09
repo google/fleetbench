@@ -36,7 +36,7 @@ if [ -z ${EXCEPTIONS_MODE:-} ]; then
   EXCEPTIONS_MODE="-fno-exceptions -fexceptions"
 fi
 
-readonly DOCKER_CONTAINER="gcr.io/google.com/absl-177019/linux_hybrid-latest:20230217"
+readonly DOCKER_CONTAINER="gcr.io/google.com/absl-177019/linux_arm_hybrid-latest:20231219"
 
 # USE_BAZEL_CACHE=1 only works on Kokoro.
 # Without access to the credentials this won't work.
@@ -76,6 +76,7 @@ stop_docker() {
 trap stop_docker EXIT
 
 # Sanity check our setup
+docker exec fleetbench /usr/local/bin/bazel --version
 docker exec fleetbench /usr/local/bin/bazel test fleetbench:distro_test
 
 # Run bazel tests.
@@ -94,7 +95,6 @@ for std in ${STD}; do
           ${build_config} \
           --copt="${exceptions_mode}" \
           --define="absl=1" \
-          --distdir="/bazel-distdir" \
           --keep_going \
           --show_timestamps \
           --test_env="GTEST_INSTALL_FAILURE_SIGNAL_HANDLER=1" \
