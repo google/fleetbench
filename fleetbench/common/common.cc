@@ -156,6 +156,20 @@ int GetCacheSize(int cache_level, absl::string_view cache_type) {
     }
   }
 
+#if defined(__aarch64__)
+  LOG(WARNING) << "Cache size could not be detected. You can use the "
+                  "--L1_data_size, --L2_size, and --L3_size flags to specify "
+                  "the cache sizes (in bytes) manually. Falling back to "
+                  "hardcoded defaults.";
+  switch (cache_level) {
+    case 1:
+      return 64 * 1024;
+    case 2:
+      return 256 * 1024;
+    case 3:
+      return 32 * 1024 * 1024;
+  }
+#endif
   LOG(FATAL) << "Cache size could not be detected. You can use the "
                 "--L1_data_size, --L2_size, and --L3_size flags to specify "
                 "the cache sizes (in bytes) manually.";
