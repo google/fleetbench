@@ -46,7 +46,9 @@ struct Message {
 class ProtoLifecycle {
  public:
   explicit ProtoLifecycle(uint32_t working_set_size)
-      : working_set_size_(working_set_size), s_(kMaxValueStringSize, 'a') {
+      : working_set_size_(working_set_size),
+        s_(kMaxValueStringSize, 'a'),
+        indices_(working_set_size) {
     Resize(message0_);
     Resize(message1_);
     Resize(message2_);
@@ -79,6 +81,7 @@ class ProtoLifecycle {
 
   uint32_t working_set_size_;
   std::string s_;
+  std::vector<int> indices_;
 
   Message<Message0> message0_;
   Message<Message1> message1_;
