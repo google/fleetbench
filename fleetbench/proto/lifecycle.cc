@@ -280,7 +280,7 @@ void ProtoLifecycle::Run() {
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
-    EnumDescriptor(message1_.message[i]);
+    EnumDescriptor(message0_.message[i]);
   }
   std::shuffle(indices_.begin(), indices_.end(), GetRNG());
   for (const auto& i : indices_) {
