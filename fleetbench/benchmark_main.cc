@@ -31,7 +31,8 @@ int main(int argc, char* argv[]) {
       tcmalloc::MallocExtension::ProcessBackgroundActions();
     }) : nullptr;
   setenv("FLEETBENCH_PROGRAM_PATH", argv[0], 1);
-  if (benchmark::GetBenchmarkFilter().empty()) {
+  if (benchmark::GetBenchmarkFilter().empty() ||
+      benchmark::GetBenchmarkFilter() == "default") {
     // --benchmark_filter flag not set
     benchmark::SetBenchmarkFilter(
         fleetbench::DynamicRegistrar::Get()->GetDefaultFilter());
