@@ -221,10 +221,7 @@ static void BM_Memory(benchmark::State &state,
   // Pre-calculates parameter values.
   std::vector<BM_Mem_Parameters> parameters(batch_size);
 
-  // Convert prod size distribution to a discrete distribution.
-  std::discrete_distribution<uint16_t> size_bytes_sampler(
-      memory_size_distribution.begin(), memory_size_distribution.end());
-  CHECK_LE(size_bytes_sampler.max(), kMaxSizeBytes)
+  CHECK_LE(memory_size_distribution.size(), kMaxSizeBytes)
       << "Maximum of the distribution larger than expected";
 
   // Max buffer size can be stored in current cache.
@@ -247,10 +244,17 @@ static void BM_Memory(benchmark::State &state,
   // as the call to absl::Uniform may perform a different number of calls to the
   // random number generator, depending on the value of offset_upper_bound,
   // which depends on the cache size.
-  for (auto &p : parameters) {
-    // Size_bytes is sampled from collected prod distribution.
-    p.size_bytes = size_bytes_sampler(GetRNG());
+  double percentage_sum = 0.0;
+  int n_parameters = 0;
+  for (int i = 0; i < memory_size_distribution.size(); ++i) {
+    // percentage_sum stores the relative frequency for an input of size <= i
+    percentage_sum += memory_size_distribution[i];
+    while (percentage_sum * batch_size - n_parameters > 0.999) {
+      parameters[n_parameters++].size_bytes = i;
+    }
   }
+  CHECK_EQ(n_parameters, parameters.size());
+  std::shuffle(parameters.begin(), parameters.end(), GetRNG());
 
   if (memory_call == &MemmoveFunction || memory_call == &CmpFunction<memcmp> ||
       memory_call == &CmpFunction<bcmp>) {
