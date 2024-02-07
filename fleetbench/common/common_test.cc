@@ -76,4 +76,24 @@ TEST(ReadCsvTest, Mixed) {
   EXPECT_EQ(result[1][1], "2");
 }
 
+TEST(RandomTest, Seed) {
+  absl::SetFlag(&FLAGS_fixed_seed, true);
+  absl::SetFlag(&FLAGS_seed, 1);
+
+  int random1 = GetRNG()();
+  Random::instance().Reset();
+  int random2 = GetRNG()();
+  EXPECT_EQ(random1, random2);
+}
+
+TEST(DeathTest, SeedFlags) {
+  ASSERT_DEATH(
+      {
+        absl::SetFlag(&FLAGS_fixed_seed, false);
+        absl::SetFlag(&FLAGS_seed, 1);
+        GetRNG()();
+      },
+      "--seed requires --fixed_seed=true");
+}
+
 }  // namespace fleetbench

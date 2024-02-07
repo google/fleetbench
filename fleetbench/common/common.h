@@ -15,18 +15,24 @@
 #define THIRD_PARTY_FLEETBENCH_COMMON_COMMON_H_
 
 #include <filesystem>  // NOLINT
+#include <optional>
 #include <random>
 #include <string>
-#include <utility>
 #include <vector>
 
+#include "absl/flags/declare.h"
 #include "absl/strings/string_view.h"
+
+// Exposed for testing only.
+ABSL_DECLARE_FLAG(bool, fixed_seed);
+ABSL_DECLARE_FLAG(std::optional<int>, seed);
 
 namespace fleetbench {
 
 // Wrapper around a random number generator.
-// If --fixed_seed is true (the default), the seed will be 0 for better
-// reproducibility.
+// If --fixed_seed is true (the default), the seed will be set to the provided
+// value for better reproducibility. Otherwise, the seed is set to random
+// values.
 class Random {
  public:
   static Random& instance();
@@ -34,9 +40,10 @@ class Random {
   void Reset();
 
  private:
-  explicit Random(bool fixed_seed);
+  explicit Random(bool fixed_seed, int seed);
 
   const bool fixed_seed_;
+  const int seed_;
   std::default_random_engine rng_;
 };
 

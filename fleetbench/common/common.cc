@@ -26,6 +26,7 @@
 
 #include "tools/cpp/runfiles/runfiles.h"
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
@@ -37,7 +38,11 @@
 using bazel::tools::cpp::runfiles::Runfiles;
 
 ABSL_FLAG(bool, fixed_seed, true,
-          "Use a fixed seed for random number generation.");
+          "Use a fixed seed for random number generation. The seed can be "
+          "specified with the --seed flag; the default is 0. If "
+          "--fixed_seed=false, random seeds are used.");
+ABSL_FLAG(std::optional<int>, seed, {},
+          "Seed for random number generation. Requires --fixed_seed=true.");
 
 ABSL_FLAG(std::optional<int>, L1_data_size, {},
           "Size of the L1 data cache in bytes. Determined automatically if the "
@@ -54,13 +59,21 @@ namespace fleetbench {
 using CacheInfo = benchmark::CPUInfo::CacheInfo;
 
 Random& Random::instance() {
-  static auto* instance = new Random(absl::GetFlag(FLAGS_fixed_seed));
+  static auto* instance = [] {
+    if (absl::GetFlag(FLAGS_seed).has_value()) {
+      CHECK(absl::GetFlag(FLAGS_fixed_seed))
+          << "--seed requires --fixed_seed=true";
+    }
+    return new Random(absl::GetFlag(FLAGS_fixed_seed),
+                      absl::GetFlag(FLAGS_seed).value_or(0));
+  }();
   return *instance;
 }
 
-Random::Random(bool fixed_seed) : fixed_seed_(fixed_seed) {
+Random::Random(bool fixed_seed, int seed)
+    : fixed_seed_(fixed_seed), seed_(seed) {
   if (fixed_seed_) {
-    rng_.seed(0);
+    rng_.seed(seed_);
   } else {
     std::random_device rd;
     rng_.seed(rd());
@@ -69,7 +82,7 @@ Random::Random(bool fixed_seed) : fixed_seed_(fixed_seed) {
 
 void Random::Reset() {
   if (fixed_seed_) {
-    rng_.seed(0);
+    rng_.seed(seed_);
   }
 }
 

@@ -11,6 +11,7 @@ cc_library(
         "@bazel_tools//tools/cpp/runfiles",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/log",
+        "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings",
         "@com_google_benchmark//:benchmark",
     ],
