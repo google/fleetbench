@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -448,8 +449,9 @@ void RegisterHotBenchmarks() {
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertManyUnordered_Hot, 64);
   for (auto* benchmark : benchmarks) {
     benchmark->ArgNames({"set_size", "density"})
+        ->RangeMultiplier(2)
         ->Ranges({
-            {1 << 4, 1 << 20},
+            {1, 1 << 20},
             {static_cast<int64_t>(Density::kMin),
              static_cast<int64_t>(Density::kMax)},
         });
@@ -462,8 +464,9 @@ void RegisterHotBenchmarks() {
                                   64);
   for (auto* benchmark : erase_insert_benchmarks) {
     benchmark->ArgNames({"set_size"})
+        ->RangeMultiplier(2)
         ->Ranges({
-            {1 << 4, 1 << 20},
+            {1, 1 << 20},
         });
   }
 
