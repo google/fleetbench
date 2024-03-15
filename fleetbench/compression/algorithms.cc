@@ -20,8 +20,8 @@
 #include "absl/strings/string_view.h"
 #include "c/include/brotli/decode.h"
 #include "c/include/brotli/encode.h"
-#include "fleetbench/compression/zlibwrapper.h"
 #include "snappy.h"
+#include "fleetbench/compression/zlibwrapper.h"
 #include "zstd.h"
 
 namespace fleetbench {
