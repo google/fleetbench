@@ -38,23 +38,16 @@ cc_test(
 
 cc_library(
     name = "empirical_driver_lib",
-    testonly = 1,
-    hdrs = ["empirical_driver.h"],
+    testonly = True,
+    srcs = [
+        "empirical_driver.cc",
+        "empirical_driver.h",
+    ],
     copts = TCMALLOC_DEFAULT_COPTS,
-    linkstatic = 1,
-    deps = ["@com_google_benchmark//:benchmark"],
-)
-
-cc_test(
-    name = "empirical_driver",
-    srcs = ["empirical_driver.cc"],
     data = glob(["distributions/**"]),
-    linkstatic = 1,
-    malloc = "@com_google_tcmalloc//tcmalloc",
-    tags = ["manual"],
+    visibility = ["//fleetbench:__pkg__"],
     deps = [
         ":empirical",
-        ":empirical_driver_lib",
         "//fleetbench:benchmark_main",
         "//fleetbench:dynamic_registrar",
         "//fleetbench/common",
@@ -65,26 +58,27 @@ cc_test(
         "@com_google_benchmark//:benchmark",
         "@com_google_tcmalloc//tcmalloc:malloc_extension",
     ],
+    alwayslink = True,
+)
+
+cc_test(
+    name = "empirical_driver",
+    linkstatic = 1,
+    malloc = "@com_google_tcmalloc//tcmalloc",
+    tags = ["manual"],
+    deps = [
+        ":empirical_driver_lib",
+        "//fleetbench:benchmark_main",
+    ],
 )
 
 # Run a minimal version of empirical_driver to exercise the code paths.
 cc_test(
     name = "empirical_driver_test",
-    srcs = ["empirical_driver.cc"],
-    data = glob(["distributions/**"]),
     local_defines = ["EMPIRICAL_DRIVER_SMOKETEST"],
     malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
-        ":empirical",
         ":empirical_driver_lib",
         "//fleetbench:benchmark_main",
-        "//fleetbench:dynamic_registrar",
-        "//fleetbench/common",
-        "@com_google_absl//absl/base",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/log:check",
-        "@com_google_absl//absl/strings",
-        "@com_google_benchmark//:benchmark",
-        "@com_google_tcmalloc//tcmalloc:malloc_extension",
     ],
 )

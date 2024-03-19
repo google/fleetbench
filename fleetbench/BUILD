@@ -78,6 +78,24 @@ selects.config_setting_group(
     ],
 )
 
+cc_test(
+    name = "fleetbench",
+    # TODO(rjogrady): Switch to generate_data so we get all the distributions.
+    data = ["//fleetbench/compression:generate_data_fleet"],
+    linkstatic = 1,
+    malloc = "@com_google_tcmalloc//tcmalloc",
+    deps = [
+        ":benchmark_main",
+        "//fleetbench/compression:compression_benchmark_lib",
+        "//fleetbench/hashing:hashing_benchmark_lib",
+        "//fleetbench/libc:mem_benchmark_lib",
+        "//fleetbench/proto:proto_benchmark_lib",
+        "//fleetbench/stl:cord_benchmark_lib",
+        "//fleetbench/swissmap:swissmap_benchmark_lib",
+        "//fleetbench/tcmalloc:empirical_driver_lib",
+    ],
+)
+
 cc_library(
     name = "benchmark_main",
     srcs = ["benchmark_main.cc"],
