@@ -24,6 +24,7 @@
 #include "absl/base/attributes.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/container/node_hash_set.h"
+#include "absl/random/random.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/dynamic_registrar.h"
 #include "fleetbench/swissmap/swissmap_benchmark.h"
@@ -265,12 +266,39 @@ static void BM_InsertManyOrdered_Hot(benchmark::State& state) {
   }
 }
 
-// Measures the time it takes to `clear` a set and then `insert` the same
-// elements back in random order. The reported time is per element. In other
+template <class KeysGenerator, class EmptySetGetter>
+static void RunInsertManyUnordered_Hot(benchmark::State& state,
+                                       KeysGenerator keys_gen,
+                                       EmptySetGetter empty_set_getter) {
+  // The higher the value, the less contribution
+  // state.{PauseTiming/ResumeTiming} makes.
+  static constexpr size_t kRepetitions = 64;
+  // The larger this value, the less the results will depend on randomness.
+  static constexpr size_t kMinInsertions = 256 << 10;
+
+  std::vector<uint32_t> keys = keys_gen();
+  const size_t n = std::max(size_t{1}, kMinInsertions / keys.size());
+  while (state.KeepRunningBatch(keys.size() * n * kRepetitions)) {
+    for (size_t i = 0; i != n; ++i) {
+      state.PauseTiming();
+      keys = keys_gen();
+      state.ResumeTiming();
+      for (size_t j = 0; j != kRepetitions; ++j) {
+        auto& s = empty_set_getter();
+        for (uint32_t key : keys) {
+          auto res = s.insert(key);
+          DoNotOptimize(res);
+        }
+      }
+    }
+  }
+}
+
+// Measures the time it takes to `clear` a set and then `insert` the same number
+// of random elements back. The reported time is per element. In other
 // words, the pseudo code below counts as N iterations.
 //
-//   set.clear();
-//   set.reserve(N);
+//   set.erase(set.begin(), set.end());
 //   set.insert(key1);
 //   ...
 //   set.insert(keyN);
@@ -282,31 +310,66 @@ template <template <class...> class SetT, size_t kValueSizeT>
 static void BM_InsertManyUnordered_Hot(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
 
-  // The higher the value, the less contribution std::shuffle makes. The price
-  // is longer benchmarking time. With 64 std::shuffle adds around 0.3 ns to
-  // the benchmark results.
-  static constexpr size_t kRepetitions = 64;
-  // The larger this value, the less the results will depend on randomness and
-  // the longer the benchmark will run.
-  static constexpr size_t kMinInsertions = 256 << 10;
+  auto gen_set = [&]() {
+    return GenerateSet<Set>(state.range(0),
+                            static_cast<Density>(state.range(1)));
+  };
+  Set s;
+  std::vector<uint32_t> keys;
 
-  Set s =
-      GenerateSet<Set>(state.range(0), static_cast<Density>(state.range(1)));
-  std::vector<uint32_t> keys = ToVector(s);
-
-  const size_t n = std::max(size_t{1}, kMinInsertions / keys.size());
-  while (state.KeepRunningBatch(keys.size() * n * kRepetitions)) {
-    for (size_t i = 0; i != n; ++i) {
-      std::shuffle(keys.begin(), keys.end(), GetRNG());
-      for (size_t j = 0; j != kRepetitions; ++j) {
+  RunInsertManyUnordered_Hot(
+      state,
+      [&]() {
+        // The keys are regenerated every kRepetitions in
+        // RunInsertManyUnordered_Hot.
+        // Regeneration is important to reduce variance due to specific hash
+        // collision pattern.
+        keys = ToVector(gen_set());
+        // keys vector has order of SwissTable returned by GenerateSet.
+        std::shuffle(keys.begin(), keys.end(), absl::BitGen());
+        return keys;
+      },
+      [&]() -> Set& {
+        // This guarantee to not release memory that is important for hot
+        // benchamrk.
         s.erase(s.begin(), s.end());
-        for (uint32_t key : keys) {
-          auto res = s.insert(key);
-          DoNotOptimize(res);
+        return s;
+      });
+}
+
+// Measures the time it takes to `insert` elements to empty set.
+// The reported time is per element.
+// In other words, the pseudo code below counts as N iterations.
+//
+//   Set set;
+//   set.insert(key1);
+//   ...
+//   set.insert(keyN);
+template <template <class...> class SetT, size_t kValueSizeT>
+static void BM_InsertManyToEmpty_Hot(benchmark::State& state) {
+  using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
+
+  const size_t num_keys = state.range(0);
+
+  Set s;
+  RunInsertManyUnordered_Hot(
+      state,
+      [num_keys]() {
+        // Generates `num_keys` unique keys.
+        std::vector<uint32_t> keys;
+        keys.reserve(num_keys);
+        for (Set s; keys.size() < num_keys;) {
+          uint32_t elem = RandomNonSpecial();
+          if (s.insert(elem).second) {
+            keys.emplace_back(elem);
+          }
         }
-      }
-    }
-  }
+        return keys;
+      },
+      [&s]() -> Set& {
+        s = Set();
+        return s;
+      });
 }
 
 using IntTable = absl::flat_hash_set<int64_t>;
@@ -462,6 +525,10 @@ void RegisterHotBenchmarks() {
                                   4);
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(erase_insert_benchmarks, BM_EraseInsert_Hot,
                                   64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(erase_insert_benchmarks,
+                                  BM_InsertManyToEmpty_Hot, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(erase_insert_benchmarks,
+                                  BM_InsertManyToEmpty_Hot, 64);
   for (auto* benchmark : erase_insert_benchmarks) {
     benchmark->ArgNames({"set_size"})
         ->RangeMultiplier(2)
