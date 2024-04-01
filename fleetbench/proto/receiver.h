@@ -143,8 +143,8 @@ void ByteSize(M* message) {
 
 template <typename M>
 void Reflection(M* message) {
-  benchmark::DoNotOptimize(
-      message->GetReflection()->GetUnknownFields(*message));
+  auto default_inst = message->GetReflection()->IsDefaultInstance(*message);
+  benchmark::DoNotOptimize(default_inst);
 }
 
 template <typename M>
