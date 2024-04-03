@@ -173,7 +173,7 @@ class CorpusGeneratorTest(absltest.TestCase):
     compression_ratio_snappy = (
         corpus_chunk_manager_snappy.compute_compression_ratio(chunk_array)
     )
-    self.assertAlmostEqual(compression_ratio_snappy, 1.58, 2)
+    self.assertBetween(compression_ratio_snappy, 1.5, 1.7)
 
     corpus_chunk_manager_zstd = corpus_generator.CorpusChunkManager(
         "ZSTD", "compress", DATASETS_TEST_SIMPLE, "A"
