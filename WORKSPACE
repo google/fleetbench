@@ -114,6 +114,15 @@ http_archive(
     urls = ["https://chromium.googlesource.com/chromium/src/third_party/zlib/+archive/f5fd0ad2663e239a31184ad4c9919991dda16f46.tar.gz"],
 )
 
+# libzip
+http_archive(
+    name = "libzip", # 2024-04-09
+    strip_prefix = "libzip-1.10.1",
+    integrity = "sha256-1W2FfRw61KfzpMAaUcam5VMONauTUD9iJ26LorMGGGo=",
+    build_file = "//fleetbench/compression:libzip.BUILD",
+    urls = ["https://github.com/nih-at/libzip/archive/v1.10.1.tar.gz"],
+)
+
 # libpfm4, for perf counters
 http_archive(
     name = "libpfm", # 2023-01-12

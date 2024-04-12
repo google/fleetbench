@@ -12,13 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <cstdio>
 #include <cstdlib>
-#include <filesystem>  // NOLINT
-#include <fstream>
-#include <ios>
-#include <iterator>
 #include <memory>
 #include <numeric>
 #include <string>
@@ -26,6 +23,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/container/btree_set.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
@@ -37,53 +36,103 @@
 #include "fleetbench/compression/algorithms.h"
 #include "fleetbench/compression/compression_parameter.h"
 #include "fleetbench/dynamic_registrar.h"
+#include "zip.h"
 
 namespace fleetbench {
 namespace compression {
 
 namespace {
-bool GetContents(const std::string& file_path, std::string* output) {
-  std::ifstream file(file_path.c_str(), std::ios::binary);
-  if (!file.good()) {
-    return false;
-  }
-  std::string content((std::istreambuf_iterator<char>(file)),
-                      std::istreambuf_iterator<char>());
-  *output = std::move(content);
-  return true;
-}
 
-// Reads all files under a given "file_path" directory and returns as a vector
-std::vector<std::string> GetCorpora(std::filesystem::path dir_path) {
-  const std::filesystem::path sandbox{dir_path};
-  std::vector<std::string> corpora;
-  for (auto const& dir_entry : std::filesystem::directory_iterator{sandbox}) {
-    std::string corpus;
-    CHECK(GetContents(dir_entry.path(), &corpus));
-    corpora.push_back(corpus);
-  }
-  return corpora;
-}
-
-// Returns a sorted list of the files in directory 'dir' whose filenames start
-// with 'prefix'.
-static std::vector<std::filesystem::path> GetMatchingDirectories(
-    absl::string_view dir, absl::string_view prefix) {
-  std::vector<std::filesystem::path> directories;
-  for (const auto& entry : std::filesystem::directory_iterator(dir)) {
-    if (std::filesystem::is_directory(entry.path())) {
-      if (absl::StartsWith(entry.path().filename().string(), prefix)) {
-        directories.push_back(entry.path());
+class CompressionCorpus {
+ public:
+  explicit CompressionCorpus() {
+    // Open the zip file and read the entries.
+    // Store the names, sizes and indices of the entries.
+    int error = 0;
+    auto corpus_path = GetFleetbenchRuntimePath("compression/corpus.zip");
+    archive_ = zip_open(corpus_path.c_str(), 0, &error);
+    if (archive_ == nullptr) {
+      LOG(FATAL) << "Failed to open zip archive: " << corpus_path
+                 << " error: " << error;
+    }
+    const int num_files = zip_get_num_entries(archive_, 0);
+    for (int i = 0; i < num_files; ++i) {
+      zip_stat_t zip_entry;
+      if (zip_stat_index(archive_, i, 0, &zip_entry) != 0) {
+        LOG(FATAL) << "Failed to stat zip entry: " << i;
       }
+
+      std::vector<std::string> paths =
+          absl::StrSplit(std::string(zip_entry.name), '/');
+      if (paths.size() < 3) {
+        LOG(FATAL) << "corpus entry should have at least 3 components: "
+                   << zip_entry.name;
+      }
+      // Strip off the path apart from the last dirname/basename,
+      // assuming that the corpus is only ever 1 level deep.
+      const std::string& basename = paths[paths.size() - 1];
+      const std::string& dirname = paths[paths.size() - 2];
+      std::string path = absl::StrCat(dirname, "/", basename);
+      entries_[path] = {.size = zip_entry.size, .index = i};
+      corpora_.insert(std::move(path));
+      // Keep track of the directories for use in GetMatchingDirectories().
+      directories_.insert(dirname);
     }
   }
-  std::sort(directories.begin(), directories.end());
-  return directories;
-}
+  ~CompressionCorpus() { zip_close(archive_); }
+
+  // Returns a sorted list of directories that match the given prefix.
+  std::vector<std::string> GetMatchingDirectories(
+      absl::string_view prefix) const {
+    std::vector<std::string> directories;
+    for (auto it = directories_.lower_bound(prefix); it != directories_.end();
+         ++it) {
+      if (!absl::StartsWith(*it, prefix)) {
+        break;
+      }
+      directories.push_back(std::move(*it));
+    }
+    return directories;
+  }
+
+  // Find all corpora whose path starts with 'dir_path', decompress and return
+  // the data.
+  std::vector<std::string> GetCorpora(absl::string_view dir_path) const {
+    std::vector<std::string> corpora;
+    for (auto it = corpora_.lower_bound(dir_path); it != corpora_.end(); ++it) {
+      if (!absl::StartsWith(*it, dir_path)) {
+        break;
+      }
+      const auto& entry = entries_.at(*it);
+      std::string content(entry.size, '\0');
+      zip_file_t* file = zip_fopen_index(archive_, entry.index, 0);
+      auto bytes_read = zip_fread(file, content.data(), content.size());
+      CHECK_GE(bytes_read, 0) << "Failed to read zip entry: " << *it;
+      content.resize(bytes_read);
+      zip_fclose(file);
+      corpora.push_back(std::move(content));
+    }
+    return corpora;
+  }
+
+ private:
+  struct ZipEntry {
+    size_t size;
+    int index;
+  };
+
+  zip_t* archive_ = nullptr;
+  // A map from file path to zip archive entries.
+  absl::flat_hash_map<std::string, ZipEntry> entries_;
+  absl::btree_set<std::string> corpora_;
+  absl::btree_set<std::string> directories_;
+};
+
+CompressionCorpus* g_corpus = nullptr;
 
 // Parse the given directory_name string, which like `ZSTD_COMPRESS_A-B-C`, to
 // get the binary name, i.e, A-B-C.
-std::string GetBinary(std::string directory_name) {
+std::string GetBinary(absl::string_view directory_name) {
   std::vector<std::string> v = absl::StrSplit(directory_name, '_');
   QCHECK_GE(v.size(), 3);
   std::string binary_name = v[2];
@@ -126,22 +175,20 @@ static int ComputeTotalNumChars(const std::vector<std::string>& strings) {
       [](int sum, const auto& cur) { return sum + cur.size(); });
 }
 
-static constexpr absl::string_view kCorporaPath = "compression/corpora/";
-
 static void BM_Compress(benchmark::State& state,
                         absl::string_view compressor_type,
-                        std::filesystem::path dir_path,
+                        absl::string_view dir_path,
                         const std::string& distribution_name) {
   auto compressor =
       CompressorFactory::CreateCompressor(compressor_type, state,
                                           /* is_compress= */ true);
 
   // Read in benchmark corpus
-  const auto& corpora = GetCorpora(dir_path);
+  const auto& corpora = g_corpus->GetCorpora(dir_path);
 
   // Reserve space to store string after compression and decompression.
-  std::vector<std::string> compressed(corpora.size()),
-      decompressed(corpora.size());
+  std::vector<std::string> compressed(corpora.size());
+  std::vector<std::string> decompressed(corpora.size());
 
   size_t batch_size = ComputeTotalNumChars(corpora);
   while (state.KeepRunningBatch(batch_size)) {
@@ -174,13 +221,13 @@ static void BM_Compress(benchmark::State& state,
 
 static void BM_Decompress(benchmark::State& state,
                           absl::string_view compressor_type,
-                          std::filesystem::path dir_path,
+                          absl::string_view dir_path,
                           const std::string& distribution_name) {
   auto compressor = CompressorFactory::CreateCompressor(
       compressor_type, state, /* is_compress= */ false);
 
   // Read in benchmark corpus
-  const auto& corpora = GetCorpora(dir_path);
+  const auto& corpora = g_corpus->GetCorpora(dir_path);
 
   // Reserve space to store string after compression and decompression.
   std::vector<std::string> compressed(corpora.size()),
@@ -218,7 +265,7 @@ static void BM_Decompress(benchmark::State& state,
 
 namespace {
 void RegisterBenchmarks() {
-  std::string path = GetFleetbenchRuntimePath(kCorporaPath);
+  g_corpus = new CompressionCorpus();
   auto compression_levels_map = GetCompressionLevelsMap();
   std::vector<absl::string_view> operations = {"COMPRESS", "DECOMPRESS"};
 
@@ -236,24 +283,24 @@ void RegisterBenchmarks() {
                     default_compression_level] : algorithms) {
     for (const auto& operation : operations) {
       auto benchmark_fn = fleetbench::compression::BM_Compress;
-      if (operation == "DECOMPRESS")
+      if (operation == "DECOMPRESS") {
         benchmark_fn = fleetbench::compression::BM_Decompress;
+      }
 
-      // Gets the a list of directory paths that stores compression corpus
+      // Gets a list of directory paths that stores compression corpus
       std::string directory_prefix = absl::StrCat(algorithm, "_", operation);
-      const auto& directories = fleetbench::compression::GetMatchingDirectories(
-          path, directory_prefix);
+      const auto& directories =
+          g_corpus->GetMatchingDirectories(directory_prefix);
 
       std::string external_name_suffix = "";
-      for (const auto& directory : directories) {
+      for (const auto& directory_name : directories) {
         // Binary names
-        std::string directory_name = directory.filename().string();
         std::string benchmark_name =
             absl::StrCat("BM_", directory_name, compressor_suffix);
         std::string binary = GetBinary(directory_name);
 
         auto* benchmark = benchmark::RegisterBenchmark(
-            benchmark_name.c_str(), benchmark_fn, compressor_type, directory,
+            benchmark_name, benchmark_fn, compressor_type, directory_name,
             external_name_suffix);
 
         if (compression_levels_map.contains(algorithm)) {

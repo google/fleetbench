@@ -71,7 +71,6 @@ JSON_FILES = [json.split("/")[-1] for json in glob(["distributions/*"])]
         n,
     ) for n in range(BENCHMARK_NUMS)],
     cmd = "$(location //fleetbench/compression/generate_corpora:generate_corpora) --distribution_name=$< --output_dir=$(RULEDIR)/corpora --benchmark_nums=100",
-    output_to_bindir = True,
     tools = [
         "//fleetbench/compression/generate_corpora",
     ],
@@ -80,6 +79,14 @@ JSON_FILES = [json.split("/")[-1] for json in glob(["distributions/*"])]
 filegroup(
     name = "generate_data",
     srcs = ["generate_data_%s" % json for json in JSON_FILES],
+)
+
+genrule(
+    name = "corpus",
+    srcs = [":generate_data"],
+    outs = ["corpus.zip"],
+    cmd = "zip -q -r $(OUTS) $(SRCS)",
+    visibility = ["//fleetbench:__pkg__"],
 )
 
 cc_library(
@@ -92,30 +99,25 @@ cc_library(
         ":compression_parameter",
         "//fleetbench:dynamic_registrar",
         "//fleetbench/common",
+        "@com_google_absl//absl/container:btree",
+        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/log",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings",
         "@com_google_benchmark//:benchmark",
+        "@libzip//:zip",
     ],
     alwayslink = True,
 )
 
 cc_test(
     name = "compression_benchmark",
-    data = [":generate_data"],
+    data = [":corpus"],
     tags = ["manual"],
     deps = [
         ":compression_benchmark_lib",
         "//fleetbench:benchmark_main",
     ],
-)
-
-JSON_FILES_FLEET = [json.split("/")[-1] for json in glob(["distributions/*Fleet.json"])]
-
-filegroup(
-    name = "generate_data_fleet",
-    srcs = ["generate_data_%s" % json for json in JSON_FILES_FLEET],
-    visibility = ["//fleetbench:__pkg__"],
 )
 
 cc_test(
@@ -126,7 +128,7 @@ cc_test(
             "BM_Flate_COMPRESS_Fleet/compression_level:1/window_log:15|" +
             "BM_Flate_COMPRESS_Fleet_internal/compression_level:1/window_log:15|" +
             "BM_Brotli_COMPRESS_Fleet/compression_level:1/window_log:18)"],
-    data = [":generate_data_fleet"],
+    data = [":corpus"],
     linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [

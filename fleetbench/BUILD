@@ -80,8 +80,7 @@ selects.config_setting_group(
 
 cc_test(
     name = "fleetbench",
-    # TODO(rjogrady): Switch to generate_data so we get all the distributions.
-    data = ["//fleetbench/compression:generate_data_fleet"],
+    data = ["//fleetbench/compression:corpus"],
     linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
