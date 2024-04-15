@@ -156,10 +156,10 @@ make(
 
 # TCMalloc
 http_archive(
-    name = "com_google_tcmalloc", # 2023-12-04
-    urls = ["https://github.com/google/tcmalloc/archive/271e52a83f626827e00581460e4be75f5db43d16.zip"],
-    strip_prefix = "tcmalloc-271e52a83f626827e00581460e4be75f5db43d16",
-    sha256 = "c46c87f2062d5af99f866d6da7c1a3789301ecde58c61f7d82912054789daea7",
+    name = "com_google_tcmalloc", # 2024-04-12
+    urls = ["https://github.com/google/tcmalloc/archive/5ed309d3de0c647a91bb41b2be68603c39aef452.zip"],
+    strip_prefix = "tcmalloc-5ed309d3de0c647a91bb41b2be68603c39aef452",
+    integrity = "sha256-Se3AKJNGeqFDmUmjHGIkwA7ZW0jiYKpczh9fxKXlNNs=",
 )
 
 # Dependencies of TCMalloc
