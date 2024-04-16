@@ -36,7 +36,7 @@ if [ -z ${EXCEPTIONS_MODE:-} ]; then
   EXCEPTIONS_MODE="-fno-exceptions -fexceptions"
 fi
 
-readonly DOCKER_CONTAINER="gcr.io/google.com/absl-177019/linux_hybrid-latest:20230217"
+readonly DOCKER_CONTAINER="gcr.io/google.com/absl-177019/linux_hybrid-latest:20231218"
 
 # USE_BAZEL_CACHE=1 only works on Kokoro.
 # Without access to the credentials this won't work.
@@ -48,6 +48,14 @@ if [[ ${USE_BAZEL_CACHE:-0} -ne 0 ]]; then
   # the cache key. Hashing the key is to make it shorter and url-safe.
   container_key=$(echo ${DOCKER_CONTAINER} | sha256sum | head -c 16)
   BAZEL_EXTRA_ARGS="--remote_http_cache=https://storage.googleapis.com/absl-bazel-remote-cache/${container_key} --google_credentials=/keystore/73103_absl-bazel-remote-cache ${BAZEL_EXTRA_ARGS:-}"
+fi
+
+# Avoid depending on external sites like GitHub by checking --distdir for
+# external dependencies first.
+# https://docs.bazel.build/versions/master/guide.html#distdir
+if [[ ${KOKORO_GFILE_DIR:-} ]] && [[ -d "${KOKORO_GFILE_DIR}/distdir" ]]; then
+  DOCKER_EXTRA_ARGS="--mount type=bind,source=${KOKORO_GFILE_DIR}/distdir,target=/distdir,readonly ${DOCKER_EXTRA_ARGS:-}"
+  BAZEL_EXTRA_ARGS="--distdir=/distdir ${BAZEL_EXTRA_ARGS:-}"
 fi
 
 # Create and start the docker container.
@@ -69,10 +77,11 @@ trap stop_docker EXIT
 
 # Install additional dependencies
 docker exec fleetbench apt-get update
-docker exec fleetbench apt-get install pip python3-numpy -y
-docker exec fleetbench pip install zstandard
-docker exec fleetbench pip install python-snappy
-docker exec fleetbench pip install brotli
+docker exec fleetbench apt-get install -y \
+      python3-numpy \
+      python3-zstandard \
+      python3-snappy \
+      python3-brotli
 
 # Sanity check our setup
 docker exec fleetbench /usr/local/bin/bazel test fleetbench:distro_test
@@ -85,15 +94,14 @@ for std in ${STD}; do
       time docker exec \
       -e PATH=${PATH}:"/opt/llvm/clang/bin" \
       -e BAZEL_CXXOPTS="-std=${std}:-nostdinc++" \
-      -e BAZEL_LINKOPTS="-L/opt/llvm/libcxx/lib/x86_64-unknown-linux-gnu:-lc++:-lc++abi:-lm:-Wl,-rpath=/opt/llvm/libcxx/lib/x86_64-unknown-linux-gnu" \
-      -e CPLUS_INCLUDE_PATH="/opt/llvm/libcxx/include/x86_64-unknown-linux-gnu/c++/v1:/opt/llvm/libcxx/include/c++/v1" \
+      -e BAZEL_LINKOPTS="-L/opt/llvm/libcxx/lib:-lc++:-lc++abi:-lm:-Wl,-rpath=/opt/llvm/libcxx/lib" \
+      -e CPLUS_INCLUDE_PATH="/opt/llvm/libcxx/include/c++/v1" \
       fleetbench \
       /usr/local/bin/bazel test ... \
           --config=clang \
           ${build_config} \
           --copt="${exceptions_mode}" \
           --define="absl=1" \
-          --distdir="/bazel-distdir" \
           --keep_going \
           --show_timestamps \
           --test_env="GTEST_INSTALL_FAILURE_SIGNAL_HANDLER=1" \
