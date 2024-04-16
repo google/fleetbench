@@ -50,18 +50,18 @@ py_repositories()
 
 # Abseil
 http_archive(
-    name = "com_google_absl", # 2023-12-04
-    urls = ["https://github.com/abseil/abseil-cpp/archive/8028a87c96df0fff5ab58daeec30c43ce6fb0d20.zip"],
-    strip_prefix = "abseil-cpp-8028a87c96df0fff5ab58daeec30c43ce6fb0d20",
-    sha256 = "33cab09e61d8fa1a87605d0003b9bd68e7bcce2cbb0abc266857b6067d5f6140",
+    name = "com_google_absl", # 2024-04-16
+    urls = ["https://github.com/abseil/abseil-cpp/archive/854193071498f330b71083d7e06a7cd18e02a4cc.zip"],
+    strip_prefix = "abseil-cpp-854193071498f330b71083d7e06a7cd18e02a4cc",
+    integrity = "sha256-T8bLjLZ6GZ96ZDDhlExWbudQ5NW+mCY++RceBJAHXHA=",
 )
 
 # Abseil-Python
 http_archive(
-    name = "com_google_absl_py", # 2023-05-24
-    urls = ["https://github.com/abseil/abseil-py/archive/c5c609cf04ea3f46eb620eb1b948ee2294645c4a.zip"],
-    strip_prefix = "abseil-py-c5c609cf04ea3f46eb620eb1b948ee2294645c4a",
-    sha256 = "a96b4fae80ccb6d393f1344dc47452dc4b557cc8f2e70483c3908d74999290f1",
+    name = "com_google_absl_py", # 2024-04-16
+    urls = ["https://github.com/abseil/abseil-py/archive/fae7e951d46011fdaf62685893ef4efd48544c0a.zip"],
+    strip_prefix = "abseil-py-fae7e951d46011fdaf62685893ef4efd48544c0a",
+    integrity = "sha256-kpYxSP+2fHkqFfDL/9TDJvpcHil5IECWLTYFYRtl3c4=",
 )
 
 
