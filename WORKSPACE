@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Prevent buildifier -lint=fix from reordering load statements. loads
+# can't come before the http_archive.
+# buildifier: disable=load-on-top
+
 workspace(name = "com_google_fleetbench")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
@@ -19,7 +23,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # Load a recent version of skylib in case our dependencies have obsolete
 # versions. This is needed for bazel 6 compatibility.
 http_archive(
-    name = "bazel_skylib", # 2022-09-01
+    name = "bazel_skylib",  # 2022-09-01
     urls = ["https://github.com/bazelbuild/bazel-skylib/archive/refs/tags/1.3.0.zip"],
     strip_prefix = "bazel-skylib-1.3.0",
     sha256 = "4756ab3ec46d94d99e5ed685d2d24aece484015e45af303eb3a11cab3cdc2e71",
@@ -27,15 +31,15 @@ http_archive(
 
 # Support for building foreign build system dependencies. Needed for libpfm.
 http_archive(
-   name = "rules_foreign_cc", # 2023-01-25
-   sha256 = "040ab3cc71356c186230e8c6c8d147dc533a83c72e3e9b4244a36cd9cf18179d",
-   strip_prefix = "rules_foreign_cc-1e66c02ea867d91312a1e14c1d3f78ccbe0d8bc8",
-   url = "https://github.com/bazelbuild/rules_foreign_cc/archive/1e66c02ea867d91312a1e14c1d3f78ccbe0d8bc8.zip",
+    name = "rules_foreign_cc",  # 2023-01-25
+    sha256 = "040ab3cc71356c186230e8c6c8d147dc533a83c72e3e9b4244a36cd9cf18179d",
+    strip_prefix = "rules_foreign_cc-1e66c02ea867d91312a1e14c1d3f78ccbe0d8bc8",
+    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/1e66c02ea867d91312a1e14c1d3f78ccbe0d8bc8.zip",
 )
+
 load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
 
 rules_foreign_cc_dependencies()
-
 
 # External Python package
 http_archive(
@@ -44,13 +48,14 @@ http_archive(
     strip_prefix = "rules_python-0.21.0",
     url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.21.0.tar.gz",
 )
+
 load("@rules_python//python:repositories.bzl", "py_repositories")
 
 py_repositories()
 
 # Abseil
 http_archive(
-    name = "com_google_absl", # 2024-04-16
+    name = "com_google_absl",  # 2024-04-16
     urls = ["https://github.com/abseil/abseil-cpp/archive/854193071498f330b71083d7e06a7cd18e02a4cc.zip"],
     strip_prefix = "abseil-cpp-854193071498f330b71083d7e06a7cd18e02a4cc",
     integrity = "sha256-T8bLjLZ6GZ96ZDDhlExWbudQ5NW+mCY++RceBJAHXHA=",
@@ -58,16 +63,15 @@ http_archive(
 
 # Abseil-Python
 http_archive(
-    name = "com_google_absl_py", # 2024-04-16
+    name = "com_google_absl_py",  # 2024-04-16
     urls = ["https://github.com/abseil/abseil-py/archive/fae7e951d46011fdaf62685893ef4efd48544c0a.zip"],
     strip_prefix = "abseil-py-fae7e951d46011fdaf62685893ef4efd48544c0a",
     integrity = "sha256-kpYxSP+2fHkqFfDL/9TDJvpcHil5IECWLTYFYRtl3c4=",
 )
 
-
 # Google benchmark.
 http_archive(
-    name = "com_google_benchmark", # 2023-09-05
+    name = "com_google_benchmark",  # 2023-09-05
     urls = ["https://github.com/google/benchmark/archive/v1.8.3.zip"],
     strip_prefix = "benchmark-1.8.3",
     sha256 = "abfc22e33e3594d0edf8eaddaf4d84a2ffc491ad74b6a7edc6e7a608f690e691",
@@ -83,7 +87,7 @@ http_archive(
 
 # Google Snappy
 http_archive(
-    name = "snappy", # 2023-05-09
+    name = "snappy",  # 2023-05-09
     urls = ["https://github.com/google/snappy/archive/c9f9edf6d75bb065fa47468bf035e051a57bec7c.zip"],
     strip_prefix = "snappy-c9f9edf6d75bb065fa47468bf035e051a57bec7c",
     sha256 = "c7b207562584bb7272921c176c6bd5c54cfae833129a5d7451bccd7f97b831b5",
@@ -91,7 +95,7 @@ http_archive(
 
 # ZSTD
 http_archive(
-    name = "ZSTD", # 2020-05-22
+    name = "ZSTD",  # 2020-05-22
     build_file = "//fleetbench/compression:zstd.BUILD",
     sha256 = "b6c537b53356a3af3ca3e621457751fa9a6ba96daf3aebb3526ae0f610863532",
     strip_prefix = "zstd-1.4.5/lib",
@@ -100,7 +104,7 @@ http_archive(
 
 # Brotli
 http_archive(
-    name = "brotli", # 2023-07-28
+    name = "brotli",  # 2023-07-28
     sha256 = "8c165ad05f6ab62b528f72dba7e5777b6361e4de24332ed34f929ff44479fb8c",
     strip_prefix = "brotli-0300be36ba019c55d2edc48353270fa18008d49c",
     urls = ["https://github.com/google/brotli/archive/0300be36ba019c55d2edc48353270fa18008d49c.zip"],
@@ -108,7 +112,7 @@ http_archive(
 
 # Flate
 http_archive(
-    name = "chromium_zlib", # 2023-08-11
+    name = "chromium_zlib",  # 2023-08-11
     build_file = "//fleetbench/compression:zlib.BUILD",
     # sha256 is not stable for googlesource.com
     urls = ["https://chromium.googlesource.com/chromium/src/third_party/zlib/+archive/f5fd0ad2663e239a31184ad4c9919991dda16f46.tar.gz"],
@@ -116,7 +120,7 @@ http_archive(
 
 # libzip
 http_archive(
-    name = "libzip", # 2024-04-09
+    name = "libzip",  # 2024-04-09
     strip_prefix = "libzip-1.10.1",
     integrity = "sha256-1W2FfRw61KfzpMAaUcam5VMONauTUD9iJ26LorMGGGo=",
     build_file = "//fleetbench/compression:libzip.BUILD",
@@ -125,7 +129,7 @@ http_archive(
 
 # libpfm4, for perf counters
 http_archive(
-    name = "libpfm", # 2023-01-12
+    name = "libpfm",  # 2023-01-12
     # use our own build file, based from google/benchmark/tools, but modified to
     # disable use-after-free, which is emitted when building libpfm.
     build_file_content = """
@@ -152,11 +156,11 @@ make(
     type = "tar.gz",
     strip_prefix = "libpfm-4.11.0",
     urls = ["https://sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz/download"],
- )
+)
 
 # TCMalloc
 http_archive(
-    name = "com_google_tcmalloc", # 2024-04-12
+    name = "com_google_tcmalloc",  # 2024-04-12
     urls = ["https://github.com/google/tcmalloc/archive/5ed309d3de0c647a91bb41b2be68603c39aef452.zip"],
     strip_prefix = "tcmalloc-5ed309d3de0c647a91bb41b2be68603c39aef452",
     integrity = "sha256-Se3AKJNGeqFDmUmjHGIkwA7ZW0jiYKpczh9fxKXlNNs=",
@@ -165,7 +169,7 @@ http_archive(
 # Dependencies of TCMalloc
 # Fuzzing
 http_archive(
-    name = "rules_fuzzing", # 2023-10-19
+    name = "rules_fuzzing",  # 2023-10-19
     sha256 = "ff52ef4845ab00e95d29c02a9e32e9eff4e0a4c9c8a6bcf8407a2f19eb3f9190",
     strip_prefix = "rules_fuzzing-0.4.1",
     urls = ["https://github.com/bazelbuild/rules_fuzzing/releases/download/v0.4.1/rules_fuzzing-0.4.1.zip"],
@@ -173,12 +177,14 @@ http_archive(
 
 # Proto rules for Bazel and Protobuf
 http_archive(
-    name = "com_google_protobuf", # 2023-10-30
+    name = "com_google_protobuf",  # 2023-10-30
     sha256 = "616bb3536ac1fff3fb1a141450fa28b875e985712170ea7f1bfe5e5fc41e2cd8",
     strip_prefix = "protobuf-24.4",
     urls = ["https://github.com/protocolbuffers/protobuf/archive/v24.4.tar.gz"],
 )
+
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+
 protobuf_deps()
 
 http_archive(
@@ -192,6 +198,7 @@ http_archive(
 )
 
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+
 rules_proto_dependencies()
 rules_proto_toolchains()
 
@@ -222,7 +229,7 @@ load("@rules_fuzzing//fuzzing:init.bzl", "rules_fuzzing_init")
 rules_fuzzing_init()
 
 http_archive(
-    name = "llvm", # 2023-03-07
+    name = "llvm",  # 2023-03-07
     build_file = "@//fleetbench:llvmlibc.BUILD.bazel",
     sha256 = "ee98a255becf4b8d2667cea777a497e0fea87a294abfc5c01ee28897dbfc7c3f",
     strip_prefix = "llvm-project-e002a38b20e3ac40aecbbfa0774f8ba7b9690b0c",

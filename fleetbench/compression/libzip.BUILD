@@ -158,7 +158,7 @@ cc_library(
     ],
     deps = [
         "@chromium_zlib//:zlib",
-    ]
+    ],
 )
 
 # Generate a zipconf.h similar to what cmake would produce.
@@ -255,9 +255,10 @@ EOF
 """,
 )
 
-genrule(name = "zip_err_str_c",
-        outs = ["zip_err_str.c",],
-        cmd = """cat <<EOF >$@
+genrule(
+    name = "zip_err_str_c",
+    outs = ["zip_err_str.c"],
+    cmd = """cat <<EOF >$@
         /*
   This file was generated automatically from a Bazel genrule.
 */
@@ -337,4 +338,5 @@ const struct _zip_err_info _zip_err_details[] = {
 
 const int _zip_err_details_count = sizeof(_zip_err_details)/sizeof(_zip_err_details[0]);
 EOF
-""")
+""",
+)
