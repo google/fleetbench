@@ -32,10 +32,6 @@ if [ -z ${BUILD_CONFIG:-} ]; then
   BUILD_CONFIG=("" "--config=opt")
 fi
 
-if [ -z ${EXCEPTIONS_MODE:-} ]; then
-  EXCEPTIONS_MODE="-fno-exceptions -fexceptions"
-fi
-
 readonly DOCKER_CONTAINER="gcr.io/google.com/absl-177019/linux_hybrid-latest:20231218"
 
 # USE_BAZEL_CACHE=1 only works on Kokoro.
@@ -89,26 +85,23 @@ docker exec fleetbench /usr/local/bin/bazel test fleetbench:distro_test
 # Run bazel tests.
 for std in ${STD}; do
   for build_config in "${BUILD_CONFIG[@]}"; do
-    for exceptions_mode in ${EXCEPTIONS_MODE}; do
-      echo "--------------------------------------------------------------------"
-      time docker exec \
-      -e PATH=${PATH}:"/opt/llvm/clang/bin" \
-      -e BAZEL_CXXOPTS="-std=${std}:-nostdinc++" \
-      -e BAZEL_LINKOPTS="-L/opt/llvm/libcxx/lib:-lc++:-lc++abi:-lm:-Wl,-rpath=/opt/llvm/libcxx/lib" \
-      -e CPLUS_INCLUDE_PATH="/opt/llvm/libcxx/include/c++/v1" \
-      fleetbench \
-      /usr/local/bin/bazel test ... \
-          --config=clang \
-          ${build_config} \
-          --copt="${exceptions_mode}" \
-          --define="absl=1" \
-          --keep_going \
-          --show_timestamps \
-          --test_env="GTEST_INSTALL_FAILURE_SIGNAL_HANDLER=1" \
-          --test_output=errors \
-          --test_tag_filters=-benchmark \
-          --test_size_filters=-enormous \
-          ${BAZEL_EXTRA_ARGS:-}
-    done
+    echo "--------------------------------------------------------------------"
+    time docker exec \
+    -e PATH=${PATH}:"/opt/llvm/clang/bin" \
+    -e BAZEL_CXXOPTS="-std=${std}:-nostdinc++" \
+    -e BAZEL_LINKOPTS="-L/opt/llvm/libcxx/lib:-lc++:-lc++abi:-lm:-Wl,-rpath=/opt/llvm/libcxx/lib" \
+    -e CPLUS_INCLUDE_PATH="/opt/llvm/libcxx/include/c++/v1" \
+    fleetbench \
+    /usr/local/bin/bazel test ... \
+        --config=clang \
+        ${build_config} \
+        --define="absl=1" \
+        --keep_going \
+        --show_timestamps \
+        --test_env="GTEST_INSTALL_FAILURE_SIGNAL_HANDLER=1" \
+        --test_output=errors \
+        --test_tag_filters=-benchmark \
+        --test_size_filters=-enormous \
+        ${BAZEL_EXTRA_ARGS:-}
   done
 done

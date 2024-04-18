@@ -32,6 +32,7 @@ build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzz
 build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan
 
 # Common compiler flags.
+build --copt='-fno-exceptions'
 build --copt='-funsigned-char'
 build --copt='-fno-strict-aliasing'
 build --copt='-fno-omit-frame-pointer'
