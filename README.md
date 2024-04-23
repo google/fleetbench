@@ -14,10 +14,7 @@ microbenchmarks for hot functions across Google's fleet. The data set
 distributions it uses for executing the benchmarks are derived from data
 collected in production.
 
-IMPORTANT: The benchmarking suite is not complete at this time. As described in
-[this paper](https://research.google/pubs/pub44271/), a significant portion of
-compute is spent in code common to many applications - the so-called ‘Data
-Center Tax’. This benchmark at `v0.4` represents subset of core libraries used
+IMPORTANT: This benchmark at `v1.0.0` represents subset of core libraries used
 across the fleet. Future releases will continue to increase this coverage. The
 goal is to expand coverage iteratively and keep distributions up-to-date, so
 always use its version at `HEAD`.
@@ -51,7 +48,7 @@ HEAD only.
 
 ## Workloads coverage
 
-As of Q3'23, Fleetbench provides coverage for several major hot functions.
+As of Q2'24, Fleetbench provides coverage for several major hot functions.
 
 Benchmark   | Description
 ----------- | -----------
@@ -69,7 +66,7 @@ STL-Cord    | Instruction-focused.
 
 [Bazel](https://bazel.build) is the official build system for Fleetbench.
 
-Bazel 6 is our supported version.
+We support Bazel version 6 and 7.
 
 As an example, to run the Swissmap benchmarks:
 
