@@ -60,6 +60,8 @@ static constexpr int64_t kSimulatedBytesPerSec = 0;
 static constexpr size_t kRecordAndReplayBufferSize = 1'000'000;
 // Number of bytes to try to release from the page heap per second.
 static constexpr int64_t kEmpiricalMallocReleaseBytesPerSec = 0;
+// Number of iterations to warm up the benchmark before the main benchmark loop.
+static constexpr size_t kNumWarmUpIterations = 500000;
 
 class SequenceNumber {
  public:
@@ -251,12 +253,24 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
   auto& sim_threads = GetSimThreads();
   sim_threads[thread_idx]->RecordTraceIfNeeded();
 
+  // We do not use the MinWarmUpTime feature of the benchmark framework here,
+  // as that feature calls Teardown and Setup after the warm-up phase, which
+  // resets the state that we want to establish with the warm-up.
+  for (int i = 0; i < kNumWarmUpIterations; i++) {
+    sim_threads[thread_idx]->ReplayTrace();
+  }
+
+  size_t bytes_warm_up = sim_threads[thread_idx]->total_bytes_allocated();
+  size_t allocations_warm_up = sim_threads[thread_idx]->load_allocations();
+
   for (auto _ : state) {
     sim_threads[thread_idx]->ReplayTrace();
   }
 
-  size_t bytes = sim_threads[thread_idx]->total_bytes_allocated();
-  size_t allocations = sim_threads[thread_idx]->load_allocations();
+  size_t bytes =
+      sim_threads[thread_idx]->total_bytes_allocated() - bytes_warm_up;
+  size_t allocations =
+      sim_threads[thread_idx]->load_allocations() - allocations_warm_up;
   double bytes_per_allocation = bytes / allocations;
 
   // Bytes and allocations per second is most useful for applications.
@@ -322,8 +336,7 @@ void RegisterBenchmarks() {
     auto* benchmark = benchmark::RegisterBenchmark(
         absl::StrCat("BM_", distribution_name).c_str(),
         BM_TCMalloc_Empirical_Driver);
-    benchmark->MinWarmUpTime(0.5)
-        ->Setup(BM_TCMalloc_Empirical_Driver_Setup)
+    benchmark->Setup(BM_TCMalloc_Empirical_Driver_Setup)
         ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
         ->ThreadRange(1, std::thread::hardware_concurrency())
         ->UseRealTime();
