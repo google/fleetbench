@@ -38,8 +38,8 @@ void ProtoLifecycle::InitMessages(std::vector<T*>& messages,
                                   std::vector<T*>& other_messages,
                                   google::protobuf::Arena* arena) {
   for (size_t i = 0; i < working_set_size_; i++) {
-    messages[i] = google::protobuf::Arena::CreateMessage<T>(arena);
-    other_messages[i] = google::protobuf::Arena::CreateMessage<T>(arena);
+    messages[i] = google::protobuf::Arena::Create<T>(arena);
+    other_messages[i] = google::protobuf::Arena::Create<T>(arena);
   }
 }
 void ProtoLifecycle::Init(google::protobuf::Arena* arena) {
