@@ -71,9 +71,15 @@ stop_docker() {
 }
 trap stop_docker EXIT
 
+# Install additional dependencies not provided by the docker image.
+docker exec fleetbench apt-get update
+docker exec fleetbench apt-get install -y \
+    python3-pandas \
+    python3-psutil
+
 # Sanity check our setup
 docker exec fleetbench /usr/local/bin/bazel --version
-docker exec fleetbench /usr/local/bin/bazel test fleetbench:distro_test
+docker exec fleetbench /usr/local/bin/bazel test fleetbench:distro_test --test_output=errors
 
 # Run bazel tests.
 for std in ${STD}; do

@@ -77,10 +77,12 @@ docker exec fleetbench apt-get install -y \
       python3-numpy \
       python3-zstandard \
       python3-snappy \
-      python3-brotli
+      python3-brotli \
+      python3-pandas \
+      python3-psutil
 
 # Sanity check our setup
-docker exec fleetbench /usr/local/bin/bazel test fleetbench:distro_test
+docker exec fleetbench /usr/local/bin/bazel test fleetbench:distro_test --test_output=errors
 
 # Run bazel tests.
 for std in ${STD}; do

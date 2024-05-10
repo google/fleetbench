@@ -15,6 +15,8 @@
 from absl.testing import absltest
 import brotli
 import numpy as np
+import pandas as pd
+import psutil
 import zstandard
 
 import snappy
@@ -22,6 +24,12 @@ import snappy
 
 class DistroTest(absltest.TestCase):
   """Sanity check that we can import Python libraries."""
+
+  def testPsUtil(self):
+    self.assertGreater(psutil.cpu_count(), 0)
+
+  def testPandas(self):
+    self.assertTrue(pd.Series([1, 2, 3]).any())
 
   def testNumpy(self):
     self.assertTrue(np.any(np.array([1, 2, 3])))

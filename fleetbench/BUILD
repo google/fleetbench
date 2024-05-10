@@ -127,7 +127,5 @@ cc_test(
 py_test(
     name = "distro_test",
     srcs = [":distro_test.py"],
-    deps = [
-        "@com_google_absl_py//absl/testing:absltest",
-    ],
+    deps = ["@com_google_absl_py//absl/testing:absltest"],
 )
