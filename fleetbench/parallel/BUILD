@@ -58,6 +58,7 @@ py_binary(
     name = "parallel_bench",
     testonly = True,
     srcs = ["parallel_bench.py"],
+    visibility = ["//fleetbench:__pkg__"],
     deps = [
         ":cpu",
         ":parallel_bench_lib",
