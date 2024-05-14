@@ -17,7 +17,6 @@
 import math
 import os
 import random
-import shutil
 import statistics
 import time
 
@@ -29,6 +28,27 @@ from fleetbench.parallel import cpu
 from fleetbench.parallel import result
 from fleetbench.parallel import run
 from fleetbench.parallel import worker
+
+
+def _GetBenchmarks(
+    benchmark_target: str, benchmark_filters: list[str]
+) -> dict[str, bm.Benchmark]:
+  """Get a list of benchmarks from the given target."""
+  benchmarks = {}
+  sub_benchmarks = bm.GetSubBenchmarks(benchmark_target)
+
+  if not benchmark_filters:
+    for name in sub_benchmarks:
+      benchmark = bm.Benchmark(benchmark_target, name)
+      benchmarks[benchmark.Name()] = benchmark
+  else:
+    for name in benchmark_filters:
+      if name not in sub_benchmarks:
+        raise ValueError(f"Benchmark {name} not found in {benchmark_target}.")
+      benchmark = bm.Benchmark(benchmark_target, name)
+      benchmarks[benchmark.Name()] = benchmark
+
+  return benchmarks
 
 
 class ParallelBench:
@@ -75,16 +95,14 @@ class ParallelBench:
     self.results: list[result.Result] = []
     self.utilization_samples: list[tuple[pd.Timestamp, float]] = []
 
-  def _PreRun(self, benchmark_paths: list[str]) -> None:
+  def _PreRun(
+      self, benchmark_target: str, benchmark_filters: list[str]
+  ) -> None:
     """Initial configuration steps."""
 
     logging.info("Initializing benchmarks and worker threads...")
 
-    for benchmark_path in benchmark_paths:
-      sub_benchmarks = bm.GetSubBenchmarks(benchmark_path)
-      for name in sub_benchmarks:
-        benchmark = bm.Benchmark(benchmark_path, name)
-        self.benchmarks[benchmark.Name()] = benchmark
+    self.benchmarks = _GetBenchmarks(benchmark_target, benchmark_filters)
 
     # Initialize the runtimes with a fake duration. This causes all benchmarks
     # to be equally likely at first.
@@ -189,9 +207,11 @@ class ParallelBench:
           self.runtimes[r.benchmark].append(r.duration)
           self.results.append(r)
 
-  def Run(self, benchmarks: list[str]) -> list[result.Result]:
+  def Run(
+      self, benchmark_target: str, benchmark_filter: list[str] = []
+  ) -> list[result.Result]:
     """Run benchmarks in parallel."""
-    self._PreRun(benchmarks)
+    self._PreRun(benchmark_target, benchmark_filter)
 
     logging.info(
         "Running %s benchmarks to try to hit %.f%% utilization",

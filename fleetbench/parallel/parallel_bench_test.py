@@ -46,9 +46,6 @@ class ParallelBenchTest(absltest.TestCase):
     self.create_tempfile(
         os.path.join(absltest.get_default_test_tmpdir(), "fake_bench")
     )
-    self.create_tempfile(
-        os.path.join(absltest.get_default_test_tmpdir(), "other_bench")
-    )
 
     def fake_utilization(unused_cpus):
       # Return 0% for the first call, then 55% for the rest.
@@ -63,9 +60,35 @@ class ParallelBenchTest(absltest.TestCase):
         duration=0.1,
         temp_root=absltest.get_default_test_tmpdir(),
     )
-    results = pb.Run(["fake_bench", "other_bench"])
+    results = pb.Run("fake_bench", [])
     mock_execute.assert_called_once()
     self.assertLen(results, 1)
+
+  @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
+  @flagsaver.flagsaver(
+      benchmark_dir=absltest.get_default_test_tmpdir(),
+  )
+  def test_getbenchmark_with_filter(self, mock_get_subbenchmarks):
+    mock_get_subbenchmarks.return_value = ["BM_Test1", "BM_Test2"]
+    self.create_tempfile(
+        os.path.join(absltest.get_default_test_tmpdir(), "fake_bench")
+    )
+
+    benchmarks = parallel_bench_lib._GetBenchmarks("fake_bench", ["BM_Test1"])
+    self.assertLen(benchmarks, 1)
+
+  @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
+  @flagsaver.flagsaver(
+      benchmark_dir=absltest.get_default_test_tmpdir(),
+  )
+  def test_getbenchmark_without_filter(self, mock_get_subbenchmarks):
+    mock_get_subbenchmarks.return_value = ["BM_Test1", "BM_Test2"]
+    self.create_tempfile(
+        os.path.join(absltest.get_default_test_tmpdir(), "fake_bench")
+    )
+
+    benchmarks = parallel_bench_lib._GetBenchmarks("fake_bench", [])
+    self.assertLen(benchmarks, 2)
 
 
 if __name__ == "__main__":

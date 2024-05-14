@@ -41,11 +41,15 @@ _TEMP_ROOT = flags.DEFINE_string(
 
 _DURATION = flags.DEFINE_integer("duration", 60, "Minimum duration in seconds.")
 
-_BENCHMARKS = flags.DEFINE_multi_string(
-    "benchmarks",
+_BENCHMARK_TARGET = flags.DEFINE_string(
+    "benchmark_target",
     "fleetbench",
-    "Benchmarks to run. Specify the basename if in the same directory as"
+    "Benchmark target to run. Specify the basename if in the same directory as"
     " parallel_bench, or the full path.",
+)
+
+_BENCHMARK_FILTER = flags.DEFINE_multi_string(
+    "benchmark_filter", [], "Specifies subset of benchmarks to run."
 )
 
 _UTILIZATION = flags.DEFINE_float(
@@ -84,7 +88,10 @@ def main(argv: Sequence[str]) -> None:
   )
 
   # TODO(rjogrady): Summarize / Print results.
-  results = bench.Run(benchmarks=_BENCHMARKS.value)
+  results = bench.Run(
+      benchmark_target=_BENCHMARK_TARGET.value,
+      benchmark_filter=_BENCHMARK_FILTER.value,
+  )
   logging.info(
       "Ran %d benchmarks. Output is in %s", len(results), _TEMP_ROOT.value
   )
