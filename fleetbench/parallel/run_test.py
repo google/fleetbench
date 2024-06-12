@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 import subprocess
 from unittest import mock
@@ -30,7 +31,12 @@ class RunTest(absltest.TestCase):
       benchmark_dir=absltest.get_default_test_tmpdir(),
   )
   def testRun(self, mock_run):
-    output_file = self.create_tempfile(content="fake benchmark results")
+    output_file = self.create_tempfile()
+
+    data = {"benchmarks": [{"cpu_time": 12.345}]}
+    json_object = json.dumps(data, indent=4)
+    with open(output_file.full_path, "w") as f:
+      f.write(json_object)
     mock_run.return_value.returncode = 0
     self.create_tempfile(
         file_path=os.path.join(
@@ -45,9 +51,10 @@ class RunTest(absltest.TestCase):
     )
     result = r.Execute()
     mock_run.assert_called_once()
-    self.assertEqual(result.result, "fake benchmark results")
+    self.assertEqual(result.result, json_object)
     self.assertEqual(result.benchmark, "fake_benchmark (BM_Test)")
     self.assertGreater(result.duration, 0)
+    self.assertEqual(result.bm_cpu_time, 12.345)
     self.assertEqual(result.rc, 0)
 
   @flagsaver.flagsaver(

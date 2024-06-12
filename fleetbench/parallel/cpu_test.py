@@ -22,8 +22,9 @@ class CpuTest(absltest.TestCase):
     self.assertGreaterEqual(len(cpu.Available()), 1)
 
   def test_Utilization(self):
-    average, per_cpu = cpu.Utilization([1])
+    average, per_cpu, busy_cpu = cpu.Utilization([1])
     self.assertEqual(average, per_cpu[1])
+    self.assertEqual(busy_cpu, 1)
 
     with self.assertRaises(ValueError):
       cpu.Utilization([])

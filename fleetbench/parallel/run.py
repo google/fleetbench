@@ -14,6 +14,7 @@
 
 """Runs a single benchmark and collects the results and metadata."""
 
+import json
 import subprocess
 import time
 
@@ -49,10 +50,12 @@ class Run:
 
     with open(self.out_file, "r") as f:
       benchmark_output = f.read()
+    benchmark_cpu_time = self._GetBenchmarkRuntime(benchmark_output)
     return result.Result(
         benchmark=self.benchmark.Name(),
         rc=proc.returncode,
         duration=end - start,
+        bm_cpu_time=benchmark_cpu_time,
         result=benchmark_output,
         stdout=proc.stdout,
         stderr=proc.stderr,
@@ -63,3 +66,7 @@ class Run:
         "--benchmark_out_format=json",
         f"--benchmark_out={self.out_file}",
     ]
+
+  def _GetBenchmarkRuntime(self, benchmark_output: str) -> float:
+    data = json.loads(benchmark_output)
+    return data["benchmarks"][0]["cpu_time"]

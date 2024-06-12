@@ -14,6 +14,7 @@
 
 """Run Fleetbench benchmarks in parallel."""
 
+import dataclasses
 import math
 import os
 import random
@@ -49,6 +50,12 @@ def _GetBenchmarks(
       benchmarks[benchmark.Name()] = benchmark
 
   return benchmarks
+
+
+@dataclasses.dataclass
+class BenchmarkTimes:
+  wall_time: float
+  cpu_time: float
 
 
 class ParallelBench:
@@ -90,7 +97,7 @@ class ParallelBench:
     self.target_utilization = utilization * 100
     self.duration = duration
     self.temp_root = temp_root
-    self.runtimes: dict[str, list[float]] = {}
+    self.runtimes: dict[str, list[BenchmarkTimes]] = {}
     self.workers: dict[int, worker.Worker] = {}
     self.results: list[result.Result] = []
     self.utilization_samples: list[tuple[pd.Timestamp, float]] = []
@@ -106,7 +113,10 @@ class ParallelBench:
 
     # Initialize the runtimes with a fake duration. This causes all benchmarks
     # to be equally likely at first.
-    self.runtimes = {benchmark: [1.0] for benchmark in self.benchmarks.keys()}
+    self.runtimes = {
+        benchmark: [BenchmarkTimes(wall_time=1.0, cpu_time=0.0)]
+        for benchmark in self.benchmarks.keys()
+    }
 
     # Create a worker thread for each CPU.
     self.workers = {
@@ -117,13 +127,12 @@ class ParallelBench:
       w.start()
 
     if self.cpu_affinity:
-      # Bind the controller to its CPU.
       logging.info(
-          "Controller on CPU %d, benchmarks running on %d CPUs (%s)",
+          "Controller on CPU %d, benchmarks running on %d CPUs",
           self.controller_cpu,
           len(self.cpus),
-          self.cpus,
       )
+      logging.debug("CPU activity: %s", self.cpus)
       os.sched_setaffinity(os.getpid(), [self.controller_cpu])
 
   def _SelectNextBenchmark(self) -> bm.Benchmark:
@@ -137,7 +146,8 @@ class ParallelBench:
     inverse_weights = []
     # Use the last 10 runtimes to estimate expected runtime.
     for times in self.runtimes.values():
-      inverse_weights.append(statistics.mean(times[-10:]))
+      last_10_wall_times = [time.wall_time for time in times[-10:]]
+      inverse_weights.append(statistics.mean(last_10_wall_times))
     probabilities = [x / sum(inverse_weights) for x in inverse_weights]
 
     # self.runtimes is a dict of benchmark name -> list of runtimes.
@@ -160,15 +170,19 @@ class ParallelBench:
       if time.time() - start_time > self.duration:
         break
       # Check CPU utilization and schedule jobs if we're under-utilized.
-      total_utilization, utilization_per_cpu = cpu.Utilization(self.cpus)
+      total_utilization, utilization_per_cpu, busy_cpus = cpu.Utilization(
+          self.cpus
+      )
 
       logging.log_every_n_seconds(
-          logging.INFO,
-          "utilization average %.1f%%, per-CPU: %s",
+          logging.DEBUG,
+          "utilization average %.1f%%, with %d busy CPUS, per-CPU: %s",
           5,
           total_utilization,
+          busy_cpus,
           utilization_per_cpu,
       )
+
       self.utilization_samples.append((pd.Timestamp.now(), total_utilization))
 
       least_busy_cpus = sorted(
@@ -204,7 +218,9 @@ class ParallelBench:
           if r.rc != 0:
             logging.error("Benchmark failed: %s", r.benchmark)
             continue
-          self.runtimes[r.benchmark].append(r.duration)
+          self.runtimes[r.benchmark].append(
+              BenchmarkTimes(wall_time=r.duration, cpu_time=r.bm_cpu_time)
+          )
           self.results.append(r)
 
   def Run(
@@ -214,11 +230,13 @@ class ParallelBench:
     self._PreRun(benchmark_target, benchmark_filter)
 
     logging.info(
-        "Running %s benchmarks to try to hit %.f%% utilization",
-        ", ".join(self.benchmarks.keys()),
+        "Running %d benchmarks to try to hit %.f%% utilization",
+        len(self.benchmarks),
         self.target_utilization,
     )
+    logging.debug("Benchmark list: %s", ", ".join(self.benchmarks.keys()))
 
+    logging.info("Start measuring for %d seconds", self.duration)
     self._RunSchedulingLoop()
 
     logging.info("Shutting down all workers...")
@@ -232,18 +250,29 @@ class ParallelBench:
     utilization = pd.DataFrame(
         self.utilization_samples, columns=["timestamp", "utilization"]
     )
-    runtimes = pd.DataFrame({
-        benchmark: pd.Series(runtimes)
-        for benchmark, runtimes in self.runtimes.items()
-    })
-    # TODO(rjogrady): We can do more here- plot utilization over time, etc.
+    data = []
+    for benchmark, times_list in self.runtimes.items():
+      for t in times_list[1:]:
+        entry = {
+            "Benchmark": benchmark,
+            "Duration": t.wall_time,
+            "CPUTimes": t.cpu_time,
+        }
+        data.append(entry)
+    runtimes = pd.DataFrame(data)
+
+    # TODO(rjogrady): We can do more here - plot utilization over time, etc.
     logging.info("Median Utilization: %f", utilization["utilization"].median())
-    logging.info("Benchmark runtimes:")
-    for col in runtimes.columns:
-      logging.info(
-          "%s: count=%s median=%s",
-          col,
-          runtimes[col].count(),
-          runtimes[col].median(),
-      )
+    logging.info("Benchmark runtimes report:")
+
+    grouped_results = (
+        runtimes.groupby("Benchmark")
+        .agg(
+            Count=("Duration", "count"),
+            Median_Duration=("Duration", "median"),
+            Mean_CPU_Time=("CPUTimes", "mean"),
+        )
+        .round(3)
+    )
+    print(grouped_results.to_string())
     return self.results

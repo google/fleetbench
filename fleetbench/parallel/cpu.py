@@ -25,7 +25,7 @@ def Available() -> set[int]:
   return set(os.sched_getaffinity(os.getpid()))
 
 
-def Utilization(cpus: list[int]) -> Tuple[float, dict[int, float]]:
+def Utilization(cpus: list[int]) -> Tuple[float, dict[int, float], int]:
   """Get CPU utilization percentage per core and average across cores.
 
   Note that this blocks for 0.1 seconds.
@@ -35,8 +35,8 @@ def Utilization(cpus: list[int]) -> Tuple[float, dict[int, float]]:
   Raises:
     ValueError: if no CPUs are provided.
   Returns:
-    Tuple of average utilization across cores and a dictionary of per-core
-    utilization.
+    Tuple of average utilization across cores, a dictionary of per-core
+    utilization and the count of all busy cpus.
   """
   if not cpus:
     raise ValueError('No CPUs provided.')
@@ -44,5 +44,10 @@ def Utilization(cpus: list[int]) -> Tuple[float, dict[int, float]]:
   usable_utilization = {}
   for cpu_id in cpus:
     usable_utilization[cpu_id] = per_core_cpu_utilization[cpu_id]
+  busy_cpus = len([val for val in usable_utilization.values() if val != 0])
 
-  return sum(usable_utilization.values()) / len(cpus), usable_utilization
+  return (
+      sum(usable_utilization.values()) / len(cpus),
+      usable_utilization,
+      busy_cpus,
+  )

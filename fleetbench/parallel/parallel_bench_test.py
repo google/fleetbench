@@ -41,6 +41,7 @@ class ParallelBenchTest(absltest.TestCase):
         stdout="fake_stdout",
         stderr="fake_stderr",
         duration=0.01,
+        bm_cpu_time=0.01,
         result="fake_result",
     )
     self.create_tempfile(
@@ -49,7 +50,7 @@ class ParallelBenchTest(absltest.TestCase):
 
     def fake_utilization(unused_cpus):
       # Return 0% for the first call, then 55% for the rest.
-      fake_utilizations = [(0, {1: 0}), (55, {1: 55})]
+      fake_utilizations = [(0, {1: 0}, 0), (55, {1: 55}, 1)]
       return fake_utilizations[min(mock_utilization.call_count - 1, 1)]
 
     mock_utilization.side_effect = fake_utilization
