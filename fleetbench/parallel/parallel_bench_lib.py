@@ -147,7 +147,7 @@ class ParallelBench:
     # Use the last 10 runtimes to estimate expected runtime.
     for times in self.runtimes.values():
       last_10_wall_times = [time.wall_time for time in times[-10:]]
-      inverse_weights.append(statistics.mean(last_10_wall_times))
+      inverse_weights.append(1 / (statistics.mean(last_10_wall_times)))
     probabilities = [x / sum(inverse_weights) for x in inverse_weights]
 
     # self.runtimes is a dict of benchmark name -> list of runtimes.
