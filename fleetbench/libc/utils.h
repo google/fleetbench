@@ -53,8 +53,8 @@ class MemoryBuffers {
   // that `mismatch_pos` should be a non-negative, less than buffer size value.
   // If it is zero, two buffers are equal. After comparison, we reset the buffer
   // to make it ready for the next iteration.
-  void mark_dst(size_t offset, size_t mismatch_pos);
-  void reset_dst(size_t offset, size_t mismatch_pos);
+  static void mark(char *buf, size_t offset, size_t mismatch_pos);
+  static void reset(char *buf, size_t offset, size_t mismatch_pos);
 
   // The size of the source and destination buffers.
   size_t size() const { return size_; }
@@ -89,12 +89,13 @@ inline const char *MemoryBuffers::dst(size_t offset) const {
   return dst_ + offset;
 }
 
-inline void MemoryBuffers::mark_dst(size_t offset, size_t mismatch_pos) {
-  if (mismatch_pos > 0) dst_[offset + mismatch_pos - 1] = 0x00;
+inline void MemoryBuffers::mark(char *buf, size_t offset, size_t mismatch_pos) {
+  if (mismatch_pos > 0) buf[offset + mismatch_pos - 1] = 0x00;
 }
 
-inline void MemoryBuffers::reset_dst(size_t offset, size_t mismatch_pos) {
-  if (mismatch_pos > 0) dst_[offset + mismatch_pos - 1] = 0xFF;
+inline void MemoryBuffers::reset(char *buf, size_t offset,
+                                 size_t mismatch_pos) {
+  if (mismatch_pos > 0) buf[offset + mismatch_pos - 1] = 0xFF;
 }
 
 // To generate pseudo-random numbers efficiently, we use a 16-bit Xorshift

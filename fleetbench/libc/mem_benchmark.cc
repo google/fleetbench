@@ -166,10 +166,10 @@ void CmpFunction(benchmark::State &state,
         UpdateOffset(buffer_size, p.size_bytes, lfsr, offset);
         dst_offset = offset;
       }
-      buffers.mark_dst(dst_offset, mismatch_pos);
+      MemoryBuffers::mark(buffer, dst_offset, mismatch_pos);
       auto res = cmp(buffer + dst_offset, buffer + src_offset, p.size_bytes);
       benchmark::DoNotOptimize(res);
-      buffers.reset_dst(dst_offset, mismatch_pos);
+      MemoryBuffers::reset(buffer, dst_offset, mismatch_pos);
       offset += p.size_bytes;
     }
   }

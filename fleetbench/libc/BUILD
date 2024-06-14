@@ -36,3 +36,13 @@ cc_test(
         "//fleetbench:benchmark_main",
     ],
 )
+
+cc_test(
+    name = "utils_test",
+    srcs = ["utils_test.cc"],
+    deps = [
+        ":utils",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
