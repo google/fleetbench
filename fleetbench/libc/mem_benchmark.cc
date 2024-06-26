@@ -96,6 +96,14 @@ void MemcpyFunction(benchmark::State &state,
   LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call memcpy function
   while (state.KeepRunningBatch(batch_size)) {
+    // The libc memory benchmarks have some sensitivity to the alignment of the
+    // branch instructions in the benchmarking loop. In particular, on some
+    // machines, there can be a slowdown if branch instructions cross a 32-Byte
+    // boundary (potentially related to the JCC erratum). We reduce this
+    // sensitivity by partially unrolling the loop, which reduces the number of
+    // branch instructions and moves the remaining ones to different offsets in
+    // different iterations.
+#pragma unroll 8
     for (auto &p : parameters) {
       UpdateOffset(buffer_size, p.size_bytes, lfsr, dst_offset);
       UpdateOffset(buffer_size, p.size_bytes, lfsr, src_offset);
@@ -118,6 +126,7 @@ void MemmoveFunction(benchmark::State &state,
   LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call memmove function
   while (state.KeepRunningBatch(batch_size)) {
+#pragma unroll 8
     for (auto &p : parameters) {
       UpdateOffset(buffer_size, std::abs(std::min(int16_t{0}, p.offset)),
                    std::max(int16_t{0}, p.offset) + p.size_bytes, lfsr, offset);
@@ -141,6 +150,7 @@ void CmpFunction(benchmark::State &state,
   LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call cmp function
   while (state.KeepRunningBatch(batch_size)) {
+#pragma unroll 8
     for (auto &p : parameters) {
       int16_t mismatch_pos = 0;
       size_t src_offset = 0;
@@ -185,6 +195,7 @@ void MemsetFunction(benchmark::State &state,
   LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call memset function
   while (state.KeepRunningBatch(batch_size)) {
+#pragma unroll 8
     for (auto &p : parameters) {
       UpdateOffset(buffer_size, p.size_bytes, lfsr, offset);
       auto res = memset(dst + offset, p.offset % 0xFF, p.size_bytes);
