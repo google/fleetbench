@@ -17,12 +17,17 @@
 #include <fstream>
 #include <ostream>
 #include <string>
+#include <vector>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 
 namespace fleetbench {
+
+using ::testing::DoubleEq;
+using ::testing::ElementsAre;
 
 TEST(ReadDistributionFileTest, Numbers) {
   std::string path =
@@ -34,10 +39,23 @@ TEST(ReadDistributionFileTest, Numbers) {
     file.close();
   }
   auto result = ReadDistributionFile(path);
-  EXPECT_EQ(result.size(), 3);
-  EXPECT_EQ(result[0], 1.1);
-  EXPECT_EQ(result[1], 2.2);
-  EXPECT_EQ(result[2], 3.3);
+  EXPECT_THAT(result, ElementsAre(DoubleEq(1.1), DoubleEq(2.2), DoubleEq(3.3)));
+}
+
+TEST(ReadDistributionFileWithOverlapProbabilityTest, Numbers) {
+  std::string path =
+      absl::StrCat(getenv("TEST_TMPDIR"), "/test1.csv");
+
+  std::ofstream file(path, std::ofstream::out);
+  if (file.is_open()) {
+    file << "1.1,2.2" << std::endl;
+    file << "0.1" << std::endl;
+    file.close();
+  }
+  DistributionOverlapProbabilityPair result =
+      ReadDistributionFileWithOverlapProbability(path);
+  EXPECT_THAT(result.distribution, ElementsAre(DoubleEq(1.1), DoubleEq(2.2)));
+  EXPECT_DOUBLE_EQ(result.overlap_probability, 0.1);
 }
 
 TEST(ReadCsvTest, Numbers) {
@@ -76,6 +94,12 @@ TEST(ReadCsvTest, Mixed) {
   EXPECT_EQ(result[1][1], "2");
 }
 
+TEST(ConvertLineTest, Numbers) {
+  std::vector<std::string> line = {"1.2345", "2.2345"};
+  EXPECT_THAT(ConvertLine(line),
+              ElementsAre(DoubleEq(1.2345), DoubleEq(2.2345)));
+}
+
 TEST(RandomTest, Seed) {
   absl::SetFlag(&FLAGS_fixed_seed, true);
   absl::SetFlag(&FLAGS_seed, 1);
@@ -94,6 +118,11 @@ TEST(DeathTest, SeedFlags) {
         GetRNG()();
       },
       "--seed requires --fixed_seed=true");
+}
+
+TEST(DeathTest, ConvertLine) {
+  std::vector<std::string> line = {"1.2345", "xyz"};
+  ASSERT_DEATH(ConvertLine(line), "Invalid column: xyz");
 }
 
 }  // namespace fleetbench

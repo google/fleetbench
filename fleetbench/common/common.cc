@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "tools/cpp/runfiles/runfiles.h"
+#include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -99,25 +100,14 @@ std::vector<std::filesystem::path> GetMatchingFiles(absl::string_view dir,
 }
 
 std::vector<double> ReadDistributionFile(std::filesystem::path file) {
-  std::vector<double> distribution;
-  std::string column;
-  std::fstream f(file, std::ios_base::in);
-  while (std::getline(f, column, ',')) {
-    double d = 0.0;
-    if (!absl::SimpleAtod(column, &d)) {
-      std::cerr << "Invalid column: " << column << "\n";
-    }
-    distribution.push_back(d);
-  }
-  return distribution;
+  return ConvertLine(ReadCsv(file)[0]);
 }
 
 DistributionOverlapProbabilityPair ReadDistributionFileWithOverlapProbability(
     std::filesystem::path file) {
-  std::vector<double> columns = ReadDistributionFile(file);
-  double overlap_probability = columns.back();
-  columns.pop_back();
-  return DistributionOverlapProbabilityPair{columns, overlap_probability};
+  auto lines = ReadCsv(file);
+  return DistributionOverlapProbabilityPair{ConvertLine(lines[0]),
+                                            ConvertLine(lines[1])[0]};
 }
 
 std::vector<std::vector<std::string>> ReadCsv(std::filesystem::path file,
@@ -137,6 +127,16 @@ std::vector<std::vector<std::string>> ReadCsv(std::filesystem::path file,
     lines.push_back(substrings);
   }
   return lines;
+}
+
+std::vector<double> ConvertLine(std::vector<std::string> line) {
+  std::vector<double> result(line.size());
+  absl::c_transform(line, result.begin(), [](const std::string& val) {
+    double d = 0.0;
+    CHECK(absl::SimpleAtod(val, &d)) << "Invalid column: " << val << "\n";
+    return d;
+  });
+  return result;
 }
 
 std::string GetFleetbenchRuntimePath(const absl::string_view path) {

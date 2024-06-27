@@ -66,7 +66,7 @@ struct DistributionOverlapProbabilityPair {
 };
 
 // Similar to ReadDistributionFile(), but for a CSV file that additionally
-// contains the overlap probability in the last column. The function returns a
+// contains the overlap probability in a second line. The function returns a
 // pair consisting of the distribution and the overlap probability.
 DistributionOverlapProbabilityPair ReadDistributionFileWithOverlapProbability(
     std::filesystem::path file);
@@ -75,7 +75,12 @@ DistributionOverlapProbabilityPair ReadDistributionFileWithOverlapProbability(
 // multiple lines. Each line converts to a vector of string, separated by the
 // delimiter.
 std::vector<std::vector<std::string>> ReadCsv(std::filesystem::path file,
-                                              char delimiter);
+                                              char delimiter = ',');
+
+// Converts a line in the result of ReadCsv (i.e., a vector of strings) to a
+// vector of doubles. Causes a failed CHECK if a string cannot be converted to
+// a double.
+std::vector<double> ConvertLine(std::vector<std::string> line);
 
 // Returns the runtime path of a runfile in the fleetbench directory.
 std::string GetFleetbenchRuntimePath(const absl::string_view path);
