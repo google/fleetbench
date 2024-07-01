@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/container/btree_map.h"
 #include "absl/crc/crc32c.h"
 #include "absl/hash/hash.h"
 #include "absl/strings/str_cat.h"
@@ -147,23 +148,35 @@ static std::vector<std::filesystem::path> GetDistributionFiles(
                           prefix);
 }
 
-static void BM_Hashing(benchmark::State &state,
-                       const std::vector<double> &hashing_size_distribution,
-                       void (*hashing_call)(benchmark::State &,
-                                            BM_Hashing_Parameters &),
-                       bool hot, const std::string &distribution_name) {
-  const size_t batch_size = 1000;
-
+static std::vector<int> SampleStringLengths(
+    const absl::btree_map<int, double> &hashing_size_distribution,
+    size_t n_samples) {
   // Convert prod size distribution to a discrete distribution.
-  std::discrete_distribution<> size_bytes_sampler(
-      hashing_size_distribution.begin(), hashing_size_distribution.end());
-
-  // Pre-calculates parameter values.
-  std::vector<int> str_lengths(batch_size);
-  for (auto &l : str_lengths) {
-    // Size_bytes is sampled from the collected prod distribution.
-    l = size_bytes_sampler(GetRNG());
+  std::vector<int> sizes;
+  std::vector<double> percentages;
+  for (auto const &[size, percentage] : hashing_size_distribution) {
+    sizes.push_back(size);
+    percentages.push_back(percentage);
   }
+  std::discrete_distribution<> sampler(percentages.begin(), percentages.end());
+
+  std::vector<int> samples(n_samples);
+  for (int &sample : samples) {
+    // sizes are sampled from the collected prod distribution.
+    sample = sizes[sampler(GetRNG())];
+  }
+
+  return samples;
+}
+
+static void BM_Hashing(
+    benchmark::State &state,
+    const absl::btree_map<int, double> &hashing_size_distribution,
+    void (*hashing_call)(benchmark::State &, BM_Hashing_Parameters &), bool hot,
+    const std::string &distribution_name) {
+  const size_t batch_size = 1000;
+  std::vector<int> str_lengths =
+      SampleStringLengths(hashing_size_distribution, batch_size);
 
   int str_size =
       *std::max_element(std::begin(str_lengths), std::end(str_lengths));
@@ -217,7 +230,7 @@ void RegisterBenchmarks() {
       auto application = file.filename().string();
       application.erase(application.find(".csv"));
 
-      const std::vector<double> hashing_size_distribution =
+      const absl::btree_map<int, double> hashing_size_distribution =
           ReadDistributionFile(file);
 
       for (const auto &[hot_str, hot] : cache_resident_info) {

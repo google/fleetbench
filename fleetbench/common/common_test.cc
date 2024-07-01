@@ -28,6 +28,7 @@ namespace fleetbench {
 
 using ::testing::DoubleEq;
 using ::testing::ElementsAre;
+using ::testing::Pair;
 
 TEST(ReadDistributionFileTest, Numbers) {
   std::string path =
@@ -35,26 +36,28 @@ TEST(ReadDistributionFileTest, Numbers) {
 
   std::ofstream file(path, std::ofstream::out);
   if (file.is_open()) {
-    file << "1.1,2.2,3.3" << std::endl;
+    file << "0:1.1,1:2.2,4:3.3" << std::endl;
     file.close();
   }
   auto result = ReadDistributionFile(path);
-  EXPECT_THAT(result, ElementsAre(DoubleEq(1.1), DoubleEq(2.2), DoubleEq(3.3)));
+  EXPECT_THAT(result,
+              ElementsAre(Pair(0, DoubleEq(1.1)), Pair(1, DoubleEq(2.2)),
+                          Pair(4, DoubleEq(3.3))));
 }
 
-TEST(ReadDistributionFileWithOverlapProbabilityTest, Numbers) {
+TEST(ReadMemDistributionFileTest, Numbers) {
   std::string path =
       absl::StrCat(getenv("TEST_TMPDIR"), "/test1.csv");
 
   std::ofstream file(path, std::ofstream::out);
   if (file.is_open()) {
-    file << "1.1,2.2" << std::endl;
-    file << "0.1" << std::endl;
+    file << "0:1.1,1:2.2" << std::endl;
+    file << "0:0.9,1:0.1" << std::endl;
     file.close();
   }
-  DistributionOverlapProbabilityPair result =
-      ReadDistributionFileWithOverlapProbability(path);
-  EXPECT_THAT(result.distribution, ElementsAre(DoubleEq(1.1), DoubleEq(2.2)));
+  MemDistributionData result = ReadMemDistributionFile(path);
+  EXPECT_THAT(result.distribution,
+              ElementsAre(Pair(0, DoubleEq(1.1)), Pair(1, DoubleEq(2.2))));
   EXPECT_DOUBLE_EQ(result.overlap_probability, 0.1);
 }
 
@@ -95,9 +98,9 @@ TEST(ReadCsvTest, Mixed) {
 }
 
 TEST(ConvertLineTest, Numbers) {
-  std::vector<std::string> line = {"1.2345", "2.2345"};
-  EXPECT_THAT(ConvertLine(line),
-              ElementsAre(DoubleEq(1.2345), DoubleEq(2.2345)));
+  std::vector<std::string> line = {"0:1.2345", "4:2.2345"};
+  EXPECT_THAT(ConvertLine(line), ElementsAre(Pair(0, DoubleEq(1.2345)),
+                                             Pair(4, DoubleEq(2.2345))));
 }
 
 TEST(RandomTest, Seed) {
@@ -120,9 +123,12 @@ TEST(DeathTest, SeedFlags) {
       "--seed requires --fixed_seed=true");
 }
 
-TEST(DeathTest, ConvertLine) {
-  std::vector<std::string> line = {"1.2345", "xyz"};
-  ASSERT_DEATH(ConvertLine(line), "Invalid column: xyz");
+TEST(DeathTest, ConvertLineInvalidKey) {
+  ASSERT_DEATH(ConvertLine({"a:1.2345", "1:2.3456"}), "Invalid key: a");
+}
+
+TEST(DeathTest, ConvertLineInvalidColumn) {
+  ASSERT_DEATH(ConvertLine({"0:1.2345", "1:xyz"}), "Invalid column: xyz");
 }
 
 }  // namespace fleetbench

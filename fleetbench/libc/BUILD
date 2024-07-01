@@ -19,6 +19,7 @@ cc_library(
         ":utils",
         "//fleetbench:dynamic_registrar",
         "//fleetbench/common",
+        "@com_google_absl//absl/container:btree",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/random:distributions",
         "@com_google_absl//absl/strings",

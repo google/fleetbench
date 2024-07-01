@@ -9,6 +9,7 @@ cc_library(
     deps = [
         "//fleetbench:dynamic_registrar",
         "//fleetbench/common",
+        "@com_google_absl//absl/container:btree",
         "@com_google_absl//absl/crc:crc32c",
         "@com_google_absl//absl/hash",
         "@com_google_absl//absl/strings",

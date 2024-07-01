@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/container/btree_map.h"
 #include "absl/flags/declare.h"
 #include "absl/strings/string_view.h"
 
@@ -55,21 +56,20 @@ std::vector<std::filesystem::path> GetMatchingFiles(absl::string_view dir,
                                                     absl::string_view prefix);
 
 // Reads a CSV file that contains a distribution. Such a file has a single line;
-// the columns represent the relative frequency with which the corresponding
-// input occurs. The function returns a vector whose entries correspond to the
-// columns in the CSV file.
-std::vector<double> ReadDistributionFile(std::filesystem::path file);
+// the columns are of the form "k:v", where v denotes the relative frequency
+// with which input k occurs.
+absl::btree_map<int, double> ReadDistributionFile(std::filesystem::path file);
 
-struct DistributionOverlapProbabilityPair {
-  std::vector<double> distribution;
+struct MemDistributionData {
+  // The size distribution is stored in a sorted map.
+  absl::btree_map<int, double> distribution;
   double overlap_probability;
 };
 
 // Similar to ReadDistributionFile(), but for a CSV file that additionally
 // contains the overlap probability in a second line. The function returns a
 // pair consisting of the distribution and the overlap probability.
-DistributionOverlapProbabilityPair ReadDistributionFileWithOverlapProbability(
-    std::filesystem::path file);
+MemDistributionData ReadMemDistributionFile(std::filesystem::path file);
 
 // Similar to ReadDistributionFile, except this function accepts file that has
 // multiple lines. Each line converts to a vector of string, separated by the
@@ -78,9 +78,9 @@ std::vector<std::vector<std::string>> ReadCsv(std::filesystem::path file,
                                               char delimiter = ',');
 
 // Converts a line in the result of ReadCsv (i.e., a vector of strings) to a
-// vector of doubles. Causes a failed CHECK if a string cannot be converted to
-// a double.
-std::vector<double> ConvertLine(std::vector<std::string> line);
+// map. Causes a failed CHECK if a string cannot be converted to the
+// corresponding numerical type.
+absl::btree_map<int, double> ConvertLine(const std::vector<std::string>& line);
 
 // Returns the runtime path of a runfile in the fleetbench directory.
 std::string GetFleetbenchRuntimePath(const absl::string_view path);

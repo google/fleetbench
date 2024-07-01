@@ -20,18 +20,19 @@
 #include <iostream>
 #include <optional>
 #include <random>
-#include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "tools/cpp/runfiles/runfiles.h"
-#include "absl/algorithm/container.h"
+#include "absl/container/btree_map.h"
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "benchmark/benchmark.h"
 
@@ -99,43 +100,46 @@ std::vector<std::filesystem::path> GetMatchingFiles(absl::string_view dir,
   return files;
 }
 
-std::vector<double> ReadDistributionFile(std::filesystem::path file) {
+absl::btree_map<int, double> ReadDistributionFile(std::filesystem::path file) {
   return ConvertLine(ReadCsv(file)[0]);
 }
 
-DistributionOverlapProbabilityPair ReadDistributionFileWithOverlapProbability(
-    std::filesystem::path file) {
-  auto lines = ReadCsv(file);
-  return DistributionOverlapProbabilityPair{ConvertLine(lines[0]),
-                                            ConvertLine(lines[1])[0]};
+MemDistributionData ReadMemDistributionFile(std::filesystem::path file) {
+  std::vector<std::vector<std::string>> lines = ReadCsv(file);
+  CHECK_GE(lines.size(), 2) << "Invalid distribution file";
+  double overlap_probability = 0.0;
+  absl::btree_map<int, double> overlap_line = ConvertLine(lines[1]);
+  auto it = overlap_line.find(1);
+  if (it != overlap_line.end()) {
+    overlap_probability = it->second;
+  }
+  return MemDistributionData{ConvertLine(lines[0]), overlap_probability};
 }
 
 std::vector<std::vector<std::string>> ReadCsv(std::filesystem::path file,
                                               char delimiter) {
   std::vector<std::vector<std::string>> lines;
   std::string line;
-
   std::fstream f(file, std::ios_base::in);
   while (std::getline(f, line)) {
-    std::stringstream linestream(line);
-
-    std::string substring;
-    std::vector<std::string> substrings{};
-    while (std::getline(linestream, substring, delimiter)) {
-      substrings.push_back(substring);
-    }
-    lines.push_back(substrings);
+    lines.push_back(absl::StrSplit(line, delimiter));
   }
   return lines;
 }
 
-std::vector<double> ConvertLine(std::vector<std::string> line) {
-  std::vector<double> result(line.size());
-  absl::c_transform(line, result.begin(), [](const std::string& val) {
-    double d = 0.0;
-    CHECK(absl::SimpleAtod(val, &d)) << "Invalid column: " << val << "\n";
-    return d;
-  });
+absl::btree_map<int, double> ConvertLine(const std::vector<std::string>& line) {
+  absl::btree_map<int, double> result;
+  for (const std::string& column : line) {
+    std::pair<absl::string_view, absl::string_view> split =
+        absl::StrSplit(column, ':');
+    int key;
+    CHECK(absl::SimpleAtoi(split.first, &key))
+        << "Invalid key: " << split.first << "\n";
+    double value;
+    CHECK(absl::SimpleAtod(split.second, &value))
+        << "Invalid column: " << split.second << "\n";
+    result[key] = value;
+  }
   return result;
 }
 

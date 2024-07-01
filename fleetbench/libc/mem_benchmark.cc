@@ -25,6 +25,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/container/btree_map.h"
 #include "absl/log/check.h"
 #include "absl/random/distributions.h"
 #include "absl/strings/str_cat.h"
@@ -213,14 +214,13 @@ static std::vector<std::filesystem::path> GetDistributionFiles(
                           prefix);
 }
 
-static void BM_Memory(benchmark::State &state,
-                      const std::vector<double> &memory_size_distribution,
-                      const double overlap_probability, size_t buffer_count,
-                      void (*memory_call)(benchmark::State &,
-                                          std::vector<BM_Mem_Parameters> &,
-                                          const size_t, const uint16_t),
-                      const size_t cache_size,
-                      const std::string &distribution_name) {
+static void BM_Memory(
+    benchmark::State &state,
+    const absl::btree_map<int, double> &memory_size_distribution,
+    const double overlap_probability, size_t buffer_count,
+    void (*memory_call)(benchmark::State &, std::vector<BM_Mem_Parameters> &,
+                        const size_t, const uint16_t),
+    const size_t cache_size, const std::string &distribution_name) {
   // Remaining available memory size in current cache for needed parameters to
   // run benchmark.
   const int available_bytes =
@@ -232,19 +232,18 @@ static void BM_Memory(benchmark::State &state,
   // Pre-calculates parameter values.
   std::vector<BM_Mem_Parameters> parameters(batch_size);
 
-  CHECK_LE(memory_size_distribution.size(), kMaxSizeBytes)
+  int max_size = memory_size_distribution.rbegin()->first;
+  CHECK_LE(max_size, kMaxSizeBytes)
       << "Maximum of the distribution larger than expected";
 
   // Max buffer size can be stored in current cache.
   const size_t buffer_size = available_bytes / buffer_count;
-  CHECK_LT(memory_size_distribution.size() * 2, buffer_size)
-      << "Buffer too small";
+  CHECK_LT(max_size * 2, buffer_size) << "Buffer too small";
   if (memory_call == &MemmoveFunction || memory_call == &CmpFunction<memcmp> ||
       memory_call == &CmpFunction<bcmp>) {
     // Memmove and memcmp/bcmp need larger buffers to allow for differents kinds
     // of overlap between src and dst.
-    CHECK_LT(memory_size_distribution.size() * 3, buffer_size)
-        << "Buffer too small";
+    CHECK_LT(max_size * 3, buffer_size) << "Buffer too small";
   }
 
   // Initial state of the linear-feedback shift register. Must be nonzero.
@@ -257,11 +256,11 @@ static void BM_Memory(benchmark::State &state,
   // which depends on the cache size.
   double percentage_sum = 0.0;
   int n_parameters = 0;
-  for (int i = 0; i < memory_size_distribution.size(); ++i) {
+  for (auto const &[size, percentage] : memory_size_distribution) {
     // percentage_sum stores the relative frequency for an input of size <= i
-    percentage_sum += memory_size_distribution[i];
+    percentage_sum += percentage;
     while (percentage_sum * batch_size - n_parameters > 0.999) {
-      parameters[n_parameters++].size_bytes = i;
+      parameters[n_parameters++].size_bytes = size;
     }
   }
   CHECK_EQ(n_parameters, parameters.size());
@@ -391,7 +390,7 @@ void RegisterBenchmarks() {
       distribution_name.erase(distribution_name.find(".csv"));
 
       const auto [memory_size_distribution, overlap_probability] =
-          ReadDistributionFileWithOverlapProbability(file);
+          ReadMemDistributionFile(file);
       for (const auto &[cache_name, cache_size] : cache_resident_info) {
         std::string benchmark_name =
             absl::StrCat("BM_", distribution_name, "_", cache_name);
