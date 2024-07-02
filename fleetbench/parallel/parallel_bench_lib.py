@@ -43,11 +43,16 @@ def _GetBenchmarks(
       benchmark = bm.Benchmark(benchmark_target, name)
       benchmarks[benchmark.Name()] = benchmark
   else:
-    for name in benchmark_filters:
-      if name not in sub_benchmarks:
-        raise ValueError(f"Benchmark {name} not found in {benchmark_target}.")
-      benchmark = bm.Benchmark(benchmark_target, name)
-      benchmarks[benchmark.Name()] = benchmark
+    for bm_filter in benchmark_filters:
+      matching_bm_names = [name for name in sub_benchmarks if bm_filter in name]
+      if matching_bm_names:
+        for name in matching_bm_names:
+          benchmark = bm.Benchmark(benchmark_target, name)
+          benchmarks[benchmark.Name()] = benchmark
+      else:
+        raise ValueError(
+            f"Benchmark {bm_filter} not found in {benchmark_target}."
+        )
 
   return benchmarks
 

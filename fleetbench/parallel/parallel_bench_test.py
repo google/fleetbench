@@ -82,6 +82,27 @@ class ParallelBenchTest(absltest.TestCase):
   @flagsaver.flagsaver(
       benchmark_dir=absltest.get_default_test_tmpdir(),
   )
+  def test_getbenchmark_with_filter_partial_match(self, mock_get_subbenchmarks):
+    mock_get_subbenchmarks.return_value = [
+        "BM_Test1_A",
+        "BM_Test1_B",
+        "BM_Test2",
+    ]
+    self.create_tempfile(
+        os.path.join(absltest.get_default_test_tmpdir(), "fake_bench")
+    )
+
+    benchmarks = parallel_bench_lib._GetBenchmarks("fake_bench", ["BM_Test1"])
+    self.assertLen(benchmarks, 2)
+    self.assertCountEqual(
+        benchmarks.keys(),
+        ["fake_bench (BM_Test1_A)", "fake_bench (BM_Test1_B)"],
+    )
+
+  @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
+  @flagsaver.flagsaver(
+      benchmark_dir=absltest.get_default_test_tmpdir(),
+  )
   def test_getbenchmark_without_filter(self, mock_get_subbenchmarks):
     mock_get_subbenchmarks.return_value = ["BM_Test1", "BM_Test2"]
     self.create_tempfile(
