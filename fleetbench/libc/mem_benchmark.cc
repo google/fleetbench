@@ -17,9 +17,9 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <deque>
 #include <filesystem>  // NOLINT
 #include <numeric>
-#include <random>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -44,57 +44,27 @@ static constexpr size_t kMemsetBufferCount = 1;
 static constexpr size_t kCmpBufferCount = 1;
 
 // The chance that two memory buffers are exactly same -- memcmp/bcmp only.
-static constexpr float kComparisonEqual = 0.4;
-
-// KibiByte. 1kKiB = 1024 bytes
-static constexpr int64_t kKiB = 1024;
-
-// Reserved space for the benchmarking framework to operate (otherwise it will
-// evict our buffers from current cache).
-static constexpr int64_t kReservedBenchmarkBytes = 1 * kKiB;
-
-// Reserved space for precomputed parameters for memory operation.
-static constexpr int64_t kPrecomputeParametersBytes = 4 * kKiB;
+static constexpr float kComparisonEqualProbability = 0.4;
 
 // Maximum value of size_bytes.
 static constexpr size_t kMaxSizeBytes = 4096;
 
-// Helper function to create non cache resident benchmark.
-// By keeping incrementing the offset, we explore all the memory of a given
-// buffer, which increases the cache miss chance of the previous cache level.
-inline void UpdateOffset(const size_t buffer_size, const size_t left_margin,
-                         const size_t right_margin,
-                         LinearFeedbackShiftRegister &lfsr, size_t &offset) {
-  uint16_t rand = lfsr.Next();
-  offset += (rand & 0xFFF);
-  if (offset + right_margin >= buffer_size || offset < left_margin) {
-    offset = left_margin + (rand & 0xFFF);
-  }
-}
+// 64 bytes is a common size for cache lines.
+static constexpr size_t kCacheLineSize = 64;
 
-// Overload for the case where left_margin = 0
-inline void UpdateOffset(const size_t buffer_size, const size_t right_margin,
-                         LinearFeedbackShiftRegister &lfsr, size_t &offset) {
-  return UpdateOffset(buffer_size, 0, right_margin, lfsr, offset);
-}
-
-// Returns the sum of the size_bytes fields of a BM_Mem_Parameters vector.
-int ComputeTotalNumBytes(const std::vector<BM_Mem_Parameters> &parameters) {
-  return std::accumulate(
-      parameters.begin(), parameters.end(), 0,
-      [](int sum, const auto &cur) { return sum + cur.size_bytes; });
+// Returns the sum of the size_bytes elements.
+size_t ComputeTotalNumBytes(const BM_Mem_Parameters &parameters) {
+  return std::accumulate(parameters.size_bytes.begin(),
+                         parameters.size_bytes.end(), size_t{0});
 }
 
 void MemcpyFunction(benchmark::State &state,
-                    std::vector<BM_Mem_Parameters> &parameters,
-                    const size_t buffer_size, const uint16_t lfsr_start_state) {
+                    const BM_Mem_Parameters &parameters,
+                    const size_t buffer_size) {
   size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
   char *dst = buffers.dst();
   char *src = buffers.src();
-  size_t dst_offset = 0;
-  size_t src_offset = 0;
-  LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call memcpy function
   while (state.KeepRunningBatch(batch_size)) {
     // The libc memory benchmarks have some sensitivity to the alignment of the
@@ -105,103 +75,68 @@ void MemcpyFunction(benchmark::State &state,
     // branch instructions and moves the remaining ones to different offsets in
     // different iterations.
 #pragma unroll 8
-    for (auto &p : parameters) {
-      UpdateOffset(buffer_size, p.size_bytes, lfsr, dst_offset);
-      UpdateOffset(buffer_size, p.size_bytes, lfsr, src_offset);
-      auto res = memcpy(dst + dst_offset, src + src_offset, p.size_bytes);
+    for (int i = 0; i < parameters.size_bytes.size(); i++) {
+      auto res =
+          memcpy(dst + parameters.dst_offset[i], src + parameters.src_offset[i],
+                 parameters.size_bytes[i]);
       benchmark::DoNotOptimize(res);
-      dst_offset += p.size_bytes;
-      src_offset += p.size_bytes;
     }
   }
 }
 
 void MemmoveFunction(benchmark::State &state,
-                     std::vector<BM_Mem_Parameters> &parameters,
-                     const size_t buffer_size,
-                     const uint16_t lfsr_start_state) {
+                     const BM_Mem_Parameters &parameters,
+                     const size_t buffer_size) {
   size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
   char *buffer = buffers.src();
-  size_t offset = 0;
-  LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call memmove function
   while (state.KeepRunningBatch(batch_size)) {
 #pragma unroll 8
-    for (auto &p : parameters) {
-      UpdateOffset(buffer_size, std::abs(std::min(int16_t{0}, p.offset)),
-                   std::max(int16_t{0}, p.offset) + p.size_bytes, lfsr, offset);
-      char *src = buffer + offset;
-      char *dst = buffer + offset + p.offset;
-      auto res = memmove(dst, src, p.size_bytes);
+    for (int i = 0; i < parameters.size_bytes.size(); i++) {
+      auto res =
+          memmove(buffer + parameters.dst_offset[i],
+                  buffer + parameters.src_offset[i], parameters.size_bytes[i]);
       benchmark::DoNotOptimize(res);
-      offset += p.size_bytes;
     }
   }
 }
 
 template <int (*cmp)(const void *, const void *, size_t)>
-void CmpFunction(benchmark::State &state,
-                 std::vector<BM_Mem_Parameters> &parameters,
-                 const size_t buffer_size, const uint16_t lfsr_start_state) {
+void CmpFunction(benchmark::State &state, const BM_Mem_Parameters &parameters,
+                 const size_t buffer_size) {
   size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
   char *buffer = buffers.src();
-  size_t offset = 0;
-  LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call cmp function
   while (state.KeepRunningBatch(batch_size)) {
 #pragma unroll 8
-    for (auto &p : parameters) {
-      int16_t mismatch_pos = 0;
-      size_t src_offset = 0;
-      size_t dst_offset = 0;
-      bool does_overlap = p.offset & 1;
-      if (does_overlap) {
-        // For simplicity, and to keep the size of BM_Mem_Parameters small, if
-        // src and dst overlap, we only consider the case that the buffers
-        // compare equal.
-        int16_t overlap_offset = p.offset >> 1;
-        UpdateOffset(
-            buffer_size, std::abs(std::min(int16_t{0}, overlap_offset)),
-            std::max(int16_t{0}, overlap_offset) + p.size_bytes, lfsr, offset);
-        src_offset = offset;
-        dst_offset = offset + overlap_offset;
-      } else {
-        mismatch_pos = p.offset >> 1;
-        UpdateOffset(buffer_size, p.size_bytes, lfsr, offset);
-        src_offset = offset;
-        // We set dst to a location after the end of src to make sure they do
-        // not overlap.
-        offset += p.size_bytes;
-        UpdateOffset(buffer_size, p.size_bytes, lfsr, offset);
-        dst_offset = offset;
-      }
-      MemoryBuffers::mark(buffer, dst_offset, mismatch_pos);
-      auto res = cmp(buffer + dst_offset, buffer + src_offset, p.size_bytes);
+    for (int i = 0; i < parameters.size_bytes.size(); i++) {
+      MemoryBuffers::mark(buffer, parameters.dst_offset[i],
+                          parameters.mismatch_pos[i]);
+      auto res =
+          cmp(buffer + parameters.dst_offset[i],
+              buffer + parameters.src_offset[i], parameters.size_bytes[i]);
       benchmark::DoNotOptimize(res);
-      MemoryBuffers::reset(buffer, dst_offset, mismatch_pos);
-      offset += p.size_bytes;
+      MemoryBuffers::reset(buffer, parameters.dst_offset[i],
+                           parameters.mismatch_pos[i]);
     }
   }
 }
 
 void MemsetFunction(benchmark::State &state,
-                    std::vector<BM_Mem_Parameters> &parameters,
-                    const size_t buffer_size, const uint16_t lfsr_start_state) {
+                    const BM_Mem_Parameters &parameters,
+                    const size_t buffer_size) {
   size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
   char *dst = buffers.dst();
-  size_t offset = 0;
-  LinearFeedbackShiftRegister lfsr(lfsr_start_state);
   // Run benchmark and call memset function
   while (state.KeepRunningBatch(batch_size)) {
 #pragma unroll 8
-    for (auto &p : parameters) {
-      UpdateOffset(buffer_size, p.size_bytes, lfsr, offset);
-      auto res = memset(dst + offset, p.offset % 0xFF, p.size_bytes);
+    for (int i = 0; i < parameters.size_bytes.size(); i++) {
+      auto res = memset(dst + parameters.dst_offset[i],
+                        parameters.memset_value[i], parameters.size_bytes[i]);
       benchmark::DoNotOptimize(res);
-      offset += p.size_bytes;
     }
   }
 }
@@ -214,30 +149,144 @@ static std::vector<std::filesystem::path> GetDistributionFiles(
                           prefix);
 }
 
+std::vector<int32_t> SampleSizeBytes(
+    const absl::btree_map<int, double> &memory_size_distribution,
+    const size_t n_samples) {
+  std::vector<int32_t> size_bytes(n_samples);
+  double percentage_sum = 0.0;
+  int n_parameters = 0;
+  for (auto const &[size, percentage] : memory_size_distribution) {
+    // percentage_sum stores the relative frequency for an input of size <= i
+    percentage_sum += percentage;
+    while (percentage_sum * n_samples - n_parameters > 0.999) {
+      size_bytes[n_parameters++] = size;
+    }
+  }
+  CHECK_EQ(n_parameters, size_bytes.size());
+  std::shuffle(size_bytes.begin(), size_bytes.end(), GetRNG());
+  return size_bytes;
+}
+
+// For memcmp/bcmp, mismatch_pos indicates the position of the first mismatch
+// char between src and dst. The value of mismatch_pos indicates:
+//  0 : Buffers always compare equal,
+// >0 : Buffers compare different at 'byte = mismatch_pos - 1'.
+// The function returns a mismatch_pos vector with the same size as size_bytes
+// that contains a suitable mismatch_pos for each element of size_bytes.
+std::vector<int32_t> SampleMismatchPosition(
+    const std::vector<int32_t> &size_bytes) {
+  std::vector<int32_t> mismatch_positions;
+  for (int32_t cur_size : size_bytes) {
+    int32_t mismatch_position = 0;
+    bool is_identical = absl::Bernoulli(GetRNG(), kComparisonEqualProbability);
+    if (!is_identical) {
+      // +1 is to make up the missing '0' used earlier to indicate equal
+      // buffers. That is, if mismatch_pos = 1, the mismatch is at index
+      // 0.
+      mismatch_position = absl::Uniform<int32_t>(GetRNG(), 0, cur_size);
+      mismatch_position += 1;
+    }
+    mismatch_positions.push_back(mismatch_position);
+  }
+  return mismatch_positions;
+}
+
+// Finds the least-recently-used block that satisfies the given constraints
+// (i.e., that is far enough away from the left and right end of the buffer).
+// Moves all blocks that are accessed by a mem operation of the given size to
+// the end of the lru list (in random order).
+static int32_t GetNextOffset(std::deque<int32_t> &blocks_lru,
+                             int32_t size_bytes, int32_t block_offset,
+                             int32_t buffer_size, int32_t left_margin = 0,
+                             int32_t right_margin = 0) {
+  int32_t block;
+  for (int32_t cur_block : blocks_lru) {
+    if (cur_block >= left_margin &&
+        cur_block + block_offset + size_bytes + right_margin <= buffer_size) {
+      block = cur_block;
+      break;
+    }
+  }
+  if (block == blocks_lru.front()) {
+    // Common case, as size_bytes is typically small.
+    blocks_lru.pop_front();
+    blocks_lru.push_back(block);
+  } else {
+    // Expensive operation, but occurs relatively rarely.
+    std::vector<int32_t> accessed_blocks;
+    auto next = std::remove_if(
+        blocks_lru.begin(), blocks_lru.end(),
+        [block, block_offset, size_bytes, &accessed_blocks](int32_t b) {
+          if (b >= block && b < block + block_offset + size_bytes) {
+            accessed_blocks.push_back(b);
+            return true;
+          } else {
+            return false;
+          }
+        });
+    std::shuffle(accessed_blocks.begin(), accessed_blocks.end(), GetRNG());
+    std::copy(accessed_blocks.begin(), accessed_blocks.end(), next);
+  }
+  CHECK_LE(block + block_offset + size_bytes, buffer_size);
+  return block + block_offset;
+}
+
+static bool CheckOverlap(int32_t src_offset, int32_t dst_offset,
+                         int32_t size_bytes) {
+  return (src_offset + size_bytes > dst_offset &&
+          src_offset < dst_offset + size_bytes);
+}
+
+std::pair<int32_t, int32_t> GetNextSrcDstOffsetWithOverlap(
+    const double overlap_probability, const size_t buffer_size,
+    const int32_t cur_size, const int32_t src_block_offset,
+    const int32_t dst_block_offset, std::deque<int32_t> &src_blocks_lru,
+    std::deque<int32_t> &dst_blocks_lru) {
+  // The memmove and compare functions allow the src and dst buffers to
+  // overlap. To reproduce this behavior, we will use the same buffer
+  // for src and dst. We want to exercise three configurations:
+  //    1. src and dst overlap, dst < src
+  //    2. src and dst overlap, dst >= src
+  //    3. src and dst do not overlap
+  const bool does_overlap = absl::Bernoulli(GetRNG(), overlap_probability);
+  if (does_overlap) {
+    // src and dst overlap, i.e., we are in case 1 or 2.
+    // We sample an offset from the range (-size_bytes, size_bytes),
+    // and set dst = src + offset. Thus, an offset < 0 corresponds to
+    // case 1 above, and 0 <= offset < size_bytes to case 2.
+    int32_t offset = absl::Uniform<int32_t>(absl::IntervalOpenOpen, GetRNG(),
+                                            -cur_size, cur_size);
+    int32_t src_offset =
+        GetNextOffset(src_blocks_lru, cur_size, src_block_offset, buffer_size,
+                      -std::min(offset, 0), std::max(offset, 0));
+    CHECK_GE(src_offset + offset, 0);
+    CHECK_LE(src_offset + offset + cur_size, buffer_size);
+    return {src_offset, src_offset + offset};
+  } else {
+    int32_t src_offset =
+        GetNextOffset(src_blocks_lru, cur_size, src_block_offset, buffer_size);
+    int32_t dst_offset;
+    do {
+      dst_offset = GetNextOffset(dst_blocks_lru, cur_size, dst_block_offset,
+                                 buffer_size);
+    } while (CheckOverlap(src_offset, dst_offset, cur_size));
+    return {src_offset, dst_offset};
+  }
+}
+
 static void BM_Memory(
     benchmark::State &state,
     const absl::btree_map<int, double> &memory_size_distribution,
     const double overlap_probability, size_t buffer_count,
-    void (*memory_call)(benchmark::State &, std::vector<BM_Mem_Parameters> &,
-                        const size_t, const uint16_t),
+    void (*memory_call)(benchmark::State &, const BM_Mem_Parameters &,
+                        const size_t),
     const size_t cache_size, const std::string &distribution_name) {
-  // Remaining available memory size in current cache for needed parameters to
-  // run benchmark.
-  const int available_bytes =
-      cache_size - kPrecomputeParametersBytes - kReservedBenchmarkBytes;
-  CHECK_LT(0, available_bytes) << "Cache too small";
-
-  const size_t batch_size = 1000;
-
-  // Pre-calculates parameter values.
-  std::vector<BM_Mem_Parameters> parameters(batch_size);
-
   int max_size = memory_size_distribution.rbegin()->first;
   CHECK_LE(max_size, kMaxSizeBytes)
       << "Maximum of the distribution larger than expected";
 
   // Max buffer size can be stored in current cache.
-  const size_t buffer_size = available_bytes / buffer_count;
+  const size_t buffer_size = cache_size / buffer_count;
   CHECK_LT(max_size * 2, buffer_size) << "Buffer too small";
   if (memory_call == &MemmoveFunction || memory_call == &CmpFunction<memcmp> ||
       memory_call == &CmpFunction<bcmp>) {
@@ -246,101 +295,79 @@ static void BM_Memory(
     CHECK_LT(max_size * 3, buffer_size) << "Buffer too small";
   }
 
-  // Initial state of the linear-feedback shift register. Must be nonzero.
-  uint16_t lfsr_start_state = GetRNG()();
-  lfsr_start_state = std::max((uint16_t)1, lfsr_start_state);
+  // With this size, the branch predictor can predict most branches correctly.
+  // TODO(aabel): Make the branching behavior more fleet-representative.
+  const size_t batch_size = 1000;
+  std::vector<int32_t> size_bytes =
+      SampleSizeBytes(memory_size_distribution, batch_size);
+  std::vector<int32_t> mismatch_pos = SampleMismatchPosition(size_bytes);
 
-  // For reproducibility, we compute all size_bytes fields before the offsets,
-  // as the call to absl::Uniform may perform a different number of calls to the
-  // random number generator, depending on the value of offset_upper_bound,
-  // which depends on the cache size.
-  double percentage_sum = 0.0;
-  int n_parameters = 0;
-  for (auto const &[size, percentage] : memory_size_distribution) {
-    // percentage_sum stores the relative frequency for an input of size <= i
-    percentage_sum += percentage;
-    while (percentage_sum * batch_size - n_parameters > 0.999) {
-      parameters[n_parameters++].size_bytes = size;
-    }
+  // A list of the starting addresses of all blocks in the buffer that
+  // correspond to a cache line.
+  std::deque<int32_t> all_blocks;
+  for (int32_t i = 0; i < buffer_size; i += kCacheLineSize) {
+    all_blocks.push_back(i);
   }
-  CHECK_EQ(n_parameters, parameters.size());
-  std::shuffle(parameters.begin(), parameters.end(), GetRNG());
 
-  if (memory_call == &MemmoveFunction || memory_call == &CmpFunction<memcmp> ||
-      memory_call == &CmpFunction<bcmp>) {
-    for (auto &p : parameters) {
-      int16_t mismatch_pos = 0;
+  // For src and dst, we maintain a list of all blocks in least-recently-used
+  // order. The goal is to avoid unwanted cache hits by only accessing a block
+  // again after all other blocks have been accessed.
+  std::deque<int32_t> src_blocks_lru = all_blocks;
+  std::deque<int32_t> dst_blocks_lru = all_blocks;
+  std::shuffle(src_blocks_lru.begin(), src_blocks_lru.end(), GetRNG());
+  std::shuffle(dst_blocks_lru.begin(), dst_blocks_lru.end(), GetRNG());
+
+  BM_Mem_Parameters parameters;
+  for (int i = 0; i < std::max(all_blocks.size(), size_bytes.size()); i++) {
+    int32_t cur_size = size_bytes[i % size_bytes.size()];
+    parameters.size_bytes.push_back(cur_size);
+
+    // TODO(aabel): use alignment data from the fleet
+    int32_t src_block_offset = absl::Uniform<int32_t>(GetRNG(), 0, 63);
+    int32_t dst_block_offset = absl::Uniform<int32_t>(GetRNG(), 0, 63);
+
+    if (memory_call == &MemcpyFunction) {
+      parameters.src_offset.push_back(GetNextOffset(
+          src_blocks_lru, cur_size, src_block_offset, buffer_size));
+      parameters.dst_offset.push_back(GetNextOffset(
+          dst_blocks_lru, cur_size, dst_block_offset, buffer_size));
+    } else if (memory_call == &MemsetFunction) {
+      parameters.dst_offset.push_back(GetNextOffset(
+          dst_blocks_lru, cur_size, dst_block_offset, buffer_size));
+      parameters.memset_value.push_back(
+          absl::Uniform<unsigned char>(GetRNG(), 0, 0xFF));
+    } else if (memory_call == &MemmoveFunction ||
+               memory_call == &CmpFunction<memcmp> ||
+               memory_call == &CmpFunction<bcmp>) {
+      const auto [src_offset, dst_offset] = GetNextSrcDstOffsetWithOverlap(
+          overlap_probability, buffer_size, cur_size, src_block_offset,
+          dst_block_offset, src_blocks_lru, dst_blocks_lru);
+      parameters.src_offset.push_back(src_offset);
+      parameters.dst_offset.push_back(dst_offset);
+
       if (memory_call == &CmpFunction<memcmp> ||
           memory_call == &CmpFunction<bcmp>) {
-        // For memcmp/bcmp, mismatch_pos indicates the position of the first
-        // mismatch char between src and dst. The value of mismatch_pos
-        // indicates:
-        //  0 : Buffers always compare equal,
-        // >0 : Buffers compare different at 'byte = mismatch_pos - 1'.
-        const bool is_identical = absl::Bernoulli(GetRNG(), kComparisonEqual);
-        if (!is_identical) {
-          // +1 is to make up the missing '0' used earlier to indicate equal
-          // buffers. That is, if mismatch_pos = 1, the mismatch is at index 0.
-          mismatch_pos = absl::Uniform<uint16_t>(GetRNG(), 0, p.size_bytes);
-          mismatch_pos += 1;
-          CHECK_LT(mismatch_pos, buffer_size)
-              << "May result in buffer overflow";
-        }
-      }
-
-      // The memmove and compare functions allow the src and dst buffers to
-      // overlap. To reproduce this behavior, we will use the same buffer for
-      // src and dst. We want to exercise three configurations:
-      //    1. src and dst overlap, dst < src
-      //    2. src and dst overlap, dst >= src
-      //    3. src and dst do not overlap
-      const bool does_overlap = absl::Bernoulli(GetRNG(), overlap_probability);
-      int16_t offset = 0;
-      if (does_overlap) {
-        // src and dst overlap, i.e., we are in case 1 or 2.
-        // We sample an offset from the range (-size_bytes, size_bytes),
-        // and set dst = src + offset. Thus, an offset < 0 corresponds to case 1
-        // above, and 0 <= offset < size_bytes to case 2.
-        offset = absl::Uniform<int16_t>(absl::IntervalOpenOpen, GetRNG(),
-                                        -p.size_bytes, p.size_bytes);
-      } else if (memory_call == &MemmoveFunction) {
-        // For memmove and case 3, we sample an offset from the range
-        // [size_bytes, 2 * kMaxSizeBytes).
-        // For memcmp/bcmp, we handle case 3 in CmpFunction() instead.
-        offset =
-            absl::Uniform<int16_t>(GetRNG(), p.size_bytes, 2 * kMaxSizeBytes);
-      }
-
-      if (memory_call == &MemmoveFunction) {
-        p.offset = offset;
-      } else {
-        // For simplicity, and to keep the size of BM_Mem_Parameters small, we
-        // assume that for memcmp/bcmp, the buffers always compare equal if src
-        // and dst overlap. Thus, we can use the p.offset field to store the
-        // offset if they overlap, and mismatch_pos if they do not overlap. We
-        // use the rightmost bit of p.offset to indicate which of the two values
-        // the field contains.
-        if (does_overlap) {
-          p.offset = (offset << 1) | 1;
-          CHECK_EQ(p.offset >> 1, offset);
-        } else {
-          p.offset = mismatch_pos << 1;
-          CHECK_EQ(p.offset >> 1, mismatch_pos);
-        }
+        parameters.mismatch_pos.push_back(
+            mismatch_pos[i % mismatch_pos.size()]);
       }
     }
   }
 
-  memory_call(state, parameters, buffer_size, lfsr_start_state);
+  CHECK_EQ(parameters.size_bytes.size(), parameters.dst_offset.size());
+  if (memory_call == &MemsetFunction) {
+    CHECK_EQ(parameters.size_bytes.size(), parameters.memset_value.size());
+  } else {
+    CHECK_EQ(parameters.size_bytes.size(), parameters.src_offset.size());
+  }
+  if (memory_call == &CmpFunction<memcmp> ||
+      memory_call == &CmpFunction<bcmp>) {
+    CHECK_EQ(parameters.size_bytes.size(), parameters.mismatch_pos.size());
+  }
+
+  memory_call(state, parameters, buffer_size);
 
   // Make each benchmark repetition reproducible, if using a fixed seed.
   Random::instance().Reset();
-
-  // Computes the total_types throughput.
-  size_t batch_bytes = 0;
-  for (auto &P : parameters) {
-    batch_bytes += P.size_bytes;
-  }
 
   // Each iteration processes one byte of data.
   const size_t total_bytes = state.iterations();
@@ -356,8 +383,8 @@ static void BM_Memory(
 void RegisterBenchmarks() {
   using operation_entry =
       std::tuple<std::string, size_t,
-                 void (*)(benchmark::State &, std::vector<BM_Mem_Parameters> &,
-                          const size_t, const uint16_t)>;
+                 void (*)(benchmark::State &, const BM_Mem_Parameters &,
+                          const size_t)>;
   auto memory_operations = {
       operation_entry("Memcpy", kMemcpyBufferCount, &MemcpyFunction),
       operation_entry("Memmove", kMemmoveBufferCount, &MemmoveFunction),

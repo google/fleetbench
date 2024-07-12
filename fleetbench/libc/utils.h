@@ -17,19 +17,21 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 #include "absl/log/check.h"
 
 namespace fleetbench {
 namespace libc {
 
-// Parameters to store memory operations data and it consumes 4B.
-// NOTE: offset is only used for memcmp/bcmp and memmove.
+// Parameters for memory operations.
 struct BM_Mem_Parameters {
-  int16_t offset;
-  uint16_t size_bytes;
-} __attribute__((__packed__));
-static_assert(sizeof(BM_Mem_Parameters) == sizeof(uint32_t));
+  std::vector<int32_t> size_bytes;
+  std::vector<int32_t> src_offset;
+  std::vector<int32_t> dst_offset;
+  std::vector<int16_t> mismatch_pos;        // Only used by memcmp/bcmp.
+  std::vector<unsigned char> memset_value;  // Only used for memset.
+};
 
 class MemoryBuffers {
  public:
@@ -97,33 +99,6 @@ inline void MemoryBuffers::reset(char *buf, size_t offset,
                                  size_t mismatch_pos) {
   if (mismatch_pos > 0) buf[offset + mismatch_pos - 1] = 0xFF;
 }
-
-// To generate pseudo-random numbers efficiently, we use a 16-bit Xorshift
-// linear-feedback shift register
-// (https://en.wikipedia.org/wiki/Linear-feedback_shift_register#Xorshift_LFSRs).
-class LinearFeedbackShiftRegister {
- public:
-  // The default constructor assumes a starting seed of 1.
-  LinearFeedbackShiftRegister() { Reset(1); }
-
-  // Constructor that specifies the starting seed. The seed must be non-zero.
-  explicit LinearFeedbackShiftRegister(uint32_t seed) { Reset(seed); }
-
-  // Reset starting from a specific seed. The seed must be non-zero.
-  void Reset(uint16_t seed) { reg_ = seed; }
-
-  // Advance to the next value.
-  inline uint16_t Next() {
-    DCHECK_NE(reg_, 0);
-    reg_ ^= reg_ >> 7;
-    reg_ ^= reg_ << 9;
-    reg_ ^= reg_ >> 13;
-    return reg_;
-  }
-
- private:
-  uint16_t reg_;
-};
 
 }  // namespace libc
 }  // namespace fleetbench
