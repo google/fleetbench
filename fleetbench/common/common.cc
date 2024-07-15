@@ -106,14 +106,16 @@ absl::btree_map<int, double> ReadDistributionFile(std::filesystem::path file) {
 
 MemDistributionData ReadMemDistributionFile(std::filesystem::path file) {
   std::vector<std::vector<std::string>> lines = ReadCsv(file);
-  CHECK_GE(lines.size(), 2) << "Invalid distribution file";
+  CHECK_GE(lines.size(), 3) << "Invalid distribution file";
   double overlap_probability = 0.0;
   absl::btree_map<int, double> overlap_line = ConvertLine(lines[1]);
   auto it = overlap_line.find(1);
   if (it != overlap_line.end()) {
     overlap_probability = it->second;
   }
-  return MemDistributionData{ConvertLine(lines[0]), overlap_probability};
+  return MemDistributionData{.size_distribution = ConvertLine(lines[0]),
+                             .overlap_probability = overlap_probability,
+                             .alignment_distribution = ConvertLine(lines[2])};
 }
 
 std::vector<std::vector<std::string>> ReadCsv(std::filesystem::path file,

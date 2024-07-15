@@ -53,12 +53,15 @@ TEST(ReadMemDistributionFileTest, Numbers) {
   if (file.is_open()) {
     file << "0:1.1,1:2.2" << std::endl;
     file << "0:0.9,1:0.1" << std::endl;
+    file << "1:0.7,64:0.3" << std::endl;
     file.close();
   }
   MemDistributionData result = ReadMemDistributionFile(path);
-  EXPECT_THAT(result.distribution,
+  EXPECT_THAT(result.size_distribution,
               ElementsAre(Pair(0, DoubleEq(1.1)), Pair(1, DoubleEq(2.2))));
   EXPECT_DOUBLE_EQ(result.overlap_probability, 0.1);
+  EXPECT_THAT(result.alignment_distribution,
+              ElementsAre(Pair(1, DoubleEq(0.7)), Pair(64, DoubleEq(0.3))));
 }
 
 TEST(ReadCsvTest, Numbers) {

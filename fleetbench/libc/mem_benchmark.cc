@@ -20,6 +20,7 @@
 #include <deque>
 #include <filesystem>  // NOLINT
 #include <numeric>
+#include <random>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -277,7 +278,9 @@ std::pair<int32_t, int32_t> GetNextSrcDstOffsetWithOverlap(
 static void BM_Memory(
     benchmark::State &state,
     const absl::btree_map<int, double> &memory_size_distribution,
-    const double overlap_probability, size_t buffer_count,
+    const double overlap_probability,
+    const absl::btree_map<int, double> &alignment_distribution,
+    size_t buffer_count,
     void (*memory_call)(benchmark::State &, const BM_Mem_Parameters &,
                         const size_t),
     const size_t cache_size, const std::string &distribution_name) {
@@ -302,6 +305,19 @@ static void BM_Memory(
       SampleSizeBytes(memory_size_distribution, batch_size);
   std::vector<int32_t> mismatch_pos = SampleMismatchPosition(size_bytes);
 
+  // alignment_probabilities[i] stores the probability for an alignment of 2^i
+  std::vector<double> alignment_probabilities;
+  int max_alignment = alignment_distribution.rbegin()->first;
+  CHECK_LE(max_alignment, kCacheLineSize)
+      << "Maximum alignment larger than expected";
+  for (int i = 1; i <= max_alignment; i *= 2) {
+    auto it = alignment_distribution.find(i);
+    alignment_probabilities.push_back(
+        (it != alignment_distribution.end() ? it->second : 0.0));
+  }
+  std::discrete_distribution<int> alignment_sampler(
+      alignment_probabilities.begin(), alignment_probabilities.end());
+
   // A list of the starting addresses of all blocks in the buffer that
   // correspond to a cache line.
   std::deque<int32_t> all_blocks;
@@ -322,9 +338,16 @@ static void BM_Memory(
     int32_t cur_size = size_bytes[i % size_bytes.size()];
     parameters.size_bytes.push_back(cur_size);
 
-    // TODO(aabel): use alignment data from the fleet
-    int32_t src_block_offset = absl::Uniform<int32_t>(GetRNG(), 0, 63);
-    int32_t dst_block_offset = absl::Uniform<int32_t>(GetRNG(), 0, 63);
+    int src_alignment = alignment_sampler(GetRNG());
+    int dst_alignment = alignment_sampler(GetRNG());
+    int32_t src_block_offset =
+        (absl::Uniform<int32_t>(GetRNG(), 0, kCacheLineSize - 1) >>
+         src_alignment)
+        << src_alignment;
+    int32_t dst_block_offset =
+        (absl::Uniform<int32_t>(GetRNG(), 0, kCacheLineSize - 1) >>
+         dst_alignment)
+        << dst_alignment;
 
     if (memory_call == &MemcpyFunction) {
       parameters.src_offset.push_back(GetNextOffset(
@@ -416,15 +439,15 @@ void RegisterBenchmarks() {
       auto distribution_name = file.filename().string();
       distribution_name.erase(distribution_name.find(".csv"));
 
-      const auto [memory_size_distribution, overlap_probability] =
-          ReadMemDistributionFile(file);
+      const auto [memory_size_distribution, overlap_probability,
+                  alignment_distribution] = ReadMemDistributionFile(file);
       for (const auto &[cache_name, cache_size] : cache_resident_info) {
         std::string benchmark_name =
             absl::StrCat("BM_", distribution_name, "_", cache_name);
-        benchmark::RegisterBenchmark(benchmark_name.c_str(), memory_benchmark,
-                                     memory_size_distribution,
-                                     overlap_probability, buffer_counter,
-                                     memory_function, cache_size, suffix_name);
+        benchmark::RegisterBenchmark(
+            benchmark_name.c_str(), memory_benchmark, memory_size_distribution,
+            overlap_probability, alignment_distribution, buffer_counter,
+            memory_function, cache_size, suffix_name);
       }
     }
   }

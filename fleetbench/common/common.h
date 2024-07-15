@@ -61,9 +61,12 @@ std::vector<std::filesystem::path> GetMatchingFiles(absl::string_view dir,
 absl::btree_map<int, double> ReadDistributionFile(std::filesystem::path file);
 
 struct MemDistributionData {
-  // The size distribution is stored in a sorted map.
-  absl::btree_map<int, double> distribution;
+  // The size and alignment distributions are stored in sorted maps. The keys
+  // are the size/the alignment in bytes, and the values are the relative
+  // frequencies.
+  absl::btree_map<int, double> size_distribution;
   double overlap_probability;
+  absl::btree_map<int, double> alignment_distribution;
 };
 
 // Similar to ReadDistributionFile(), but for a CSV file that additionally
