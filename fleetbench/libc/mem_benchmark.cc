@@ -47,9 +47,6 @@ static constexpr size_t kCmpBufferCount = 1;
 // The chance that two memory buffers are exactly same -- memcmp/bcmp only.
 static constexpr float kComparisonEqualProbability = 0.4;
 
-// Maximum value of size_bytes.
-static constexpr size_t kMaxSizeBytes = 4096;
-
 // 64 bytes is a common size for cache lines.
 static constexpr size_t kCacheLineSize = 64;
 
@@ -152,18 +149,63 @@ static std::vector<std::filesystem::path> GetDistributionFiles(
 
 std::vector<int32_t> SampleSizeBytes(
     const absl::btree_map<int, double> &memory_size_distribution,
-    const size_t n_samples) {
-  std::vector<int32_t> size_bytes(n_samples);
+    const size_t max_size, const size_t n_samples) {
+  // Expected number of bytes for the specified number of samples.
+  double expected_bytes_tmp = 0.0;
+  // Sum of the percentages in the distribution; this might not be exactly 1.0
+  // due to rounding in the input files.
   double percentage_sum = 0.0;
+  for (auto const [size, percentage] : memory_size_distribution) {
+    expected_bytes_tmp += n_samples * size * percentage;
+    percentage_sum += percentage;
+  }
+  int64_t expected_bytes = static_cast<int64_t>(expected_bytes_tmp);
+
+  std::vector<int32_t> size_bytes(n_samples);
+  double cur_percentage_sum = 0.0;
   int n_parameters = 0;
   for (auto const &[size, percentage] : memory_size_distribution) {
-    // percentage_sum stores the relative frequency for an input of size <= i
-    percentage_sum += percentage;
-    while (percentage_sum * n_samples - n_parameters > 0.999) {
-      size_bytes[n_parameters++] = size;
+    // cur_percentage_sum stores the relative frequency for an input <= size
+    cur_percentage_sum += percentage;
+    while (n_samples * cur_percentage_sum / percentage_sum - n_parameters >
+           0.999) {
+      size_bytes[n_parameters++] =
+          std::min(size, static_cast<int32_t>(max_size));
     }
   }
   CHECK_EQ(n_parameters, size_bytes.size());
+
+  // The probabilities for larger sizes are typically very small. However, these
+  // sizes can have a significant impact on the average size. Therefore, for
+  // smaller values of n_samples or max_size, the average size of the samples at
+  // this point can differ significantly from the average value of the
+  // distribution. There is a trade-off between matching the probabilities and
+  // matching the average accurately. We consider the average to be more
+  // important here, so that the L1/L2/L3/Cold benchmark touch the same number
+  // of bytes, and that a different value for n_samples does not affect the
+  // average of the samples significantly. We therefore adjust the samples a bit
+  // to make sure that the average size matches the the expected value.
+  int64_t actual_bytes =
+      std::accumulate(size_bytes.begin(), size_bytes.end(), int64_t{0});
+  for (auto it = size_bytes.rbegin(); it != size_bytes.rend(); ++it) {
+    int32_t old_bytes = *it;
+    int32_t new_bytes = 0;
+    if (actual_bytes > expected_bytes) {
+      new_bytes = std::max(
+          0, static_cast<int32_t>(old_bytes - (actual_bytes - expected_bytes)));
+    } else if (actual_bytes < expected_bytes) {
+      new_bytes = std::min(
+          static_cast<int32_t>(max_size),
+          static_cast<int32_t>(old_bytes + (expected_bytes - actual_bytes)));
+    } else {
+      break;
+    }
+    *it = new_bytes;
+    actual_bytes = actual_bytes - old_bytes + new_bytes;
+  }
+
+  CHECK_EQ(actual_bytes, expected_bytes);
+
   std::shuffle(size_bytes.begin(), size_bytes.end(), GetRNG());
   return size_bytes;
 }
@@ -284,25 +326,24 @@ static void BM_Memory(
     void (*memory_call)(benchmark::State &, const BM_Mem_Parameters &,
                         const size_t),
     const size_t cache_size, const std::string &distribution_name) {
-  int max_size = memory_size_distribution.rbegin()->first;
-  CHECK_LE(max_size, kMaxSizeBytes)
-      << "Maximum of the distribution larger than expected";
-
-  // Max buffer size can be stored in current cache.
+  // Max buffer size that can be stored in current cache.
   const size_t buffer_size = cache_size / buffer_count;
-  CHECK_LT(max_size * 2, buffer_size) << "Buffer too small";
+
+  size_t distribution_max_size = memory_size_distribution.rbegin()->first;
+  // Limit to sizes that fit in the buffer.
+  size_t max_size = std::min(distribution_max_size, buffer_size / 2);
   if (memory_call == &MemmoveFunction || memory_call == &CmpFunction<memcmp> ||
       memory_call == &CmpFunction<bcmp>) {
     // Memmove and memcmp/bcmp need larger buffers to allow for differents kinds
     // of overlap between src and dst.
-    CHECK_LT(max_size * 3, buffer_size) << "Buffer too small";
+    max_size = std::min(distribution_max_size, buffer_size / 3);
   }
 
   // With this size, the branch predictor can predict most branches correctly.
   // TODO(aabel): Make the branching behavior more fleet-representative.
   const size_t batch_size = 1000;
   std::vector<int32_t> size_bytes =
-      SampleSizeBytes(memory_size_distribution, batch_size);
+      SampleSizeBytes(memory_size_distribution, max_size, batch_size);
   std::vector<int32_t> mismatch_pos = SampleMismatchPosition(size_bytes);
 
   // alignment_probabilities[i] stores the probability for an alignment of 2^i
