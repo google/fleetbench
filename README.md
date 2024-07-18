@@ -7,6 +7,9 @@ and "benchmark". It is meant for use by chip vendors, compiler researchers, and
 others interested in making performance optimizations beneficial to workloads
 similar to Google's. This repository contains the Fleetbench C++ code.
 
+Details on Fleetbench can be found in our paper
+[A Profiling-Based Benchmark Suite for Warehouse-Scale Computers](https://doi.org/10.1109/ISPASS61541.2024.00046).
+
 ## Overview
 
 Fleetbench is a benchmarking suite that consists of a curated set of
