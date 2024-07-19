@@ -19,6 +19,7 @@
 #include <cstring>
 #include <deque>
 #include <filesystem>  // NOLINT
+#include <iterator>
 #include <numeric>
 #include <random>
 #include <string>
@@ -26,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/container/btree_map.h"
 #include "absl/log/check.h"
 #include "absl/random/distributions.h"
@@ -339,12 +341,39 @@ static void BM_Memory(
     max_size = std::min(distribution_max_size, buffer_size / 3);
   }
 
-  // With this size, the branch predictor can predict most branches correctly.
-  // TODO(aabel): Make the branching behavior more fleet-representative.
-  const size_t batch_size = 1000;
-  std::vector<int32_t> size_bytes =
-      SampleSizeBytes(memory_size_distribution, max_size, batch_size);
-  std::vector<int32_t> mismatch_pos = SampleMismatchPosition(size_bytes);
+  // The branching behavior of the mem functions depends on the input sizes, and
+  // for memcmp/bcmp, on the mismatch positions. For a pattern that is repeated
+  // with a small enough period (e.g., 1,000), the branch predictors on modern
+  // CPU can predict almost all branches correctly. On the other hand, larger
+  // periods (e.g., 10,000) lead to a high branch miss rate.
+  // In the fleet, both scenarios (branch hits and misses) are relevant; cases
+  // that can be predicted well are more common than those that cannot. The
+  // following is a very rough approximation of the fleet behavior. A better
+  // model would require more detailed data on the patterns that occur in the
+  // fleet.
+  const float kPredictableProbability = 0.8;
+  const size_t kPredictablePeriod = 1000;
+  const size_t kNonPredictablePeriod = 10000;
+
+  std::vector<int32_t> size_bytes_predictable =
+      SampleSizeBytes(memory_size_distribution, max_size, kPredictablePeriod);
+  std::vector<int32_t> size_bytes_non_predictable = SampleSizeBytes(
+      memory_size_distribution, max_size, kNonPredictablePeriod);
+  std::vector<int32_t> mismatch_pos_predictable =
+      SampleMismatchPosition(size_bytes_predictable);
+  std::vector<int32_t> mismatch_pos_non_predictable =
+      SampleMismatchPosition(size_bytes_non_predictable);
+
+  std::vector<int32_t> size_bytes = size_bytes_non_predictable;
+  std::vector<int32_t> mismatch_pos = mismatch_pos_non_predictable;
+
+  size_t kPredictableCount =
+      kNonPredictablePeriod / (1 - kPredictableProbability) -
+      kNonPredictablePeriod;
+  for (int i = 0; i < kPredictableCount / kPredictablePeriod; i++) {
+    absl::c_copy(size_bytes_predictable, std::back_inserter(size_bytes));
+    absl::c_copy(mismatch_pos_predictable, std::back_inserter(mismatch_pos));
+  }
 
   // alignment_probabilities[i] stores the probability for an alignment of 2^i
   std::vector<double> alignment_probabilities;
