@@ -337,8 +337,12 @@ static void BM_Memory(
   if (memory_call == &MemmoveFunction || memory_call == &CmpFunction<memcmp> ||
       memory_call == &CmpFunction<bcmp>) {
     // Memmove and memcmp/bcmp need larger buffers to allow for differents kinds
-    // of overlap between src and dst.
-    max_size = std::min(distribution_max_size, buffer_size / 3);
+    // of overlap between src and dst. In particular, a maximum size of
+    // `(buffer_size / 3) - kCacheLineSize` guarantees that for any valid
+    // (src_block, src_block_offset, dst_block_offset) triple, we can find
+    // a dst_block such that there is no overlap.
+    max_size =
+        std::min(distribution_max_size, (buffer_size / 3) - kCacheLineSize);
   }
 
   // The branching behavior of the mem functions depends on the input sizes, and
