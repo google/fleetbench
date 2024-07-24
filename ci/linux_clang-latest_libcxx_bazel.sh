@@ -24,14 +24,6 @@ if [ -z ${FLEETBENCH_ROOT:-} ]; then
   FLEETBENCH_ROOT="$(realpath $(dirname ${0})/..)"
 fi
 
-if [ -z ${STD:-} ]; then
-  STD="c++17"
-fi
-
-if [ -z ${BUILD_CONFIG:-} ]; then
-  BUILD_CONFIG=("" "--config=opt")
-fi
-
 readonly DOCKER_CONTAINER="gcr.io/google.com/absl-177019/linux_hybrid-latest:20231218"
 
 # USE_BAZEL_CACHE=1 only works on Kokoro.
@@ -46,30 +38,9 @@ if [[ ${USE_BAZEL_CACHE:-0} -ne 0 ]]; then
   BAZEL_EXTRA_ARGS="--remote_http_cache=https://storage.googleapis.com/absl-bazel-remote-cache/${container_key} --google_credentials=/keystore/73103_absl-bazel-remote-cache ${BAZEL_EXTRA_ARGS:-}"
 fi
 
-# Avoid depending on external sites like GitHub by checking --distdir for
-# external dependencies first.
-# https://docs.bazel.build/versions/master/guide.html#distdir
-if [[ ${KOKORO_GFILE_DIR:-} ]] && [[ -d "${KOKORO_GFILE_DIR}/distdir" ]]; then
-  DOCKER_EXTRA_ARGS="--mount type=bind,source=${KOKORO_GFILE_DIR}/distdir,target=/distdir,readonly ${DOCKER_EXTRA_ARGS:-}"
-  BAZEL_EXTRA_ARGS="--distdir=/distdir ${BAZEL_EXTRA_ARGS:-}"
-fi
+source "${FLEETBENCH_ROOT}/ci/common.sh"
 
-# Create and start the docker container.
-docker run --name fleetbench --volume="${FLEETBENCH_ROOT}:/fleetbench:ro" \
-        --workdir=/fleetbench \
-        --cap-add=SYS_PTRACE \
-        --detach=true \
-        --interactive=true \
-        --tty=true \
-        --rm \
-        ${DOCKER_EXTRA_ARGS:-} \
-        ${DOCKER_CONTAINER} \
-        /bin/bash
-
-stop_docker() {
-  docker stop fleetbench
-}
-trap stop_docker EXIT
+start_docker_container
 
 # Install additional dependencies
 docker exec fleetbench apt-get update
@@ -81,29 +52,12 @@ docker exec fleetbench apt-get install -y \
       python3-pandas \
       python3-psutil
 
-# Sanity check our setup
-docker exec fleetbench /usr/local/bin/bazel test fleetbench:distro_test --test_output=errors
+sanity_check_docker_container
 
-# Run bazel tests.
+LLVM_PATH="/opt/llvm"
+LLVM_CXX_PATH="${LLVM_PATH}/libcxx"
 for std in ${STD}; do
-  for build_config in "${BUILD_CONFIG[@]}"; do
-    echo "--------------------------------------------------------------------"
-    time docker exec \
-    -e PATH=${PATH}:"/opt/llvm/clang/bin" \
-    -e BAZEL_CXXOPTS="-std=${std}:-nostdinc++" \
-    -e BAZEL_LINKOPTS="-L/opt/llvm/libcxx/lib:-lc++:-lc++abi:-lm:-Wl,-rpath=/opt/llvm/libcxx/lib" \
-    -e CPLUS_INCLUDE_PATH="/opt/llvm/libcxx/include/c++/v1" \
-    fleetbench \
-    /usr/local/bin/bazel test ... \
-        --config=clang \
-        ${build_config} \
-        --define="absl=1" \
-        --keep_going \
-        --show_timestamps \
-        --test_env="GTEST_INSTALL_FAILURE_SIGNAL_HANDLER=1" \
-        --test_output=errors \
-        --test_tag_filters=-benchmark \
-        --test_size_filters=-enormous \
-        ${BAZEL_EXTRA_ARGS:-}
-  done
+  run_generic_tests \
+    "-e PATH=${PATH}:${LLVM_PATH}/clang/bin -e BAZEL_CXXOPTS=-std=${std}:-nostdinc++ -e BAZEL_LINKOPTS=-L${LLVM_CXX_PATH}/lib:-lc++:-lc++abi:-lm:-Wl,-rpath=${LLVM_CXX_PATH}/lib -e CPLUS_INCLUDE_PATH=${LLVM_CXX_PATH}/include/c++/v1" \
+    "--config=clang"
 done
