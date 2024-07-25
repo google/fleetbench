@@ -73,8 +73,10 @@ run_generic_tests() {
   # Run bazel tests.
   for build_config in "${BUILD_CONFIG[@]}"; do
     echo "--------------------------------------------------------------------"
-    # build/test separately to avoid thrashing VM resources
+
     BAZEL_COMMANDS=("build" "test")
+
+    # build/test separately to avoid thrashing VM resources
     for cmd in "${BAZEL_COMMANDS[@]}"; do
       time docker exec ${DOCKER_ENV} \
         fleetbench \

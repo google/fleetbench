@@ -20,14 +20,20 @@ workspace(name = "com_google_fleetbench")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-# Load a recent version of skylib in case our dependencies have obsolete
-# versions. This is needed for bazel 6 compatibility.
+# GRPC rules.
 http_archive(
-    name = "bazel_skylib",  # 2022-09-01
-    sha256 = "4756ab3ec46d94d99e5ed685d2d24aece484015e45af303eb3a11cab3cdc2e71",
-    strip_prefix = "bazel-skylib-1.3.0",
-    urls = ["https://github.com/bazelbuild/bazel-skylib/archive/refs/tags/1.3.0.zip"],
+    name = "com_github_grpc_grpc",  # 2024-07-23
+    strip_prefix = "grpc-4b206a2812af345297a7223026cd7c5fd643d3be",
+    urls = ["https://github.com/grpc/grpc/archive/4b206a2812af345297a7223026cd7c5fd643d3be.tar.gz"],
 )
+
+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+
+grpc_deps()
+
+load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
+
+grpc_extra_deps()
 
 # Support for building foreign build system dependencies. Needed for libpfm.
 http_archive(
@@ -40,26 +46,6 @@ http_archive(
 load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
 
 rules_foreign_cc_dependencies()
-
-# External Python package
-http_archive(
-    name = "rules_python",  # 2023-05-22
-    sha256 = "94750828b18044533e98a129003b6a68001204038dc4749f40b195b24c38f49f",
-    strip_prefix = "rules_python-0.21.0",
-    url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.21.0.tar.gz",
-)
-
-load("@rules_python//python:repositories.bzl", "py_repositories")
-
-py_repositories()
-
-# Abseil
-http_archive(
-    name = "com_google_absl",  # 2024-04-16
-    integrity = "sha256-T8bLjLZ6GZ96ZDDhlExWbudQ5NW+mCY++RceBJAHXHA=",
-    strip_prefix = "abseil-cpp-854193071498f330b71083d7e06a7cd18e02a4cc",
-    urls = ["https://github.com/abseil/abseil-cpp/archive/854193071498f330b71083d7e06a7cd18e02a4cc.zip"],
-)
 
 # Abseil-Python
 http_archive(
@@ -75,14 +61,6 @@ http_archive(
     sha256 = "abfc22e33e3594d0edf8eaddaf4d84a2ffc491ad74b6a7edc6e7a608f690e691",
     strip_prefix = "benchmark-1.8.3",
     urls = ["https://github.com/google/benchmark/archive/v1.8.3.zip"],
-)
-
-# GoogleTest/GoogleMock framework. Used by most unit tests.
-http_archive(
-    name = "com_google_googletest",  # 2021-05-19T20:10:13Z
-    sha256 = "8cf4eaab3a13b27a95b7e74c58fb4c0788ad94d1f7ec65b20665c4caf1d245e8",
-    strip_prefix = "googletest-aa9b44a18678dfdf57089a5ac22c1edb69f35da5",
-    urls = ["https://github.com/google/googletest/archive/aa9b44a18678dfdf57089a5ac22c1edb69f35da5.zip"],
 )
 
 # Google Snappy
@@ -175,18 +153,6 @@ http_archive(
     urls = ["https://github.com/bazelbuild/rules_fuzzing/releases/download/v0.4.1/rules_fuzzing-0.4.1.zip"],
 )
 
-# Proto rules for Bazel and Protobuf
-http_archive(
-    name = "com_google_protobuf",  # 2024-04-16
-    integrity = "sha256-T8X/Gywzn7hs06JfC1MRR4qwgeZa0ljGeJNZzYTUIfg=",
-    strip_prefix = "protobuf-26.1",
-    urls = ["https://github.com/protocolbuffers/protobuf/archive/v26.1.tar.gz"],
-)
-
-load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-
-protobuf_deps()
-
 http_archive(
     name = "rules_proto",
     sha256 = "66bfdf8782796239d3875d37e7de19b1d94301e8972b3cbd2446b332429b4df1",
@@ -202,14 +168,6 @@ load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_
 rules_proto_dependencies()
 
 rules_proto_toolchains()
-
-# C++ rules for Bazel.
-http_archive(
-    name = "rules_cc",  # 2021-05-14T14:51:14Z
-    sha256 = "1e19e9a3bc3d4ee91d7fcad00653485ee6c798efbbf9588d40b34cbfbded143d",
-    strip_prefix = "rules_cc-68cb652a71e7e7e2858c50593e5a9e3b94e5b9a9",
-    urls = ["https://github.com/bazelbuild/rules_cc/archive/68cb652a71e7e7e2858c50593e5a9e3b94e5b9a9.zip"],
-)
 
 # Bazel platform rules.
 http_archive(
