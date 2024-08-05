@@ -1,0 +1,150 @@
+// Copyright 2023 The Fleetbench Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License" );
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an " AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// WARNING: DO NOT EDIT! This file is auto-generated.
+syntax = "proto2";
+
+package fleetbench.rpc.P1.response.Message0;
+
+message Message0 {
+  optional int32 f_0 = 1;
+  optional int32 f_1 = 3;
+  optional fixed64 f_2 = 4;
+  optional int32 f_3 = 5;
+  optional fixed64 f_4 = 6;
+  optional double f_5 = 7;
+  optional fixed64 f_6 = 8;
+  optional double f_7 = 11;
+  optional double f_8 = 12;
+  optional double f_9 = 14;
+  optional int32 f_10 = 15;
+  optional int32 f_11 = 16;
+  optional int32 f_12 = 17;
+  optional int32 f_13 = 18;
+  optional fixed64 f_14 = 19;
+  optional int32 f_15 = 20;
+  optional int32 f_16 = 21;
+  optional int32 f_17 = 23;
+  optional int32 f_18 = 24;
+  optional int32 f_19 = 25;
+  optional double f_20 = 26;
+  optional fixed64 f_21 = 27;
+  optional int32 f_22 = 28;
+  optional double f_23 = 29;
+  message M1 {
+    optional double f_0 = 2;
+    message M10 {
+      optional int32 f_0 = 1;
+      optional fixed64 f_1 = 2;
+      optional double f_2 = 3;
+      optional fixed64 f_3 = 4;
+      message M18 {
+        optional int32 f_0 = 1;
+        optional float f_1 = 2;
+      }
+      optional M18 f_6 = 6;
+    }
+    optional M10 f_3 = 3;
+    message M12 {
+      optional fixed64 f_0 = 1;
+      optional double f_1 = 2;
+      optional double f_2 = 4;
+      optional double f_3 = 5;
+      message M17 {
+        optional int32 f_0 = 1;
+        optional double f_1 = 3;
+      }
+      optional M17 f_6 = 6;
+    }
+    optional M12 f_4 = 4;
+  }
+  optional M1 f_30 = 30;
+  message M2 {
+    optional double f_0 = 1;
+    message M9 {
+      optional double f_0 = 1;
+    }
+    optional M9 f_2 = 2;
+    message M14 {
+      optional double f_0 = 1;
+      optional int32 f_1 = 2;
+      optional double f_2 = 4;
+      optional double f_3 = 5;
+    }
+    optional M14 f_3 = 3;
+  }
+  optional M2 f_31 = 31;
+  message M3 {
+    optional fixed64 f_0 = 1;
+    message M6 {
+      optional int32 f_0 = 1;
+    }
+    optional M6 f_2 = 2;
+    message M11 {
+      optional int32 f_0 = 1;
+    }
+    optional M11 f_3 = 3;
+  }
+  optional M3 f_32 = 32;
+  message M4 {
+    optional fixed64 f_0 = 1;
+    optional fixed64 f_1 = 2;
+    message M5 {
+      optional int32 f_0 = 1;
+      optional double f_1 = 4;
+      optional fixed64 f_2 = 5;
+      optional fixed64 f_3 = 6;
+      optional double f_4 = 7;
+    }
+    optional M5 f_3 = 3;
+    message M7 {
+      optional int32 f_0 = 1;
+      message M16 {
+        optional fixed64 f_0 = 2;
+        optional double f_1 = 4;
+        optional fixed64 f_2 = 5;
+      }
+      optional M16 f_2 = 2;
+      message M19 {
+        optional fixed64 f_0 = 1;
+        optional int32 f_1 = 3;
+        optional fixed64 f_2 = 4;
+      }
+      optional M19 f_3 = 3;
+    }
+    optional M7 f_4 = 4;
+    message M8 {
+      optional fixed64 f_0 = 2;
+      optional fixed64 f_1 = 3;
+      optional uint32 f_2 = 4;
+      optional double f_3 = 5;
+    }
+    optional M8 f_5 = 5;
+    message M13 {
+      optional double f_0 = 1;
+      optional double f_1 = 2;
+      optional int32 f_2 = 3;
+      optional fixed64 f_3 = 4;
+      optional int32 f_4 = 7;
+    }
+    optional M13 f_6 = 6;
+    message M15 {
+      optional double f_0 = 1;
+      optional fixed64 f_1 = 2;
+      optional double f_2 = 3;
+    }
+    optional M15 f_7 = 7;
+  }
+  optional M4 f_33 = 33;
+}

@@ -1,0 +1,47 @@
+
+
+// Copyright 2023 The Fleetbench Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License" );
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an " AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// WARNING: DO NOT EDIT! This file is auto-generated.
+
+syntax = "proto2";
+
+package fleetbench.rpc;
+
+import "fleetbench/rpc/protos/P0ResponseMessage.proto";
+import "fleetbench/rpc/protos/P1ResponseMessage.proto";
+import "fleetbench/rpc/protos/P2ResponseMessage.proto";
+import "fleetbench/rpc/protos/P3ResponseMessage.proto";
+import "fleetbench/rpc/protos/P4ResponseMessage.proto";
+import "fleetbench/rpc/protos/P5ResponseMessage.proto";
+import "fleetbench/rpc/protos/P6ResponseMessage.proto";
+import "fleetbench/rpc/protos/P7ResponseMessage.proto";
+import "fleetbench/rpc/protos/P8ResponseMessage.proto";
+import "fleetbench/rpc/protos/P9ResponseMessage.proto";
+
+message ResponseMessage {
+  oneof msg {
+    P0ResponseMessage p0 = 1;
+    P1ResponseMessage p1 = 2;
+    P2ResponseMessage p2 = 3;
+    P3ResponseMessage p3 = 4;
+    P4ResponseMessage p4 = 5;
+    P5ResponseMessage p5 = 6;
+    P6ResponseMessage p6 = 7;
+    P7ResponseMessage p7 = 8;
+    P8ResponseMessage p8 = 9;
+    P9ResponseMessage p9 = 10;
+  }
+}

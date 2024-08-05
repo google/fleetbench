@@ -1,0 +1,47 @@
+
+
+// Copyright 2023 The Fleetbench Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License" );
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an " AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// WARNING: DO NOT EDIT! This file is auto-generated.
+
+syntax = "proto2";
+
+package fleetbench.rpc;
+
+import "fleetbench/rpc/protos/P0RequestMessage.proto";
+import "fleetbench/rpc/protos/P1RequestMessage.proto";
+import "fleetbench/rpc/protos/P2RequestMessage.proto";
+import "fleetbench/rpc/protos/P3RequestMessage.proto";
+import "fleetbench/rpc/protos/P4RequestMessage.proto";
+import "fleetbench/rpc/protos/P5RequestMessage.proto";
+import "fleetbench/rpc/protos/P6RequestMessage.proto";
+import "fleetbench/rpc/protos/P7RequestMessage.proto";
+import "fleetbench/rpc/protos/P8RequestMessage.proto";
+import "fleetbench/rpc/protos/P9RequestMessage.proto";
+
+message RequestMessage {
+  oneof msg {
+    P0RequestMessage p0 = 1;
+    P1RequestMessage p1 = 2;
+    P2RequestMessage p2 = 3;
+    P3RequestMessage p3 = 4;
+    P4RequestMessage p4 = 5;
+    P5RequestMessage p5 = 6;
+    P6RequestMessage p6 = 7;
+    P7RequestMessage p7 = 8;
+    P8RequestMessage p8 = 9;
+    P9RequestMessage p9 = 10;
+  }
+}
