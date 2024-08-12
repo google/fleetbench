@@ -38,7 +38,7 @@ using ::benchmark::DoNotOptimize;
 //
 // assert(set.find(key) == set.end());
 template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_FindMiss_Hot(benchmark::State& state) {
+static void BM_SWISSMAP_FindMiss_Hot(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
 
   // The larger this value, the less the results will depend on randomness and
@@ -108,7 +108,7 @@ void LookupHit_Hot(benchmark::State& state, Lookup lookup) {
 //   asssert(set.find(key) != set.end());
 // template <class Set>
 template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_FindHit_Hot(benchmark::State& state) {
+static void BM_SWISSMAP_FindHit_Hot(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
   return LookupHit_Hot<SetT, kValueSizeT>(state, [](Set* set, uint32_t key) {
     DoNotOptimize(set);
@@ -122,7 +122,7 @@ static void BM_FindHit_Hot(benchmark::State& state) {
 //
 //   assert(!set.insert(key).second);
 template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_InsertHit_Hot(benchmark::State& state) {
+static void BM_SWISSMAP_InsertHit_Hot(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
   return LookupHit_Hot<SetT, kValueSizeT>(state, [](Set* set, uint32_t key) {
     DoNotOptimize(set);
@@ -140,7 +140,7 @@ static void BM_InsertHit_Hot(benchmark::State& state) {
 //     Read(elem);
 //   }
 template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_Iterate_Hot(benchmark::State& state) {
+static void BM_SWISSMAP_Iterate_Hot(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
 
   // The larger this value, the hotter the benchmark and the longer it will
@@ -184,7 +184,7 @@ static void BM_Iterate_Hot(benchmark::State& state) {
 //   CHECK(set.erase(key1));
 //   CHECK(set.insert(key2).second);
 template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_EraseInsert_Hot(benchmark::State& state) {
+static void BM_SWISSMAP_EraseInsert_Hot(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
 
   // The larger this value, the less the results will depend on randomness and
@@ -233,7 +233,7 @@ static void BM_EraseInsert_Hot(benchmark::State& state) {
 //   ...
 //   set.insert(keyN);
 template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_InsertManyOrdered_Hot(benchmark::State& state) {
+static void BM_SWISSMAP_InsertManyOrdered_Hot(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
 
   // The higher the value, the less contribution std::shuffle makes. The price
@@ -307,7 +307,7 @@ static void RunInsertManyUnordered_Hot(benchmark::State& state,
 // most containers this can be expressed as `set.clear()` but for SwissTable
 // containers this call can release memory.
 template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_InsertManyUnordered_Hot(benchmark::State& state) {
+static void BM_SWISSMAP_InsertManyUnordered_Hot(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
 
   auto gen_set = [&]() {
@@ -346,7 +346,7 @@ static void BM_InsertManyUnordered_Hot(benchmark::State& state) {
 //   ...
 //   set.insert(keyN);
 template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_InsertManyToEmpty_Hot(benchmark::State& state) {
+static void BM_SWISSMAP_InsertManyToEmpty_Hot(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
 
   const size_t num_keys = state.range(0);
@@ -375,14 +375,14 @@ static void BM_InsertManyToEmpty_Hot(benchmark::State& state) {
 using IntTable = absl::flat_hash_set<int64_t>;
 using StrTable = absl::flat_hash_set<std::string>;
 
-void BM_EmptyConstructor(benchmark::State& state) {
+void BM_SWISSMAP_EmptyConstructor(benchmark::State& state) {
   for (auto unused : state) {
     IntTable t;
     benchmark::DoNotOptimize(t);
   }
 }
 
-void BM_SizedConstructor(benchmark::State& state) {
+void BM_SWISSMAP_SizedConstructor(benchmark::State& state) {
   constexpr int kElements = 64;
   for (auto unused : state) {
     IntTable t(kElements);
@@ -410,7 +410,7 @@ class CustomAlloc : public std::allocator<T> {
   };
 };
 
-void BM_MoveConstructor(benchmark::State& state) {
+void BM_SWISSMAP_MoveConstructor(benchmark::State& state) {
   // For now just measure a small cheap hash table since we
   // are mostly interested in the overhead of type-erasure
   // in resize(). We also use a custom allocator to disable
@@ -454,7 +454,7 @@ ABSL_ATTRIBUTE_NOINLINE void FillInts(IntTable* t, int n) {
   }
 }
 
-void BM_IntDestructor(benchmark::State& state) {
+void BM_SWISSMAP_IntDestructor(benchmark::State& state) {
   int size = state.range(0);
   int capacity = state.range(1);
   size_t batch_size = 2048 / (capacity + 1) + 1;
@@ -480,7 +480,7 @@ ABSL_ATTRIBUTE_NOINLINE void FillStrings(StrTable* t, int n) {
   }
 }
 
-void BM_StrDestructor(benchmark::State& state) {
+void BM_SWISSMAP_StrDestructor(benchmark::State& state) {
   int size = state.range(0);
   int capacity = state.range(1);
   size_t batch_size = 2048 / (capacity + 1) + 1;
@@ -498,18 +498,22 @@ void BM_StrDestructor(benchmark::State& state) {
 
 void RegisterHotBenchmarks() {
   std::vector<benchmark::internal::Benchmark*> benchmarks;
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_FindMiss_Hot, 4);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_FindMiss_Hot, 64);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_FindHit_Hot, 4);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_FindHit_Hot, 64);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertHit_Hot, 4);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertHit_Hot, 64);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_Iterate_Hot, 4);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_Iterate_Hot, 64);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertManyOrdered_Hot, 4);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertManyOrdered_Hot, 64);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertManyUnordered_Hot, 4);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertManyUnordered_Hot, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_FindMiss_Hot, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_FindMiss_Hot, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_FindHit_Hot, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_FindHit_Hot, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_InsertHit_Hot, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_InsertHit_Hot, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_Iterate_Hot, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_Iterate_Hot, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_InsertManyOrdered_Hot,
+                                  4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_InsertManyOrdered_Hot,
+                                  64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks,
+                                  BM_SWISSMAP_InsertManyUnordered_Hot, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks,
+                                  BM_SWISSMAP_InsertManyUnordered_Hot, 64);
   for (auto* benchmark : benchmarks) {
     benchmark->ArgNames({"set_size", "density"})
         ->RangeMultiplier(2)
@@ -521,14 +525,14 @@ void RegisterHotBenchmarks() {
   }
 
   std::vector<benchmark::internal::Benchmark*> erase_insert_benchmarks;
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(erase_insert_benchmarks, BM_EraseInsert_Hot,
-                                  4);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(erase_insert_benchmarks, BM_EraseInsert_Hot,
-                                  64);
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(erase_insert_benchmarks,
-                                  BM_InsertManyToEmpty_Hot, 4);
+                                  BM_SWISSMAP_EraseInsert_Hot, 4);
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(erase_insert_benchmarks,
-                                  BM_InsertManyToEmpty_Hot, 64);
+                                  BM_SWISSMAP_EraseInsert_Hot, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(erase_insert_benchmarks,
+                                  BM_SWISSMAP_InsertManyToEmpty_Hot, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(erase_insert_benchmarks,
+                                  BM_SWISSMAP_InsertManyToEmpty_Hot, 64);
   for (auto* benchmark : erase_insert_benchmarks) {
     benchmark->ArgNames({"set_size"})
         ->RangeMultiplier(2)
@@ -537,9 +541,9 @@ void RegisterHotBenchmarks() {
         });
   }
 
-  REGISTER_BENCHMARK(BM_EmptyConstructor);
-  REGISTER_BENCHMARK(BM_SizedConstructor);
-  REGISTER_BENCHMARK(BM_MoveConstructor);
+  REGISTER_BENCHMARK(BM_SWISSMAP_EmptyConstructor);
+  REGISTER_BENCHMARK(BM_SWISSMAP_SizedConstructor);
+  REGISTER_BENCHMARK(BM_SWISSMAP_MoveConstructor);
 
   auto destructor_setup_fn = [](auto* b) {
     b->ArgNames({"size", "capacity"})
@@ -557,8 +561,8 @@ void RegisterHotBenchmarks() {
         ->ArgPair(255, 256);
   };
 
-  REGISTER_BENCHMARK(BM_IntDestructor)->Apply(destructor_setup_fn);
-  REGISTER_BENCHMARK(BM_StrDestructor)->Apply(destructor_setup_fn);
+  REGISTER_BENCHMARK(BM_SWISSMAP_IntDestructor)->Apply(destructor_setup_fn);
+  REGISTER_BENCHMARK(BM_SWISSMAP_StrDestructor)->Apply(destructor_setup_fn);
 }
 
 class HotBenchmarkRegisterer {
@@ -566,7 +570,8 @@ class HotBenchmarkRegisterer {
   HotBenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterHotBenchmarks);
     DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_InsertHit_Hot.*::absl::flat_hash_set.*64.*set_size:64.*density:0");
+        "BM_SWISSMAP_InsertHit_Hot.*::absl::flat_hash_set.*64.*set_size:64.*"
+        "density:0");
   }
 };
 

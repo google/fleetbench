@@ -32,7 +32,7 @@ using ::benchmark::DoNotOptimize;
 //
 // assert(set.find(key) == set.end());
 template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_FindMiss_Cold(benchmark::State& state) {
+static void BM_SWISSMAP_FindMiss_Cold(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
 
   // The larger this value, the colder the benchmark and the longer it takes
@@ -86,7 +86,7 @@ void LookupHit_Cold(benchmark::State& state, Lookup lookup) {
 //
 //   asssert(set.find(key) != set.end());
 template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_FindHit_Cold(benchmark::State& state) {
+static void BM_SWISSMAP_FindHit_Cold(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
   return LookupHit_Cold<SetT, kValueSizeT>(state, [](Set* set, uint32_t key) {
     DoNotOptimize(set);
@@ -100,7 +100,7 @@ static void BM_FindHit_Cold(benchmark::State& state) {
 //
 //   assert(!set.insert(key).second);
 template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_InsertHit_Cold(benchmark::State& state) {
+static void BM_SWISSMAP_InsertHit_Cold(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
   return LookupHit_Cold<SetT, kValueSizeT>(state, [](Set* set, uint32_t key) {
     DoNotOptimize(set);
@@ -118,7 +118,7 @@ static void BM_InsertHit_Cold(benchmark::State& state) {
 //     Read(elem);
 //   }
 template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_Iterate_Cold(benchmark::State& state) {
+static void BM_SWISSMAP_Iterate_Cold(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
 
   // The larger this value, the colder the benchmark and the longer it takes
@@ -189,7 +189,7 @@ static void BM_Iterate_Cold(benchmark::State& state) {
 //   assert(set.erase(key1));
 //   assert(set.insert(key2).second);
 template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_EraseInsert_Cold(benchmark::State& state) {
+static void BM_SWISSMAP_EraseInsert_Cold(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
 
   // The larger this value, the colder the benchmark and the longer it takes
@@ -232,7 +232,7 @@ static void BM_EraseInsert_Cold(benchmark::State& state) {
 //   ...
 //   set.insert(keyN);
 template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_InsertManyOrdered_Cold(benchmark::State& state) {
+static void BM_SWISSMAP_InsertManyOrdered_Cold(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
 
   // The larger this value, the colder the benchmark and the longer it takes
@@ -273,7 +273,7 @@ static void BM_InsertManyOrdered_Cold(benchmark::State& state) {
 //   ...
 //   set.insert(keyN);
 template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_InsertManyUnordered_Cold(benchmark::State& state) {
+static void BM_SWISSMAP_InsertManyUnordered_Cold(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
 
   // The larger this value, the colder the benchmark and the longer it takes
@@ -307,18 +307,22 @@ static void BM_InsertManyUnordered_Cold(benchmark::State& state) {
 
 void RegisterColdBenchmarks() {
   std::vector<benchmark::internal::Benchmark*> benchmarks;
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_FindMiss_Cold, 4);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_FindMiss_Cold, 64);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_FindHit_Cold, 4);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_FindHit_Cold, 64);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertHit_Cold, 4);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertHit_Cold, 64);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_Iterate_Cold, 4);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_Iterate_Cold, 64);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertManyOrdered_Cold, 4);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertManyOrdered_Cold, 64);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertManyUnordered_Cold, 4);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_InsertManyUnordered_Cold, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_FindMiss_Cold, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_FindMiss_Cold, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_FindHit_Cold, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_FindHit_Cold, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_InsertHit_Cold, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_InsertHit_Cold, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_Iterate_Cold, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_Iterate_Cold, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks,
+                                  BM_SWISSMAP_InsertManyOrdered_Cold, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks,
+                                  BM_SWISSMAP_InsertManyOrdered_Cold, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks,
+                                  BM_SWISSMAP_InsertManyUnordered_Cold, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks,
+                                  BM_SWISSMAP_InsertManyUnordered_Cold, 64);
   for (auto* benchmark : benchmarks) {
     benchmark->ArgNames({"set_size", "density"})
         ->Ranges({
@@ -329,10 +333,10 @@ void RegisterColdBenchmarks() {
   }
 
   std::vector<benchmark::internal::Benchmark*> erase_insert_benchmarks;
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(erase_insert_benchmarks, BM_EraseInsert_Cold,
-                                  4);
-  ADD_SWISSMAP_BENCHMARKS_TO_LIST(erase_insert_benchmarks, BM_EraseInsert_Cold,
-                                  64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(erase_insert_benchmarks,
+                                  BM_SWISSMAP_EraseInsert_Cold, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(erase_insert_benchmarks,
+                                  BM_SWISSMAP_EraseInsert_Cold, 64);
   for (auto* benchmark : erase_insert_benchmarks) {
     benchmark->ArgNames({"set_size"})
         ->Ranges({
@@ -346,7 +350,8 @@ class ColdBenchmarkRegisterer {
   ColdBenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterColdBenchmarks);
     DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_InsertHit_Cold.*::absl::flat_hash_set.*64.*set_size:64.*density:0");
+        "BM_SWISSMAP_InsertHit_Cold.*::absl::flat_hash_set.*64.*set_size:64.*"
+        "density:0");
   }
 };
 

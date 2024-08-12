@@ -18,13 +18,12 @@
 #include "absl/strings/cord.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/dynamic_registrar.h"
-
 #include "fleetbench/stl/generated_cord_benchmarks.h"
 
 namespace fleetbench::stl {
 
 static void BM_Cord(benchmark::State &state,
-                    void (*benchmark_code)(std::vector<absl::Cord>&),
+                    void (*benchmark_code)(std::vector<absl::Cord> &),
                     std::vector<absl::Cord> (*benchmark_setup)(),
                     const std::string &label) {
   auto cords = benchmark_setup();
@@ -48,7 +47,7 @@ class BenchmarkRegisterer {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
 
     // We use the fleet-wide distribution as the defaults.
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Cord_Fleet");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_CORD_Fleet");
   }
 };
 

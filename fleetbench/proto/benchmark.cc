@@ -49,15 +49,15 @@ void BM_Protogen_NoArena(benchmark::State& state) {
 }
 
 void RegisterBenchmarks() {
-  REGISTER_BENCHMARK(BM_Protogen_Arena);
-  REGISTER_BENCHMARK(BM_Protogen_NoArena);
+  benchmark::RegisterBenchmark("BM_PROTO_Arena", BM_Protogen_Arena);
+  benchmark::RegisterBenchmark("BM_PROTO_NoArena", BM_Protogen_NoArena);
 }
 
 class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Protogen_Arena");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_PROTO_Arena");
   }
 };
 

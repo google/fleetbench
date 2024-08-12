@@ -517,7 +517,7 @@ void RegisterBenchmarks() {
                   alignment_distribution] = ReadMemDistributionFile(file);
       for (const auto &[cache_name, cache_size] : cache_resident_info) {
         std::string benchmark_name =
-            absl::StrCat("BM_", distribution_name, "_", cache_name);
+            absl::StrCat("BM_LIBC_", distribution_name, "_", cache_name);
         benchmark::RegisterBenchmark(
             benchmark_name.c_str(), memory_benchmark, memory_size_distribution,
             overlap_probability, alignment_distribution, buffer_counter,
@@ -531,11 +531,11 @@ class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Bcmp_Fleet_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memcmp_Fleet_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memcpy_Fleet_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memmove_Fleet_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Memset_Fleet_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Bcmp_Fleet_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memcmp_Fleet_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memcpy_Fleet_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memmove_Fleet_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memset_Fleet_L1");
   }
 };
 

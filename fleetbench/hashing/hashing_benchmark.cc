@@ -235,7 +235,7 @@ void RegisterBenchmarks() {
 
       for (const auto &[hot_str, hot] : cache_resident_info) {
         std::string benchmark_name =
-            absl::StrCat("BM_", application, "_", hot_str);
+            absl::StrCat("BM_HASHING_", application, "_", hot_str);
         benchmark::RegisterBenchmark(benchmark_name.c_str(), BM_Hashing,
                                      hashing_size_distribution, hash_function,
                                      hot, suffix_name);
@@ -251,15 +251,17 @@ class BenchmarkRegisterer {
 
     // We use the fleet-wide distributions as the defaults.
     DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_Extendcrc32cinternal_Fleet_hot");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Computecrc32c_Fleet_hot");
+        "BM_HASHING_Extendcrc32cinternal_Fleet_hot");
     DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_Combine_contiguous_Fleet_hot");
+        "BM_HASHING_Computecrc32c_Fleet_hot");
     DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_Extendcrc32cinternal_Fleet_cold");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Computecrc32c_Fleet_cold");
+        "BM_HASHING_Combine_contiguous_Fleet_hot");
     DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_Combine_contiguous_Fleet_cold");
+        "BM_HASHING_Extendcrc32cinternal_Fleet_cold");
+    DynamicRegistrar::Get()->AddDefaultFilter(
+        "BM_HASHING_Computecrc32c_Fleet_cold");
+    DynamicRegistrar::Get()->AddDefaultFilter(
+        "BM_HASHING_Combine_contiguous_Fleet_cold");
   }
 };
 

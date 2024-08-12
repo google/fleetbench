@@ -55,47 +55,47 @@ void CordBenchmark9(std::vector<absl::Cord>& cords);
 std::vector<CordBenchmark> GetBenchmarks() {
   return {
       CordBenchmark{//
-                    "BM_Cord_Fleet",
+                    "BM_CORD_Fleet",
                     "",
                     CordBenchmarkFleet, CordBenchmarkFleetSetup},
       CordBenchmark{//
-                    "BM_Cord_0",
+                    "BM_CORD_0",
                     "",
                     CordBenchmark0, CordBenchmark0Setup},
       CordBenchmark{//
-                    "BM_Cord_1",
+                    "BM_CORD_1",
                     "",
                     CordBenchmark1, CordBenchmark1Setup},
       CordBenchmark{//
-                    "BM_Cord_2",
+                    "BM_CORD_2",
                     "",
                     CordBenchmark2, CordBenchmark2Setup},
       CordBenchmark{//
-                    "BM_Cord_3",
+                    "BM_CORD_3",
                     "",
                     CordBenchmark3, CordBenchmark3Setup},
       CordBenchmark{//
-                    "BM_Cord_4",
+                    "BM_CORD_4",
                     "",
                     CordBenchmark4, CordBenchmark4Setup},
       CordBenchmark{//
-                    "BM_Cord_5",
+                    "BM_CORD_5",
                     "",
                     CordBenchmark5, CordBenchmark5Setup},
       CordBenchmark{//
-                    "BM_Cord_6",
+                    "BM_CORD_6",
                     "",
                     CordBenchmark6, CordBenchmark6Setup},
       CordBenchmark{//
-                    "BM_Cord_7",
+                    "BM_CORD_7",
                     "",
                     CordBenchmark7, CordBenchmark7Setup},
       CordBenchmark{//
-                    "BM_Cord_8",
+                    "BM_CORD_8",
                     "",
                     CordBenchmark8, CordBenchmark8Setup},
       CordBenchmark{//
-                    "BM_Cord_9",
+                    "BM_CORD_9",
                     "",
                     CordBenchmark9, CordBenchmark9Setup},
   };

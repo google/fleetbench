@@ -296,7 +296,7 @@ void RegisterBenchmarks() {
       for (const auto& directory_name : directories) {
         // Binary names
         std::string benchmark_name =
-            absl::StrCat("BM_", directory_name, compressor_suffix);
+            absl::StrCat("BM_COMPRESSION_", directory_name, compressor_suffix);
         std::string binary = GetBinary(directory_name);
 
         auto* benchmark = benchmark::RegisterBenchmark(
