@@ -197,7 +197,7 @@ std::vector<std::unique_ptr<SimThread>>& GetSimThreads() {
 // Gets a list of distribution file paths.
 static std::vector<std::filesystem::path> GetDistributionFilesPath() {
   return GetMatchingFiles(GetFleetbenchRuntimePath("tcmalloc/distributions"),
-                          "Tcmalloc");
+                          "TCMALLOC");
 }
 
 // Gets a single file that matches the input file key word
@@ -209,13 +209,13 @@ static std::filesystem::path GetFilePath(absl::string_view file_key_word) {
 void BM_TCMalloc_Empirical_Driver_Setup(const benchmark::State& state) {
   // Gets distribution name
   std::string distribution_name = state.name();
-  std::string prefix = "BM_Tcmalloc_";
+  std::string prefix = "BM_TCMALLOC_";
   QCHECK(absl::StrContains(distribution_name, prefix));
   distribution_name.replace(0, prefix.size(), "");
 
   // Gets distribution profile
   std::string profile_path =
-      GetFilePath(absl::StrCat("Tcmalloc_", distribution_name));
+      GetFilePath(absl::StrCat("TCMALLOC_", distribution_name));
 
   // Gets heap size
   std::string heap_size_file = GetFilePath("heap_size");
@@ -313,7 +313,7 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
 
 #ifdef EMPIRICAL_DRIVER_SMOKETEST
 BENCHMARK(BM_TCMalloc_Empirical_Driver)
-    ->Name("BM_Tcmalloc_5")
+    ->Name("BM_TCMALLOC_5")
     ->Setup(BM_TCMalloc_Empirical_Driver_Setup)
     ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
     ->Threads(4);
@@ -350,7 +350,7 @@ class BenchmarkRegisterer {
 #ifndef EMPIRICAL_DRIVER_SMOKETEST
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
 #endif
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_Tcmalloc_5.*/threads:1$");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_TCMALLOC_5.*/threads:1$");
   }
 };
 
