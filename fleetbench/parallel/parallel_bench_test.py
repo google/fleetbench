@@ -112,6 +112,31 @@ class ParallelBenchTest(absltest.TestCase):
     benchmarks = parallel_bench_lib._GetBenchmarks("fake_bench", [])
     self.assertLen(benchmarks, 2)
 
+  def test_set_extra_benchmark_flags(self):
+    self.assertEqual(
+        parallel_bench_lib._SetExtraBenchmarkFlags(
+            benchmark_perf_counters="instructions",
+            benchmark_repetitions=10,
+            benchmark_min_time="10s",
+        ),
+        [
+            "--benchmark_perf_counters=instructions",
+            "--benchmark_min_time=10s",
+            "--benchmark_repetitions=10",
+        ],
+    )
+
+    self.assertEqual(
+        parallel_bench_lib._SetExtraBenchmarkFlags(
+            benchmark_perf_counters="instructions",
+            benchmark_repetitions=0,
+            benchmark_min_time="",
+        ),
+        [
+            "--benchmark_perf_counters=instructions",
+        ],
+    )
+
 
 if __name__ == "__main__":
   absltest.main()

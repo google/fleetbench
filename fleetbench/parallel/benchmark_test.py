@@ -58,6 +58,38 @@ class BenchmarkTest(absltest.TestCase):
         ["BM_Test", "BM_Test2"],
     )
 
+  def testCommandLine(self):
+    temp_dir = self.create_tempdir()
+    temp_dir.create_file("fake_benchmark")
+    benchmark_path = os.path.join(temp_dir, "fake_benchmark")
+    bm = benchmark.Benchmark(benchmark_path, "BM_Test")
+    self.assertEqual(
+        bm.CommandLine(),
+        [benchmark_path, "--benchmark_filter=BM_Test$"],
+    )
+
+    bm.AddCommandFlags(["--benchmark_min_time=10"])
+
+    self.assertEqual(
+        bm.CommandLine(),
+        [
+            benchmark_path,
+            "--benchmark_filter=BM_Test$",
+            "--benchmark_min_time=10",
+        ],
+    )
+
+    bm.AddCommandFlags(["--benchmark_perf_counters=ctr1,ctr2"])
+    self.assertEqual(
+        bm.CommandLine(),
+        [
+            benchmark_path,
+            "--benchmark_filter=BM_Test$",
+            "--benchmark_min_time=10",
+            "--benchmark_perf_counters=ctr1,ctr2",
+        ],
+    )
+
 
 if __name__ == "__main__":
   absltest.main()

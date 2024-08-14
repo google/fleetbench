@@ -57,11 +57,15 @@ class Benchmark:
     self._name = os.path.basename(name)
     self._path = _FindBenchmarkPath(name)
     self._benchmark_filter = benchmark_filter
-
-  def CommandLine(self):
     # Trailing $ since this is a regex and we don't want to match anything
     # extra.
-    return [self._path, f"--benchmark_filter={self._benchmark_filter}$"]
+    self._command_flag = [f"--benchmark_filter={self._benchmark_filter}$"]
+
+  def CommandLine(self) -> list[str]:
+    return [self._path] + self._command_flag
+
+  def AddCommandFlags(self, flag: list[str]) -> None:
+    self._command_flag.extend(flag)
 
   def Name(self):
     return f"{self._name} ({self._benchmark_filter})"

@@ -57,6 +57,25 @@ def _GetBenchmarks(
   return benchmarks
 
 
+def _SetExtraBenchmarkFlags(
+    benchmark_perf_counters: str,
+    benchmark_repetitions: int,
+    benchmark_min_time: str,
+) -> list[str]:
+  """Set extra benchmark flags."""
+  benchmark_flags = []
+  if benchmark_perf_counters:
+    benchmark_flags.append(
+        f"--benchmark_perf_counters={benchmark_perf_counters}"
+    )
+  if benchmark_min_time:
+    benchmark_flags.append(f"--benchmark_min_time={benchmark_min_time}")
+  if benchmark_repetitions:
+    benchmark_flags.append(f"--benchmark_repetitions={benchmark_repetitions}")
+
+  return benchmark_flags
+
+
 @dataclasses.dataclass
 class BenchmarkTimes:
   wall_time: float
@@ -108,13 +127,27 @@ class ParallelBench:
     self.utilization_samples: list[tuple[pd.Timestamp, float]] = []
 
   def _PreRun(
-      self, benchmark_target: str, benchmark_filters: list[str]
+      self,
+      benchmark_target: str,
+      benchmark_filters: list[str],
+      benchmark_perf_counters: str,
+      benchmark_repetitions: int,
+      benchmark_min_time: str,
   ) -> None:
     """Initial configuration steps."""
 
     logging.info("Initializing benchmarks and worker threads...")
 
     self.benchmarks = _GetBenchmarks(benchmark_target, benchmark_filters)
+
+    benchmark_flags = _SetExtraBenchmarkFlags(
+        benchmark_perf_counters, benchmark_repetitions, benchmark_min_time
+    )
+
+    if benchmark_flags:
+      logging.info("Setting benchmark flags: %s", benchmark_flags)
+      for benchmark in self.benchmarks.values():
+        benchmark.AddCommandFlags(benchmark_flags)
 
     # Initialize the runtimes with a fake duration. This causes all benchmarks
     # to be equally likely at first.
@@ -229,10 +262,21 @@ class ParallelBench:
           self.results.append(r)
 
   def Run(
-      self, benchmark_target: str, benchmark_filter: list[str] = []
+      self,
+      benchmark_target: str,
+      benchmark_filter: list[str] = [],
+      benchmark_perf_counters: str = "",
+      benchmark_repetitions: int = 0,
+      benchmark_min_time: str = "",
   ) -> list[result.Result]:
     """Run benchmarks in parallel."""
-    self._PreRun(benchmark_target, benchmark_filter)
+    self._PreRun(
+        benchmark_target,
+        benchmark_filter,
+        benchmark_perf_counters,
+        benchmark_repetitions,
+        benchmark_min_time,
+    )
 
     logging.info(
         "Running %d benchmarks to try to hit %.f%% utilization",

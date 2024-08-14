@@ -52,6 +52,27 @@ _BENCHMARK_FILTER = flags.DEFINE_multi_string(
     "benchmark_filter", [], "Specifies subset of benchmarks to run."
 )
 
+_BENCHMARK_PERF_COUNTERS = flags.DEFINE_string(
+    "benchmark_perf_counters",
+    "",
+    "Perf counter to collect during benchmark run. When applied, all benchmarks"
+    " will be run with the same counter.",
+)
+
+_BENCHMARK_REPETITIONS = flags.DEFINE_integer(
+    "benchmark_repetitions",
+    0,
+    "Number of times to run each benchmark. Applied to all benchmarks.",
+    lower_bound=0,
+)
+
+_BENCHMARK_MIN_TIME = flags.DEFINE_string(
+    "benchmark_min_time",
+    "",
+    "Minimum time to run each benchmark. Applied to all benchmarks.",
+)
+
+
 _UTILIZATION = flags.DEFINE_float(
     "utilization",
     0.75,
@@ -91,6 +112,9 @@ def main(argv: Sequence[str]) -> None:
   results = bench.Run(
       benchmark_target=_BENCHMARK_TARGET.value,
       benchmark_filter=_BENCHMARK_FILTER.value,
+      benchmark_perf_counters=_BENCHMARK_PERF_COUNTERS.value,
+      benchmark_repetitions=_BENCHMARK_REPETITIONS.value,
+      benchmark_min_time=_BENCHMARK_MIN_TIME.value,
   )
   logging.info(
       "Ran %d benchmarks. Output is in %s", len(results), _TEMP_ROOT.value
