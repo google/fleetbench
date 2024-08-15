@@ -15,6 +15,7 @@
 """Run Fleetbench benchmarks in parallel."""
 
 import dataclasses
+import json
 import math
 import os
 import random
@@ -261,6 +262,71 @@ class ParallelBench:
           )
           self.results.append(r)
 
+  def GenerateBenchmarkReport(self) -> None:
+    utilization = pd.DataFrame(
+        self.utilization_samples, columns=["timestamp", "utilization"]
+    )
+    data = []
+    for benchmark, times_list in self.runtimes.items():
+      for t in times_list[1:]:
+        entry = {
+            "Benchmark": benchmark,
+            "Duration": t.wall_time,
+            "CPUTimes": t.cpu_time,
+        }
+        data.append(entry)
+    runtimes = pd.DataFrame(data)
+
+    # TODO(rjogrady): We can do more here - plot utilization over time, etc.
+    logging.info("Median Utilization: %f", utilization["utilization"].median())
+    logging.info("Benchmark runtimes report:")
+
+    grouped_results = (
+        runtimes.groupby("Benchmark")
+        .agg(
+            Count=("Duration", "count"),
+            Median_Duration=("Duration", "median"),
+            Mean_CPU_Time=("CPUTimes", "mean"),
+        )
+        .round(3)
+    )
+    print(grouped_results.to_string())
+
+  def GeneratePerfCounterReport(self, counters: list[str]) -> None:
+    """Generate a report of the perf counters for each benchmark."""
+    performance_data = []
+    for filename in os.listdir(self.temp_root):
+
+      file_path = os.path.join(self.temp_root, filename)
+      with open(file_path, "r") as f:
+        benchmark_result = json.loads(f.read())["benchmarks"][0]
+
+      for counter in counters:
+        if counter in benchmark_result:
+          entry = {
+              "Benchmark": benchmark_result["name"],
+              "Counter": counter,
+              "Value": benchmark_result[counter],
+          }
+          performance_data.append(entry)
+
+    perf_counters = pd.DataFrame(performance_data)
+    perf_counters_results = (
+        perf_counters.groupby(["Benchmark", "Counter"])
+        .agg(
+            Median=("Value", "median"),
+            Mean=("Value", "mean"),
+        )
+        .round(3)
+    )
+
+    print(perf_counters_results.to_string())
+
+    # Summarizes results to CSV for post-analysis
+    perf_counters_results.to_csv(
+        os.path.join(self.temp_root, "perf_counters.csv")
+    )
+
   def Run(
       self,
       benchmark_target: str,
@@ -296,32 +362,10 @@ class ParallelBench:
       logging.debug("Joining worker on CPU %d", cpu_id)
       w.join()
 
-    utilization = pd.DataFrame(
-        self.utilization_samples, columns=["timestamp", "utilization"]
-    )
-    data = []
-    for benchmark, times_list in self.runtimes.items():
-      for t in times_list[1:]:
-        entry = {
-            "Benchmark": benchmark,
-            "Duration": t.wall_time,
-            "CPUTimes": t.cpu_time,
-        }
-        data.append(entry)
-    runtimes = pd.DataFrame(data)
+    self.GenerateBenchmarkReport()
 
-    # TODO(rjogrady): We can do more here - plot utilization over time, etc.
-    logging.info("Median Utilization: %f", utilization["utilization"].median())
-    logging.info("Benchmark runtimes report:")
+    if benchmark_perf_counters:
+      counters = benchmark_perf_counters.split(",")
+      self.GeneratePerfCounterReport(counters)
 
-    grouped_results = (
-        runtimes.groupby("Benchmark")
-        .agg(
-            Count=("Duration", "count"),
-            Median_Duration=("Duration", "median"),
-            Mean_CPU_Time=("CPUTimes", "mean"),
-        )
-        .round(3)
-    )
-    print(grouped_results.to_string())
     return self.results
