@@ -90,6 +90,62 @@ class BenchmarkTest(absltest.TestCase):
         ],
     )
 
+  @mock.patch.object(subprocess, "run", autospec=True)
+  def testGetWorkloads(self, mock_run):
+    mock_run.return_value = subprocess.CompletedProcess(
+        args=[],
+        returncode=0,
+        stdout=(
+            "BM_LIBC_Test1\nBM_LIBC_Test2\nBM_PROTO_Test1\nBM_TCMALLOC_Test1\n"
+        ),
+        stderr="",
+    )
+    self.assertCountEqual(
+        benchmark.GetWorkloads("/path/to/benchmark"),
+        ["LIBC", "PROTO", "TCMALLOC"],
+    )
+
+  @mock.patch.object(subprocess, "run", autospec=True)
+  def testGetSubBenchmarksWorkload(self, mock_run):
+    mock_run.return_value = subprocess.CompletedProcess(
+        args=[],
+        returncode=0,
+        stdout="BM_PROTO_Arena\nBM_PROTO_NoArena\n",
+        stderr="",
+    )
+    self.assertEqual(
+        benchmark.GetSubBenchmarks("/path/to/benchmark", "proto"),
+        ["BM_PROTO_Arena", "BM_PROTO_NoArena"],
+    )
+
+  @mock.patch.object(subprocess, "run", autospec=True)
+  def testGetSubBenchmarksWorkloadWithUnmatchedBM(self, mock_run):
+    # Simulate the full list of benchmarks
+    full_benchmarks = ["BM_PROTO_Arena", "BM_PROTO_NoArena", "BM_CORD_Fleet"]
+
+    # Simulate the subprocess output
+    mock_run.return_value = subprocess.CompletedProcess(
+        args=[],
+        returncode=0,
+        stdout="\n".join(full_benchmarks),
+        stderr="",
+    )
+
+    sub_benchmarks = benchmark.GetSubBenchmarks("/path/to/benchmark", "proto")
+
+    # Assert the expected behavior
+    self.assertEqual(sub_benchmarks, ["BM_PROTO_Arena", "BM_PROTO_NoArena"])
+    mock_run.assert_called_once_with(
+        [
+            "/path/to/benchmark",
+            "--benchmark_list_tests",
+            "--benchmark_filter=BM_PROTO",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
 
 if __name__ == "__main__":
   absltest.main()

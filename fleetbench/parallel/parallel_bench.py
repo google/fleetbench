@@ -49,7 +49,32 @@ _BENCHMARK_TARGET = flags.DEFINE_string(
 )
 
 _BENCHMARK_FILTER = flags.DEFINE_multi_string(
-    "benchmark_filter", [], "Specifies subset of benchmarks to run."
+    "benchmark_filter",
+    [],
+    """Specifies subset of benchmarks to run.
+
+    Filtering options:
+    - Empty list: Selects all default benchmarks.
+    - Keyword list: Selects benchmarks from the default list matching any \n
+        provided keyword, one keyword per filter \n
+        (e.g., "--benchmark_filter=Cold --benchmark_filter=Hot").""",
+)
+
+
+_WORKLOAD_FILTER = flags.DEFINE_multi_string(
+    "workload_filter",
+    [],
+    """Selects benchmarks associated with specified workloads. This will \n
+       overwrite the `--benchmark_filter` flag.
+
+    Filtering options:
+    - Workload name + keyword(s): Selects benchmarks associated with the \n
+        specified workload, further filtered by keywords 
+        (e.g., "--workload_filter=libc,Memcpy,Memcmp").
+    - Workload name + "all": Selects all benchmarks associated with the \n
+        specified workload 
+        (e.g., "--workload_filter=proto,all")
+    """,
 )
 
 _BENCHMARK_PERF_COUNTERS = flags.DEFINE_string(
@@ -112,6 +137,7 @@ def main(argv: Sequence[str]) -> None:
   results = bench.Run(
       benchmark_target=_BENCHMARK_TARGET.value,
       benchmark_filter=_BENCHMARK_FILTER.value,
+      workload_filter=_WORKLOAD_FILTER.value,
       benchmark_perf_counters=_BENCHMARK_PERF_COUNTERS.value,
       benchmark_repetitions=_BENCHMARK_REPETITIONS.value,
       benchmark_min_time=_BENCHMARK_MIN_TIME.value,

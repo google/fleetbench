@@ -32,27 +32,88 @@ from fleetbench.parallel import run
 from fleetbench.parallel import worker
 
 
-def _GetBenchmarks(
+def _CreateBenchmarks(
+    bm_target: str, names: list[str]
+) -> dict[str, bm.Benchmark]:
+  """Creates benchmark dictionary with the benchmark name as the key."""
+  benchmarks = {}
+  for name in names:
+    benchmark = bm.Benchmark(bm_target, name)
+    benchmarks[benchmark.Name()] = benchmark
+  return benchmarks
+
+
+def _CreateMatchingBenchmarks(
+    bm_target: str, bm_filter: str, bm_candidates: list[str]
+) -> dict[str, bm.Benchmark]:
+  """Creates benchmarks that match the given filter."""
+  matching_bm_names = [name for name in bm_candidates if bm_filter in name]
+  if not matching_bm_names:
+    raise ValueError(f"Can't find benchmarks matching {bm_filter}.")
+  return _CreateBenchmarks(bm_target, matching_bm_names)
+
+
+def _GetDefaultBenchmarks(
     benchmark_target: str, benchmark_filters: list[str]
 ) -> dict[str, bm.Benchmark]:
-  """Get a list of benchmarks from the given target."""
+  """Get a list of benchmarks from the default target.
+
+    Filtering options:
+  - Empty list: Returns all default benchmarks.
+  - Keyword list: Returns benchmarks from the default list matching the provided
+                  keyword (e.g., "Cold Hot").
+  """
   benchmarks = {}
   sub_benchmarks = bm.GetSubBenchmarks(benchmark_target)
 
+  # Gets default benchmark sets
   if not benchmark_filters:
-    for name in sub_benchmarks:
-      benchmark = bm.Benchmark(benchmark_target, name)
-      benchmarks[benchmark.Name()] = benchmark
-  else:
-    for bm_filter in benchmark_filters:
-      matching_bm_names = [name for name in sub_benchmarks if bm_filter in name]
-      if matching_bm_names:
-        for name in matching_bm_names:
-          benchmark = bm.Benchmark(benchmark_target, name)
-          benchmarks[benchmark.Name()] = benchmark
-      else:
-        raise ValueError(
-            f"Benchmark {bm_filter} not found in {benchmark_target}."
+    return _CreateBenchmarks(benchmark_target, sub_benchmarks)
+
+  # Gets benchmark sets from filters
+  for bm_filter in benchmark_filters:
+    benchmarks.update(
+        _CreateMatchingBenchmarks(benchmark_target, bm_filter, sub_benchmarks)
+    )
+  return benchmarks
+
+
+def _GetWorkloadBenchmarks(
+    benchmark_target: str, workload_filters: list[str]
+) -> dict[str, bm.Benchmark]:
+  """Get a list of benchmarks from the given workload that match the filters.
+
+  Filtering options:
+    - Workload name + keyword(s): Returns benchmarks associated with the
+        specified workload, further filtered by keywords (e.g.,
+        "libc,Memcpy,Memcmp").
+    - Workload name + "all": Returns all benchmarks associated with the
+        specified workload (e.g., "proto,all").
+  """
+  benchmarks = {}
+
+  # Get all unique workloads
+  workloads = bm.GetWorkloads(benchmark_target)
+
+  def _GetWorkloadAndFilter(bm_filter: str) -> tuple[str, list[str]]:
+    parts = bm_filter.split(",")
+    if parts[0].upper() not in workloads:
+      raise ValueError(f"Workload {parts[0]} not supported in Fleetbench.")
+    return parts[0], parts[1:]
+
+  for workload_filter in workload_filters:
+    workload, bm_filters = _GetWorkloadAndFilter(workload_filter)
+    workload_bms = bm.GetSubBenchmarks(benchmark_target, workload)
+    if bm_filters == ["all"]:
+      benchmarks.update(
+          _CreateMatchingBenchmarks(
+              benchmark_target, workload.upper(), workload_bms
+          )
+      )
+    else:
+      for bm_filter in bm_filters:
+        benchmarks.update(
+            _CreateMatchingBenchmarks(benchmark_target, bm_filter, workload_bms)
         )
 
   return benchmarks
@@ -131,6 +192,7 @@ class ParallelBench:
       self,
       benchmark_target: str,
       benchmark_filters: list[str],
+      workload_filters: list[str],
       benchmark_perf_counters: str,
       benchmark_repetitions: int,
       benchmark_min_time: str,
@@ -139,7 +201,14 @@ class ParallelBench:
 
     logging.info("Initializing benchmarks and worker threads...")
 
-    self.benchmarks = _GetBenchmarks(benchmark_target, benchmark_filters)
+    if workload_filters:
+      self.benchmarks = _GetWorkloadBenchmarks(
+          benchmark_target, workload_filters
+      )
+    else:
+      self.benchmarks = _GetDefaultBenchmarks(
+          benchmark_target, benchmark_filters
+      )
 
     benchmark_flags = _SetExtraBenchmarkFlags(
         benchmark_perf_counters, benchmark_repetitions, benchmark_min_time
@@ -331,14 +400,25 @@ class ParallelBench:
       self,
       benchmark_target: str,
       benchmark_filter: list[str] = [],
+      workload_filter: list[str] = [],
       benchmark_perf_counters: str = "",
       benchmark_repetitions: int = 0,
       benchmark_min_time: str = "",
   ) -> list[result.Result]:
     """Run benchmarks in parallel."""
+    logging.info("Running with benchmark_filter: %s", benchmark_filter)
+    logging.info("Running with workload_filter: %s", workload_filter)
+
+    if benchmark_filter and workload_filter:
+      logging.warning(
+          "Both benchmark_filter and workload_filter specified. "
+          "benchmark_filter will be ignored."
+      )
+
     self._PreRun(
         benchmark_target,
         benchmark_filter,
+        workload_filter,
         benchmark_perf_counters,
         benchmark_repetitions,
         benchmark_min_time,

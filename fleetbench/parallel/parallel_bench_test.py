@@ -69,48 +69,36 @@ class ParallelBenchTest(absltest.TestCase):
   @flagsaver.flagsaver(
       benchmark_dir=absltest.get_default_test_tmpdir(),
   )
-  def test_getbenchmark_with_filter(self, mock_get_subbenchmarks):
-    mock_get_subbenchmarks.return_value = ["BM_Test1", "BM_Test2"]
-    self.create_tempfile(
-        os.path.join(absltest.get_default_test_tmpdir(), "fake_bench")
-    )
-
-    benchmarks = parallel_bench_lib._GetBenchmarks("fake_bench", ["BM_Test1"])
-    self.assertLen(benchmarks, 1)
-
-  @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
-  @flagsaver.flagsaver(
-      benchmark_dir=absltest.get_default_test_tmpdir(),
-  )
-  def test_getbenchmark_with_filter_partial_match(self, mock_get_subbenchmarks):
-    mock_get_subbenchmarks.return_value = [
-        "BM_Test1_A",
-        "BM_Test1_B",
-        "BM_Test2",
-    ]
-    self.create_tempfile(
-        os.path.join(absltest.get_default_test_tmpdir(), "fake_bench")
-    )
-
-    benchmarks = parallel_bench_lib._GetBenchmarks("fake_bench", ["BM_Test1"])
-    self.assertLen(benchmarks, 2)
-    self.assertCountEqual(
-        benchmarks.keys(),
-        ["fake_bench (BM_Test1_A)", "fake_bench (BM_Test1_B)"],
-    )
-
-  @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
-  @flagsaver.flagsaver(
-      benchmark_dir=absltest.get_default_test_tmpdir(),
-  )
   def test_getbenchmark_without_filter(self, mock_get_subbenchmarks):
     mock_get_subbenchmarks.return_value = ["BM_Test1", "BM_Test2"]
     self.create_tempfile(
         os.path.join(absltest.get_default_test_tmpdir(), "fake_bench")
     )
 
-    benchmarks = parallel_bench_lib._GetBenchmarks("fake_bench", [])
+    benchmarks = parallel_bench_lib._GetDefaultBenchmarks("fake_bench", [])
     self.assertLen(benchmarks, 2)
+    self.assertCountEqual(
+        benchmarks.keys(),
+        ["fake_bench (BM_Test1)", "fake_bench (BM_Test2)"],
+    )
+
+  @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
+  @flagsaver.flagsaver(
+      benchmark_dir=absltest.get_default_test_tmpdir(),
+  )
+  def test_getbenchmark_with_filter_partial_match(self, mock_get_subbenchmarks):
+    mock_get_subbenchmarks.return_value = ["BM_Test1", "BM_Test2"]
+    self.create_tempfile(
+        os.path.join(absltest.get_default_test_tmpdir(), "fake_bench")
+    )
+    benchmarks = parallel_bench_lib._GetDefaultBenchmarks(
+        "fake_bench", ["Test1"]
+    )
+    self.assertLen(benchmarks, 1)
+    self.assertCountEqual(
+        benchmarks.keys(),
+        ["fake_bench (BM_Test1)"],
+    )
 
   def test_set_extra_benchmark_flags(self):
     self.assertEqual(
@@ -134,6 +122,66 @@ class ParallelBenchTest(absltest.TestCase):
         ),
         [
             "--benchmark_perf_counters=instructions",
+        ],
+    )
+
+  @mock.patch.object(bm, "GetWorkloads", autospec=True)
+  @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
+  @flagsaver.flagsaver(
+      benchmark_dir=absltest.get_default_test_tmpdir(),
+  )
+  def test_getworkloadbenchmark_all(
+      self, mock_get_subbenchmarks, mock_get_workloads
+  ):
+    mock_get_workloads.return_value = ["PROTO"]
+    mock_get_subbenchmarks.return_value = [
+        "BM_PROTO_Test1",
+        "BM_PROTO_Test2",
+        "BM_PROTO_Test3",
+    ]
+    self.create_tempfile(
+        os.path.join(absltest.get_default_test_tmpdir(), "fake_bench")
+    )
+    benchmarks = parallel_bench_lib._GetWorkloadBenchmarks(
+        "fake_bench", ["proto,all"]
+    )
+    self.assertLen(benchmarks, 3)
+    self.assertCountEqual(
+        benchmarks.keys(),
+        [
+            "fake_bench (BM_PROTO_Test1)",
+            "fake_bench (BM_PROTO_Test2)",
+            "fake_bench (BM_PROTO_Test3)",
+        ],
+    )
+
+  @mock.patch.object(bm, "GetWorkloads", autospec=True)
+  @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
+  @flagsaver.flagsaver(
+      benchmark_dir=absltest.get_default_test_tmpdir(),
+  )
+  def test_getworkloadbenchmark_subset(
+      self, mock_get_subbenchmarks, mock_get_workloads
+  ):
+    mock_get_workloads.return_value = ["PROTO", "CORD"]
+    mock_get_subbenchmarks.side_effect = [
+        ["BM_PROTO_Test1", "BM_PROTO_Test2", "BM_PROTO_Test3"],
+        ["BM_CORD_Test1"],
+    ]
+    self.create_tempfile(
+        os.path.join(absltest.get_default_test_tmpdir(), "fake_bench")
+    )
+
+    benchmarks = parallel_bench_lib._GetWorkloadBenchmarks(
+        "fake_bench", ["proto,1,2", "cord,all"]
+    )
+    self.assertLen(benchmarks, 3)
+    self.assertCountEqual(
+        benchmarks.keys(),
+        [
+            "fake_bench (BM_PROTO_Test1)",
+            "fake_bench (BM_PROTO_Test2)",
+            "fake_bench (BM_CORD_Test1)",
         ],
     )
 

@@ -15,6 +15,7 @@
 """Represent a Fleetbench benchmark."""
 
 import os
+import re
 import subprocess
 
 from absl import flags
@@ -44,10 +45,34 @@ def _FindBenchmarkPath(benchmark: str) -> str:
   raise FileNotFoundError(f"Benchmark not found: {benchmark}")
 
 
-def GetSubBenchmarks(benchmark_path: str):
+def GetSubBenchmarks(benchmark_path: str, workload: str = "") -> list[str]:
+  """Retrieves a list of sub-benchmarks from a benchmark executable.
+
+  If 'workload' is specified, only sub-benchmarks with the given workload are
+  returned.
+  """
   cmd = [benchmark_path, "--benchmark_list_tests"]
+
+  if workload == "all":
+    cmd += ["--benchmark_filter=all"]
+  elif workload:
+    cmd += [
+        f"--benchmark_filter=BM_{workload.upper()}",
+    ]
   p = subprocess.run(cmd, capture_output=True, text=True, check=True)
   return p.stdout.split("\n")[:-1]
+
+
+def GetWorkloads(benchmark_path: str):
+  """Retrieves a list of unique workloads from a benchmark executable."""
+  benchmarks = GetSubBenchmarks(benchmark_path, "all")
+  workload_pattern = r"BM_(?P<workload>[^_]+)"
+
+  def extract_workload(benchmark):
+    match = re.search(workload_pattern, benchmark)
+    return match.group("workload") if match else None
+
+  return list(set(filter(None, map(extract_workload, benchmarks))))
 
 
 class Benchmark:
