@@ -62,6 +62,13 @@ def _GetDefaultBenchmarks(
   - Empty list: Returns all default benchmarks.
   - Keyword list: Returns benchmarks from the default list matching the provided
                   keyword (e.g., "Cold Hot").
+
+  Args:
+    benchmark_target: Path to the benchmark binary.
+    benchmark_filters: List of filters to apply to the benchmarks to run.
+
+  Returns:
+    A map of benchmark names to Benchmark objects.
   """
   benchmarks = {}
   sub_benchmarks = bm.GetSubBenchmarks(benchmark_target)
@@ -89,6 +96,12 @@ def _GetWorkloadBenchmarks(
         "libc,Memcpy,Memcmp").
     - Workload name + "all": Returns all benchmarks associated with the
         specified workload (e.g., "proto,all").
+  Args:
+    benchmark_target: Path to the benchmark binary.
+    workload_filters: List of filters to apply to the benchmarks to run.
+
+  Returns:
+    A map of benchmark names to Benchmark objects.
   """
   benchmarks = {}
 
@@ -177,7 +190,8 @@ class ParallelBench:
       raise ValueError("Must specify at least 2 CPUs.")
 
     # Reserve a CPU for the controller loop.
-    self.controller_cpu, *self.cpus = cpus
+    self.controller_cpu = cpus[0]
+    self.cpus = cpus[1:]
     self.cpu_affinity = cpu_affinity
     self.benchmarks: dict[str, bm.Benchmark] = {}
     self.target_utilization = utilization * 100
@@ -191,8 +205,8 @@ class ParallelBench:
   def _PreRun(
       self,
       benchmark_target: str,
-      benchmark_filters: list[str],
-      workload_filters: list[str],
+      benchmark_filters: list[str] | None,
+      workload_filters: list[str] | None,
       benchmark_perf_counters: str,
       benchmark_repetitions: int,
       benchmark_min_time: str,
@@ -332,6 +346,7 @@ class ParallelBench:
           self.results.append(r)
 
   def GenerateBenchmarkReport(self) -> None:
+    """Print some aggregated results of the benchmark runs."""
     utilization = pd.DataFrame(
         self.utilization_samples, columns=["timestamp", "utilization"]
     )
@@ -399,8 +414,8 @@ class ParallelBench:
   def Run(
       self,
       benchmark_target: str,
-      benchmark_filter: list[str] = [],
-      workload_filter: list[str] = [],
+      benchmark_filter: list[str] | None = None,
+      workload_filter: list[str] | None = None,
       benchmark_perf_counters: str = "",
       benchmark_repetitions: int = 0,
       benchmark_min_time: str = "",

@@ -52,28 +52,26 @@ _BENCHMARK_FILTER = flags.DEFINE_multi_string(
     "benchmark_filter",
     [],
     """Specifies subset of benchmarks to run.
-
     Filtering options:
     - Empty list: Selects all default benchmarks.
-    - Keyword list: Selects benchmarks from the default list matching any \n
-        provided keyword, one keyword per filter \n
-        (e.g., "--benchmark_filter=Cold --benchmark_filter=Hot").""",
+    - Keyword list: Selects benchmarks from the default list matching any
+      provided keyword, one keyword per filter
+      (e.g., "--benchmark_filter=Cold --benchmark_filter=Hot")
+    """,
 )
 
 
 _WORKLOAD_FILTER = flags.DEFINE_multi_string(
     "workload_filter",
     [],
-    """Selects benchmarks associated with specified workloads. This will \n
+    """Selects benchmarks associated with specified workloads. This will
        overwrite the `--benchmark_filter` flag.
-
     Filtering options:
-    - Workload name + keyword(s): Selects benchmarks associated with the \n
-        specified workload, further filtered by keywords 
-        (e.g., "--workload_filter=libc,Memcpy,Memcmp").
-    - Workload name + "all": Selects all benchmarks associated with the \n
-        specified workload 
-        (e.g., "--workload_filter=proto,all")
+    - Workload name + keyword(s): Selects benchmarks associated with the
+      specified workload, further filtered by keywords
+      (e.g., "--workload_filter=libc,Memcpy,Memcmp").
+    - Workload name + "all": Selects all benchmarks associated with the
+      specified workload (e.g., "--workload_filter=proto,all")
     """,
 )
 
@@ -109,9 +107,9 @@ _UTILIZATION = flags.DEFINE_float(
 _NUM_CPUS = flags.DEFINE_integer(
     "num_cpus",
     len(cpu.Available()),
-    "Number of CPUs to use. Note that 1 CPU will be reserved for scheduling."
-    " The lowest available core will be used for the control thread, and the"
-    " remaining up to num_cpus - 1 will be used for the workers.",
+    """Number of CPUs to use. Note that 1 CPU will be reserved for scheduling.
+    The lowest available core will be used for the control thread, and the
+     remaining up to num_cpus - 1 will be used for the workers.""",
     lower_bound=2,
     upper_bound=len(cpu.Available()),
 )
