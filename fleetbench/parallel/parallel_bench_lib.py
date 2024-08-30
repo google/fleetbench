@@ -18,11 +18,10 @@ import dataclasses
 import json
 import math
 import os
-import random
-import statistics
 import time
 
 from absl import logging
+import numpy as np
 import pandas as pd
 
 from fleetbench.parallel import benchmark as bm
@@ -199,7 +198,6 @@ class ParallelBench:
     self.temp_root = temp_root
     self.runtimes: dict[str, list[BenchmarkTimes]] = {}
     self.workers: dict[int, worker.Worker] = {}
-    self.results: list[result.Result] = []
     self.utilization_samples: list[tuple[pd.Timestamp, float]] = []
 
   def _PreRun(
@@ -257,29 +255,30 @@ class ParallelBench:
       logging.debug("CPU activity: %s", self.cpus)
       os.sched_setaffinity(os.getpid(), [self.controller_cpu])
 
-  def _SelectNextBenchmark(self) -> bm.Benchmark:
-    """Randomly choose the next benchmark to run.
+  def _ComputeBenchmarkWeights(self) -> np.ndarray:
+    """Probability is inversely based on expected runtime."""
 
-    Probability is inversely based on expected runtime.
+    inverse_weights = np.empty(len(self.runtimes.keys()))
 
-    Returns:
-      Benchmark name to run next.
-    """
-    inverse_weights = []
     # Use the last 10 runtimes to estimate expected runtime.
-    for times in self.runtimes.values():
-      last_10_wall_times = [time.wall_time for time in times[-10:]]
-      inverse_weights.append(1 / (statistics.mean(last_10_wall_times)))
-    probabilities = [x / sum(inverse_weights) for x in inverse_weights]
+    for i, times in enumerate(self.runtimes.values()):
+      last_10_wall_times = np.array([t.wall_time for t in times[-10:]])
+      inverse_weights[i] = 1 / last_10_wall_times.mean()
+    return inverse_weights / inverse_weights.sum()
 
+  def _SelectNextBenchmarks(self, count: int) -> list[bm.Benchmark]:
+    """Randomly choose some benchmarks to run."""
+
+    if count <= 0:
+      return []
+    # Probabilities based on the expected runtime.
+    probabilities = self._ComputeBenchmarkWeights()
     # self.runtimes is a dict of benchmark name -> list of runtimes.
-    # Pick a random one based on the expected runtime.
-    benchmark_name = random.choices(
-        k=1,
-        population=list(self.runtimes.keys()),
-        weights=probabilities,
-    )[0]
-    return self.benchmarks[benchmark_name]
+    benchmark_names = list(self.runtimes.keys())
+    selected_names = np.random.choice(
+        benchmark_names, p=probabilities, size=count, replace=True
+    )
+    return [self.benchmarks[name] for name in selected_names]
 
   def _RunSchedulingLoop(self) -> None:
     """Check CPU utilization and pick the next job to schedule."""
@@ -318,19 +317,26 @@ class ParallelBench:
       expected_utilization = 100 / len(self.cpus)
       jobs_required = math.ceil(utilization_gap / expected_utilization)
 
+      # Randomly select benchmarks, weighting by inverse runtime.
+      # This makes it less likely to select long-running benchmarks and
+      # get an even distribution.
+      benchmarks = self._SelectNextBenchmarks(jobs_required)
+
       # Schedule something on an available CPUs if we're under-utilized.
       # Otherwise, do nothing while we wait for utilization to drop.
-      for _ in range(jobs_required):
+      for benchmark in benchmarks:
+        path = os.path.join(self.temp_root, "run_%03d" % next_run_id)
+        r = run.Run(
+            benchmark=benchmark,
+            out_file=path,
+        )
         for cpu_id in least_busy_cpus:
-          benchmark = self._SelectNextBenchmark()
-          path = os.path.join(self.temp_root, "run_%03d" % next_run_id)
-          r = run.Run(
-              benchmark=benchmark,
-              out_file=path,
-          )
           if self.workers[cpu_id].TryAddRun(r):
             next_run_id += 1
             logging.debug("Scheduling %s on CPU %d", benchmark, cpu_id)
+            # We just added something to this worker, so presumably
+            # trying to add the next benchmark to it will fail.
+            least_busy_cpus.remove(cpu_id)
             break
 
       # Process any available results. This updates the runtimes of each
@@ -343,7 +349,6 @@ class ParallelBench:
           self.runtimes[r.benchmark].append(
               BenchmarkTimes(wall_time=r.duration, cpu_time=r.bm_cpu_time)
           )
-          self.results.append(r)
 
   def GenerateBenchmarkReport(self) -> None:
     """Print some aggregated results of the benchmark runs."""
@@ -362,6 +367,7 @@ class ParallelBench:
     runtimes = pd.DataFrame(data)
 
     # TODO(rjogrady): We can do more here - plot utilization over time, etc.
+    logging.info("Ran %d total benchmarks", runtimes["Benchmark"].count())
     logging.info("Median Utilization: %f", utilization["utilization"].median())
     logging.info("Benchmark runtimes report:")
 
@@ -419,7 +425,7 @@ class ParallelBench:
       benchmark_perf_counters: str = "",
       benchmark_repetitions: int = 0,
       benchmark_min_time: str = "",
-  ) -> list[result.Result]:
+  ):
     """Run benchmarks in parallel."""
     logging.info("Running with benchmark_filter: %s", benchmark_filter)
     logging.info("Running with workload_filter: %s", workload_filter)
@@ -451,7 +457,7 @@ class ParallelBench:
 
     logging.info("Shutting down all workers...")
     for w in self.workers.values():
-      self.results.extend(w.StopAndGetResults())
+      w.StopAndGetResults()
 
     for cpu_id, w in self.workers.items():
       logging.debug("Joining worker on CPU %d", cpu_id)
@@ -462,5 +468,3 @@ class ParallelBench:
     if benchmark_perf_counters:
       counters = benchmark_perf_counters.split(",")
       self.GeneratePerfCounterReport(counters)
-
-    return self.results

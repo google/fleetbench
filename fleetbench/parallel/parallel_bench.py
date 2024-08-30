@@ -131,8 +131,7 @@ def main(argv: Sequence[str]) -> None:
       temp_root=_TEMP_ROOT.value,
   )
 
-  # TODO(rjogrady): Summarize / Print results.
-  results = bench.Run(
+  bench.Run(
       benchmark_target=_BENCHMARK_TARGET.value,
       benchmark_filter=_BENCHMARK_FILTER.value,
       workload_filter=_WORKLOAD_FILTER.value,
@@ -140,9 +139,7 @@ def main(argv: Sequence[str]) -> None:
       benchmark_repetitions=_BENCHMARK_REPETITIONS.value,
       benchmark_min_time=_BENCHMARK_MIN_TIME.value,
   )
-  logging.info(
-      "Ran %d benchmarks. Output is in %s", len(results), _TEMP_ROOT.value
-  )
+  logging.info("Benchmark output is in %s", _TEMP_ROOT.value)
 
 
 if __name__ == "__main__":

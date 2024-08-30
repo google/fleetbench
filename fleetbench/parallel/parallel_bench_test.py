@@ -61,9 +61,8 @@ class ParallelBenchTest(absltest.TestCase):
         duration=0.1,
         temp_root=absltest.get_default_test_tmpdir(),
     )
-    results = pb.Run("fake_bench", [])
+    pb.Run("fake_bench", [])
     mock_execute.assert_called_once()
-    self.assertLen(results, 1)
 
   @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
   @flagsaver.flagsaver(
