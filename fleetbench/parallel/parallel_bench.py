@@ -89,9 +89,11 @@ _BENCHMARK_REPETITIONS = flags.DEFINE_integer(
     lower_bound=0,
 )
 
+# This is a bit hacky. We set the flag to ensure the target utilization is
+# actually reached.
 _BENCHMARK_MIN_TIME = flags.DEFINE_string(
     "benchmark_min_time",
-    "",
+    "2s",
     "Minimum time to run each benchmark. Applied to all benchmarks.",
 )
 
