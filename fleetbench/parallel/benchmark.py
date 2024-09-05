@@ -95,5 +95,8 @@ class Benchmark:
   def Name(self):
     return f"{self._name} ({self._benchmark_filter})"
 
+  def Path(self):
+    return f"{self._path}"
+
   def __str__(self):
     return self.Name()
