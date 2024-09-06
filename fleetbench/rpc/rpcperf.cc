@@ -16,7 +16,6 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <thread>
 #include <vector>
 
 #include "absl/flags/flag.h"
@@ -28,8 +27,6 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "fleetbench/rpc/generator_process.h"
 #include "fleetbench/rpc/grpc_client.h"
 #include "fleetbench/rpc/grpc_server.h"
@@ -159,28 +156,12 @@ std::unique_ptr<GRPCClient> CreateAndStartClient(
                                           req_delay_us_dist_args, program_idx);
 }
 
-void Wait(std::shared_ptr<GRPCServer> server,
-          std::shared_ptr<GRPCClient> client, int32_t seconds_to_run) {
-  // spawn a separate thread for a timer
-  std::thread t([&] {
-    if (seconds_to_run > 0) {
-      LOG(INFO) << "Running for " << seconds_to_run
-                << " seconds before shutdown.";
-      absl::SleepFor(absl::Seconds(seconds_to_run));
-      LOG(INFO) << "Attempting shutting down of client";
-      client->Shutdown();  // ideally client shutdown called before server
-                           // shutdown s.t. no RPCs are inflight (not
-                           // guaranteed)
-      LOG(INFO) << "Attempting shutting down of server";
-      server->Shutdown();
-      LOG(INFO) << "Successfully asked for shutdowns";
-    }
-  });
-
-  // TODO(b/356415004): ideally moved into separately spawned thread
+void Stop(std::shared_ptr<GRPCServer> server,
+          std::shared_ptr<GRPCClient> client) {
+  client->Shutdown();
   client->Wait();  // wait for all RPCs to be stopped sending
+  server->Shutdown();
   server->Wait();  // wait for server completion
-  t.join();
 }
 
 }  // namespace fleetbench::rpc

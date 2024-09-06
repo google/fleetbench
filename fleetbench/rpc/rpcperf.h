@@ -36,8 +36,8 @@ std::unique_ptr<GRPCClient> CreateAndStartClient(
     int32_t connections_per_peer, std::string logstats_output_path,
     std::string req_delay_us_dist, uint64_t program_idx);
 
-void Wait(std::shared_ptr<GRPCServer> server,
-          std::shared_ptr<GRPCClient> client, int32_t seconds_to_run);
+void Stop(std::shared_ptr<GRPCServer> server,
+          std::shared_ptr<GRPCClient> client);
 
 }  // namespace fleetbench::rpc
 

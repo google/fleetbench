@@ -24,6 +24,8 @@
 #include "absl/flags/flag.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "fleetbench/rpc/grpc_client.h"
 #include "fleetbench/rpc/grpc_server.h"
 #include "fleetbench/rpc/rpcperf.h"
@@ -102,9 +104,13 @@ int main(int argc, char** argv) {
           absl::GetFlag(FLAGS_program_idx));
 
   LOG(INFO) << "Waiting for termination ...";
-
-  fleetbench::rpc::Wait(server, client, absl::GetFlag(FLAGS_seconds_to_run));
-
+  absl::Duration sleep_duration =
+      absl::Seconds(absl::GetFlag(FLAGS_seconds_to_run));
+  if (sleep_duration <= absl::ZeroDuration()) {
+    sleep_duration = absl::InfiniteDuration();
+  }
+  absl::SleepFor(sleep_duration);
+  fleetbench::rpc::Stop(server, client);
   LOG(INFO) << "Complete";
   return 0;
 }

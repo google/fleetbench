@@ -53,7 +53,7 @@ struct RPCBenchmarkTestFixture : public testing::TestWithParam<int> {
 };
 
 TEST_P(RPCBenchmarkTestFixture, RunLocalhostMinimal) {
-  fleetbench::rpc::Wait(server, client, 5);
+  fleetbench::rpc::Stop(server, client);
   EXPECT_TRUE(true);  // Test finished
 }
 
