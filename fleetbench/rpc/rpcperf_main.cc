@@ -1,4 +1,4 @@
-// Copyright 2023 The Fleetbench Authors
+// Copyright 2024 The Fleetbench Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License" );
 // you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@
 #include "absl/flags/flag.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-#include "fleetbench/rpc/grpc.h"
+#include "fleetbench/rpc/grpc_client.h"
+#include "fleetbench/rpc/grpc_server.h"
 #include "fleetbench/rpc/rpcperf.h"
 
 ABSL_FLAG(std::vector<std::string>, ports, {"20000"},

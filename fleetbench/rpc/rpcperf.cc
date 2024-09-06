@@ -19,6 +19,7 @@
 #include <thread>
 #include <vector>
 
+#include "absl/flags/flag.h"
 #include "absl/log/log.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -30,11 +31,17 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "fleetbench/rpc/generator_process.h"
-#include "fleetbench/rpc/grpc.h"
+#include "fleetbench/rpc/grpc_client.h"
+#include "fleetbench/rpc/grpc_server.h"
 #include "fleetbench/rpc/util.h"
 #include "include/grpcpp/security/server_credentials.h"
 #include "include/grpcpp/server_builder.h"
 #include "google/protobuf/text_format.h"
+
+ABSL_FLAG(bool, grpc_tx_zerocopy, false,
+          "Whether to enable gRPC TCP Tx Zerocopy");
+ABSL_FLAG(int32_t, grpc_tx_zerocopy_threshold_bytes, 16 * 1024,
+          "Only use gRPC TCP Tx Zerocopy for payloads > this size in bytes.");
 
 namespace fleetbench::rpc {
 
@@ -115,7 +122,9 @@ std::unique_ptr<GRPCServer> CreateAndStartServer(
   opts.compress = compress;
   opts.checksum = checksum;
   opts.workers = workers;
-
+  opts.tx_zerocopy = absl::GetFlag(FLAGS_grpc_tx_zerocopy);
+  opts.tx_zerocopy_threshold_bytes =
+      absl::GetFlag(FLAGS_grpc_tx_zerocopy_threshold_bytes);
   return StartGRPCServer(opts, logstats_output_path, resp_delay_us_dist_args,
                          &builder, program_idx);
 }
@@ -142,6 +151,9 @@ std::unique_ptr<GRPCClient> CreateAndStartClient(
   client_opts.peers = peers;
   client_opts.connections_per_peer = connections_per_peer;
   client_opts.skip_loopback = skip_loopback;
+  client_opts.tx_zerocopy = absl::GetFlag(FLAGS_grpc_tx_zerocopy);
+  client_opts.tx_zerocopy_threshold_bytes =
+      absl::GetFlag(FLAGS_grpc_tx_zerocopy_threshold_bytes);
 
   return fleetbench::rpc::StartGRPCClient(client_opts, logstats_output_path,
                                           req_delay_us_dist_args, program_idx);

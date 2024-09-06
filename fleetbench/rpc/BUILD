@@ -37,31 +37,67 @@ cc_grpc_library(
 # core defs
 
 cc_library(
-    name = "grpc",
+    name = "rpc_counters",
     srcs = [
-        "grpc.cc",
+        "rpc_counters.cc",
     ],
     hdrs = [
-        "generator_process.h",
-        "grpc.h",
+        "rpc_counters.h",
     ],
     deps = [
-        ":distributionargs_cc_proto",
-        ":fleetbenchservice_cc_proto",
-        ":fleetbenchservice_grpc",
-        ":generator_process",
-        "//fleetbench/rpc/protos:combo",
-        "@com_github_grpc_grpc//:grpc++",
-        "@com_github_grpc_grpc//:grpc_security_base",
-        "@com_google_absl//absl/flags:flag",
-        "@com_google_absl//absl/hash",
         "@com_google_absl//absl/log",
-        "@com_google_absl//absl/log:check",
-        "@com_google_absl//absl/random",
-        "@com_google_absl//absl/random:distributions",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/synchronization",
+    ],
+)
+
+cc_library(
+    name = "grpc_client",
+    srcs = [
+        "grpc_client.cc",
+    ],
+    hdrs = [
+        "grpc_client.h",
+    ],
+    deps = [
+        ":fleetbenchservice_grpc",
+        ":generator_process",
+        ":rpc_counters",
+        "//fleetbench/rpc/protos:combo",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_github_grpc_grpc//:grpc_security_base",
+        "@com_google_absl//absl/algorithm:container",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_absl//absl/time",
+    ],
+)
+
+cc_library(
+    name = "grpc_server",
+    srcs = [
+        "grpc_server.cc",
+    ],
+    hdrs = [
+        "grpc_server.h",
+    ],
+    deps = [
+        ":fleetbenchservice_grpc",
+        ":generator_process",
+        ":rpc_counters",
+        "//fleetbench/rpc/protos:combo",
+        "//fleetbench/rpc/protos:response_Message_cc_proto",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_github_grpc_grpc//:grpc_security_base",
+        "@com_google_absl//absl/hash",
+        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/time",
     ],
 )
@@ -110,9 +146,12 @@ cc_library(
     ],
     visibility = ["//fleetbench:__pkg__"],
     deps = [
-        ":grpc",
+        ":generator_process",
+        ":grpc_client",
+        ":grpc_server",
         ":util",
         "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/log",
         "@com_google_absl//absl/random",
         "@com_google_absl//absl/status",
@@ -128,7 +167,8 @@ cc_binary(
         "rpcperf_main.cc",
     ],
     deps = [
-        ":grpc",
+        ":grpc_client",
+        ":grpc_server",
         ":rpcperf",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
@@ -142,10 +182,10 @@ cc_test(
     srcs = ["rpcperf_test.cc"],
     linkstatic = 1,
     deps = [
-        ":grpc",
+        ":grpc_client",
+        ":grpc_server",
         ":rpcperf",
         "//fleetbench/rpc/protos:combo",
-        "@com_github_grpc_grpc//:grpc++",
         "@com_google_googletest//:gtest_main",
     ],
 )

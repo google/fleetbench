@@ -1,4 +1,4 @@
-// Copyright 2023 The Fleetbench Authors
+// Copyright 2024 The Fleetbench Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License" );
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef THIRD_PARTY_FLEETBENCH_RPC_GRPC_H_
-#define THIRD_PARTY_FLEETBENCH_RPC_GRPC_H_
+#ifndef THIRD_PARTY_FLEETBENCH_RPC_GRPC_CLIENT_H_
+#define THIRD_PARTY_FLEETBENCH_RPC_GRPC_CLIENT_H_
 
 #include <cstdint>
-#include <fstream>
 #include <memory>
 #include <string>
 #include <vector>
@@ -25,104 +24,13 @@
 #include "absl/synchronization/mutex.h"
 #include "absl/time/time.h"
 #include "fleetbench/rpc/fleetbenchservice.grpc.pb.h"
-#include "fleetbench/rpc/fleetbenchservice.pb.h"
 #include "fleetbench/rpc/generator_process.h"
+#include "fleetbench/rpc/rpc_counters.h"
 #include "include/grpcpp/client_context.h"
-#include "include/grpcpp/server_builder.h"
 #include "include/grpcpp/support/async_unary_call.h"
 #include "include/grpcpp/support/status.h"
 
 namespace fleetbench::rpc {
-
-// Log RPC statistics to a file. This class is thread-safe.
-class RPCCounters {
- public:
-  explicit RPCCounters(absl::string_view filepath);
-  ~RPCCounters();
-
-  // Mark a client RPC as complete, logging it's completion latency and status
-  void ClientRPCComplete(double latency, bool is_ok);
-  // Mark a server RPC as complete
-  void ServerRPCComplete();
-
- private:
-  std::vector<double> client_latency_;
-  uint64_t client_queries_;
-  uint64_t client_errors_;
-  uint64_t server_queries_;
-  std::ofstream outfile_;
-  absl::Mutex mtx_;
-};
-
-struct GRPCServerOptions {
-  // Generic options:
-  int32_t response_size = 0;
-  bool compress = false;
-  bool checksum = false;
-
-  // Options applied only to AsyncCallback:
-  int32_t workers = 0;  // default value overridden
-};
-
-// Wrapper around a grpc::Server async. callback server. It spawns a server with
-// `opts` options that sends`P<program_idx>ResponseMessage` type protos at a
-// `delay_dist` rate. It manages the lifetime of the object as well as
-// optionally logging RPC completion statistics.
-class GRPCServer {
- public:
-  explicit GRPCServer(const GRPCServerOptions& opts, DelayProcess delay_type,
-                      std::unique_ptr<RandomDistribution> delay_dist,
-                      uint64_t program_idx);
-  GRPCServer(const GRPCServer&) = delete;
-  GRPCServer& operator=(const GRPCServer&) = delete;
-
-  // Start the server
-  void Start(absl::string_view filepath, grpc::ServerBuilder* builder);
-
-  // Return a random ResponseMessage response proto
-  const fleetbench::rpc::ResponseMessage& Buffer(const void* ctx) const;
-
-  // Delay based on `delay_dist`
-  void Delay();
-
-  // Return a reference to logging statistics object
-  std::shared_ptr<RPCCounters> GetStatsCounters();
-
-  // Wait until grpc::Server object completes. Blocks until `Shutdown()` is
-  // called.
-  void Wait();
-
-  // Shutdown grpc::Server object
-  void Shutdown();
-
- private:
-  // Start async. callback server
-  void StartCallback(grpc::ServerBuilder* builder);
-
-  GRPCServerOptions opts_;
-
-  // Different `ResponseMessage`s (and string to fill them) that are sent
-  std::vector<fleetbench::rpc::ResponseMessage> message_buffers_;
-  std::string s_;
-
-  // Delay distribution used configure `Delay()`
-  const DelayProcess delay_type_;
-  std::unique_ptr<RandomDistribution> delay_dist_;
-
-  // Index into submessage `P<program_idx_>ResponseMessage` of `ResponseMessage`
-  // proto
-  uint64_t program_idx_;
-
-  // Callback service object used to build grpc::Server
-  std::unique_ptr<fleetbench::rpc::FleetBenchPerf::CallbackService>
-      callback_service_;
-
-  // Logging statistics
-  std::shared_ptr<RPCCounters> stats_counters_;
-
-  // Inner grpc::Server object
-  std::unique_ptr<grpc::Server> server_;
-};
 
 struct GRPCClientOptions {
   // Generic options:
@@ -132,6 +40,8 @@ struct GRPCClientOptions {
   bool compress = false;
   bool checksum = false;
   bool skip_loopback = true;
+  bool tx_zerocopy = false;
+  int32_t tx_zerocopy_threshold_bytes = 0;
 };
 
 struct GRPCClientStubBuffer {
@@ -217,11 +127,6 @@ std::unique_ptr<GRPCClient> StartGRPCClient(
     const GRPCClientOptions& opts, absl::string_view filepath,
     const DistributionArgs& req_delay_us_dist_args, uint64_t program_idx);
 
-std::unique_ptr<GRPCServer> StartGRPCServer(
-    const GRPCServerOptions& opts, absl::string_view filepath,
-    const DistributionArgs& resp_delay_us_dist_args,
-    grpc::ServerBuilder* builder, uint64_t program_idx);
-
 }  // namespace fleetbench::rpc
 
-#endif  // THIRD_PARTY_FLEETBENCH_RPC_GRPC_H_
+#endif  // THIRD_PARTY_FLEETBENCH_RPC_GRPC_CLIENT_H_

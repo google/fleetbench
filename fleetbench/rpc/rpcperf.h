@@ -20,7 +20,8 @@
 #include <string>
 #include <vector>
 
-#include "fleetbench/rpc/grpc.h"
+#include "fleetbench/rpc/grpc_client.h"
+#include "fleetbench/rpc/grpc_server.h"
 
 namespace fleetbench::rpc {
 

@@ -17,7 +17,8 @@
 #include <memory>
 
 #include "gtest/gtest.h"
-#include "fleetbench/rpc/grpc.h"
+#include "fleetbench/rpc/grpc_client.h"
+#include "fleetbench/rpc/grpc_server.h"
 #include "fleetbench/rpc/protos/combo.h"
 
 struct RPCBenchmarkTestFixture : public testing::TestWithParam<int> {
