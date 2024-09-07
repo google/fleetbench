@@ -44,11 +44,10 @@ namespace {
 
 // NOTE: similar to fleetbench/proto/lifecycle.h
 const int kMaxValueStringSize = 1 << 20;
-}
+}  // namespace
 
 void GRPCClient::SendOneRPC(GRPCClientStubBuffer* sb) {
-  // TODO: potentially use a std::shared_ptr here
-  auto client_rpc = new GRPCClientRPC();
+  auto* client_rpc = new GRPCClientRPC();
   client_rpc->stub_buf = sb;
   client_rpc->request = sb->buf;
   client_rpc->start = absl::Now();
@@ -59,19 +58,23 @@ void GRPCClient::SendOneRPC(GRPCClientStubBuffer* sb) {
         double latency = absl::FDivDuration((absl::Now() - client_rpc->start),
                                             absl::Microseconds(1));
 
-        if (stats_counters_)
+        if (stats_counters_) {
           stats_counters_->ClientRPCComplete(latency,
                                              /*is_ok=*/s.ok());
+        }
+        GRPCClientStubBuffer* stub_buf = client_rpc->stub_buf;
+        // Ensure client context is deleted before marking that we are done.
+        // Otherwise we could race with the main thread shutting down and
+        // destroying the stub.
+        delete client_rpc;
 
         // Wait before the next send if configured.
         Delay();
         if (IsRunning()) {
-          SendOneRPC(client_rpc->stub_buf);
+          SendOneRPC(stub_buf);
         } else {
           MarkRPCStreamDone();
         }
-
-        delete client_rpc;
       });
 }
 
@@ -116,8 +119,9 @@ GRPCClient::GRPCClient(const GRPCClientOptions& opts,
     for (int32_t i = 0; i < opts_.connections_per_peer; ++i) {
       std::shared_ptr<::grpc::Channel> channel = ::grpc::CreateCustomChannel(
           peer, ::grpc::InsecureChannelCredentials(), channel_args);
-      stub_bufs_.push_back({fleetbench::rpc::FleetBenchPerf::NewStub(channel),
-                            message_buffers_[i % message_buffers_.size()]});
+      stub_bufs_.push_back(
+          {.stub = fleetbench::rpc::FleetBenchPerf::NewStub(channel),
+           .buf = message_buffers_[i % message_buffers_.size()]});
       LOG(INFO) << "Connected to " << peer << " connection #" << i;
     }
   }
