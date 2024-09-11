@@ -1,3 +1,5 @@
+load("@fleetbench_pip_deps//:requirements.bzl", "requirement")
+
 # Parallel benchmark harness.
 
 package(default_visibility = ["//visibility:private"])
@@ -7,6 +9,9 @@ licenses(["notice"])
 py_library(
     name = "cpu",
     srcs = ["cpu.py"],
+    deps = [
+        requirement("psutil"),
+    ],
 )
 
 py_library(
@@ -51,6 +56,8 @@ py_library(
         ":run",
         ":worker",
         "@com_google_absl_py//absl/logging",
+        requirement("numpy"),
+        requirement("pandas"),
     ],
 )
 

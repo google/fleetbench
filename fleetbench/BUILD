@@ -1,4 +1,6 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@fleetbench_pip_deps//:requirements.bzl", "requirement")
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@rules_python//python:py_test.bzl", "py_test")
 
 package(default_visibility = ["//visibility:private"])
@@ -127,5 +129,20 @@ cc_test(
 py_test(
     name = "distro_test",
     srcs = [":distro_test.py"],
-    deps = ["@com_google_absl_py//absl/testing:absltest"],
+    deps = [
+        "@com_google_absl_py//absl/testing:absltest",
+        requirement("brotli"),
+        requirement("numpy"),
+        requirement("pandas"),
+        requirement("psutil"),
+        requirement("zstandard"),
+        requirement("python-snappy"),
+    ],
+)
+
+compile_pip_requirements(
+    name = "requirements",
+    extra_args = ["--allow-unsafe"],
+    requirements_in = "requirements.in",
+    requirements_txt = "requirements.txt",
 )

@@ -1,9 +1,14 @@
+load("@fleetbench_pip_deps//:requirements.bzl", "requirement")
+
 package(default_visibility = ["//fleetbench:__subpackages__"])
 
 py_library(
     name = "distribution_tracker",
     srcs = ["distribution_tracker.py"],
-    deps = ["@com_google_absl_py//absl/logging"],
+    deps = [
+        "@com_google_absl_py//absl/logging",
+        requirement("numpy"),
+    ],
 )
 
 py_test(
@@ -22,6 +27,9 @@ py_library(
     deps = [
         "@com_google_absl_py//absl/logging",
         "@rules_python//python/runfiles",
+        requirement("brotli"),
+        requirement("zstandard"),
+        requirement("python-snappy"),
     ],
 )
 
@@ -33,6 +41,7 @@ py_test(
         ":corpus_generator",
         "@com_google_absl_py//absl/testing:absltest",
         "@rules_python//python/runfiles",
+        requirement("numpy"),
     ],
 )
 
@@ -44,5 +53,6 @@ py_binary(
         ":distribution_tracker",
         "@com_google_absl_py//absl:app",
         "@com_google_absl_py//absl/flags",
+        requirement("numpy"),
     ],
 )

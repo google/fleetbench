@@ -41,17 +41,6 @@ fi
 source "${FLEETBENCH_ROOT}/ci/common.sh"
 
 start_docker_container
-
-# Install additional dependencies
-docker exec fleetbench apt-get update
-docker exec fleetbench apt-get install -y \
-      python3-numpy \
-      python3-zstandard \
-      python3-snappy \
-      python3-brotli \
-      python3-pandas \
-      python3-psutil
-
 sanity_check_docker_container
 
 LLVM_PATH="/opt/llvm"

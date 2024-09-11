@@ -41,13 +41,6 @@ fi
 source "${FLEETBENCH_ROOT}/ci/common.sh"
 
 start_docker_container
-
-# Install additional dependencies not provided by the docker image.
-docker exec fleetbench apt-get update
-docker exec fleetbench apt-get install -y \
-    python3-pandas \
-    python3-psutil
-
 sanity_check_docker_container
 
 CLANG_PATH="/opt/llvm/clang"

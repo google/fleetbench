@@ -198,3 +198,34 @@ http_archive(
 load("@llvm//utils/bazel:configure.bzl", "llvm_configure")
 
 llvm_configure(name = "llvm-project")
+
+## Support for PIP dependencies
+http_archive(
+    name = "rules_python",  # 2024-09-10
+    strip_prefix = "rules_python-0.35.0",
+    url = "https://github.com/bazelbuild/rules_python/releases/download/0.35.0/rules_python-0.35.0.tar.gz",
+)
+
+load("@rules_python//python:repositories.bzl", "py_repositories", "python_register_toolchains")
+
+py_repositories()
+
+python_register_toolchains(
+    name = "python3_12",
+    # TODO(rjogrady): Consider running the Docker build as non-root.
+    ignore_root_user_error = True,
+    python_version = "3.12",
+)
+
+load("@python3_12//:defs.bzl", "interpreter")
+load("@rules_python//python:pip.bzl", "pip_parse")
+
+pip_parse(
+    name = "fleetbench_pip_deps",
+    python_interpreter_target = interpreter,
+    requirements_lock = "//fleetbench:requirements.txt",
+)
+
+load("@fleetbench_pip_deps//:requirements.bzl", "install_deps")
+
+install_deps()
