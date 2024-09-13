@@ -15,9 +15,11 @@
 #include <limits.h>
 #include <unistd.h>
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/flags/parse.h"
@@ -86,14 +88,15 @@ int main(int argc, char** argv) {
   const std::string hostname(result ? "unknown" : hostname_c);
   LOG(INFO) << "machine=" << hostname;
 
-  std::shared_ptr<fleetbench::rpc::GRPCServer> server =
+  std::unique_ptr<fleetbench::rpc::GRPCServer> server =
       fleetbench::rpc::CreateAndStartServer(
           absl::GetFlag(FLAGS_ports), absl::GetFlag(FLAGS_workers),
           absl::GetFlag(FLAGS_compress), absl::GetFlag(FLAGS_checksum),
           logstats_output_path, absl::GetFlag(FLAGS_resp_delay_us_dist),
           absl::GetFlag(FLAGS_program_idx));
 
-  std::shared_ptr<fleetbench::rpc::GRPCClient> client =
+  std::atomic<bool> keep_running = true;
+  std::unique_ptr<fleetbench::rpc::GRPCClient> client =
       fleetbench::rpc::CreateAndStartClient(
           absl::GetFlag(FLAGS_max_outstanding_rpcs),
           absl::GetFlag(FLAGS_compress), absl::GetFlag(FLAGS_checksum),
@@ -101,7 +104,8 @@ int main(int argc, char** argv) {
           absl::GetFlag(FLAGS_max_peers),
           absl::GetFlag(FLAGS_connections_per_peer), logstats_output_path,
           absl::GetFlag(FLAGS_req_delay_us_dist),
-          absl::GetFlag(FLAGS_program_idx));
+          absl::GetFlag(FLAGS_program_idx),
+          [&keep_running]() { return keep_running.load(); });
 
   LOG(INFO) << "Waiting for termination ...";
   absl::Duration sleep_duration =
@@ -110,7 +114,8 @@ int main(int argc, char** argv) {
     sleep_duration = absl::InfiniteDuration();
   }
   absl::SleepFor(sleep_duration);
-  fleetbench::rpc::Stop(server, client);
+  keep_running = false;
+  fleetbench::rpc::Wait(std::move(server), std::move(client));
   LOG(INFO) << "Complete";
   return 0;
 }

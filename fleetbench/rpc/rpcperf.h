@@ -16,6 +16,7 @@
 #define THIRD_PARTY_FLEETBENCH_RPC_RPCPERF_H_
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -34,10 +35,11 @@ std::unique_ptr<GRPCClient> CreateAndStartClient(
     int32_t max_outstanding_rpcs, bool compress, bool checksum,
     bool skip_loopback, std::vector<std::string> peers, int32_t max_peers,
     int32_t connections_per_peer, std::string logstats_output_path,
-    std::string req_delay_us_dist, uint64_t program_idx);
+    std::string req_delay_us_dist, uint64_t program_idx,
+    std::function<bool()> keep_running);
 
-void Stop(std::shared_ptr<GRPCServer> server,
-          std::shared_ptr<GRPCClient> client);
+void Wait(std::unique_ptr<GRPCServer> server,
+          std::unique_ptr<GRPCClient> client);
 
 }  // namespace fleetbench::rpc
 

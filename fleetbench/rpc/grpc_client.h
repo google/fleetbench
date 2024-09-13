@@ -16,6 +16,7 @@
 #define THIRD_PARTY_FLEETBENCH_RPC_GRPC_CLIENT_H_
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -70,15 +71,11 @@ class GRPCClient {
   explicit GRPCClient(const GRPCClientOptions& opts, absl::string_view filepath,
                       DelayProcess delay_type,
                       std::unique_ptr<RandomDistribution> delay_dist,
-                      uint64_t program_idx);
+                      uint64_t program_idx, std::function<bool()> keep_running);
   GRPCClient(const GRPCClient&) = delete;
   GRPCClient& operator=(const GRPCClient&) = delete;
 
-  // Stop any future outbound RPCs. Doesn't cancel in-flight RPCs.
-  void Shutdown();
-
-  // Wait until no more outbound RPCs are in-flight. Blocks until `Shutdown()`
-  // is called.
+  // Wait until no more outbound RPCs are in-flight.
   void Wait();
 
  private:
@@ -88,12 +85,9 @@ class GRPCClient {
   // Mark that a stream of RPCs is not inflight anymore
   void MarkRPCStreamDone();
 
-  // Send one RPC. Can recursively send another RPC after completion if client
-  // is not running (i.e. `Shutdown()` hasn't been called yet).
+  // Send one RPC. Sends recursively another RPC after completion if
+  // keep_running_() returns true.
   void SendOneRPC(GRPCClientStubBuffer* sb);
-
-  // Check if client is running.
-  bool IsRunning();
 
   GRPCClientOptions opts_;
 
@@ -110,13 +104,12 @@ class GRPCClient {
   // proto
   uint64_t program_idx_;
 
+  // Check if client should send another RPC.
+  std::function<bool()> keep_running_;
+
   // Different `RequestMessage`s (and string to fill them) that are sent
   std::vector<fleetbench::rpc::RequestMessage> message_buffers_;
   std::string s_;
-
-  // Variables showing if client is still able to send RPCs
-  bool running_;
-  absl::Mutex running_mtx_;
 
   // Variables to count how many RPC streams have stopped sending RPCs
   uint64_t inflight_rpcs_count_;
@@ -125,7 +118,8 @@ class GRPCClient {
 
 std::unique_ptr<GRPCClient> StartGRPCClient(
     const GRPCClientOptions& opts, absl::string_view filepath,
-    const DistributionArgs& req_delay_us_dist_args, uint64_t program_idx);
+    const DistributionArgs& req_delay_us_dist_args, uint64_t program_idx,
+    std::function<bool()> keep_running);
 
 }  // namespace fleetbench::rpc
 

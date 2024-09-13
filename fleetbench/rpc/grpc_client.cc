@@ -16,8 +16,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
-#include <new>
 #include <utility>
 
 #include "absl/log/check.h"
@@ -70,7 +70,7 @@ void GRPCClient::SendOneRPC(GRPCClientStubBuffer* sb) {
 
         // Wait before the next send if configured.
         Delay();
-        if (IsRunning()) {
+        if (keep_running_()) {
           SendOneRPC(stub_buf);
         } else {
           MarkRPCStreamDone();
@@ -81,15 +81,15 @@ void GRPCClient::SendOneRPC(GRPCClientStubBuffer* sb) {
 GRPCClient::GRPCClient(const GRPCClientOptions& opts,
                        absl::string_view filepath, DelayProcess delay_type,
                        std::unique_ptr<RandomDistribution> delay_dist,
-                       uint64_t program_idx)
+                       uint64_t program_idx, std::function<bool()> keep_running)
     : opts_(opts),
       delay_type_(delay_type),
       delay_dist_(std::move(delay_dist)),
       program_idx_(program_idx),
+      keep_running_(keep_running),
       message_buffers_(fleetbench::rpc::kMaxMessagesPerProgram *
                        fleetbench::rpc::kMaxSettersPerMessage),
       s_(kMaxValueStringSize, 'a'),
-      running_(true),
       inflight_rpcs_count_(0) {
   for (size_t i = 0; i < message_buffers_.size(); ++i) {
     fleetbench::rpc::RequestMessage_Set(
@@ -133,15 +133,13 @@ GRPCClient::GRPCClient(const GRPCClientOptions& opts,
 
   for (int j = 0; j < opts_.max_outstanding_rpcs; ++j) {
     for (auto& sb : stub_bufs_) {
-      SendOneRPC(&sb);
-      inflight_rpcs_count_++;
+      if (keep_running_()) {
+        absl::MutexLock l(&inflight_rpcs_mtx_);
+        SendOneRPC(&sb);
+        inflight_rpcs_count_++;
+      }
     }
   }
-}
-
-void GRPCClient::Shutdown() {
-  absl::MutexLock l(&running_mtx_);
-  running_ = false;
 }
 
 void GRPCClient::Wait() {
@@ -155,15 +153,6 @@ void GRPCClient::MarkRPCStreamDone() {
   --inflight_rpcs_count_;
 }
 
-bool GRPCClient::IsRunning() {
-  bool copy_running;
-  {
-    absl::MutexLock l(&running_mtx_);
-    copy_running = running_;
-  }
-  return copy_running;
-}
-
 void GRPCClient::Delay() {
   if (delay_type_ == DelayProcess::RANDOM_DELAY) {
     int usec = delay_dist_->sample();
@@ -174,17 +163,19 @@ void GRPCClient::Delay() {
 
 std::unique_ptr<GRPCClient> StartGRPCClient(
     const GRPCClientOptions& opts, absl::string_view filepath,
-    const DistributionArgs& req_delay_us_dist_args, uint64_t program_idx) {
+    const DistributionArgs& req_delay_us_dist_args, uint64_t program_idx,
+    std::function<bool()> keep_running) {
   auto req_delay_dist =
       GetDistribution(req_delay_us_dist_args, "req_delay_usec");
   bool no_delay = req_delay_dist->clamp_value() == 0;
   if (no_delay) {
     return std::make_unique<GRPCClient>(opts, filepath, DelayProcess::NO_DELAY,
-                                        nullptr, program_idx);
+                                        nullptr, program_idx,
+                                        std::move(keep_running));
   } else {
-    return std::make_unique<GRPCClient>(opts, filepath,
-                                        DelayProcess::RANDOM_DELAY,
-                                        std::move(req_delay_dist), program_idx);
+    return std::make_unique<GRPCClient>(
+        opts, filepath, DelayProcess::RANDOM_DELAY, std::move(req_delay_dist),
+        program_idx, keep_running);
   }
 }
 }  // namespace fleetbench::rpc

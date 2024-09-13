@@ -179,13 +179,18 @@ cc_binary(
 
 cc_test(
     name = "rpc_benchmark",
-    srcs = ["rpcperf_test.cc"],
+    srcs = ["rpcperf_benchmark.cc"],
     linkstatic = 1,
     deps = [
         ":grpc_client",
         ":grpc_server",
         ":rpcperf",
+        "//fleetbench:benchmark_main",
+        "//fleetbench:dynamic_registrar",
         "//fleetbench/rpc/protos:combo",
-        "@com_google_googletest//:gtest_main",
+        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_benchmark//:benchmark",
     ],
 )

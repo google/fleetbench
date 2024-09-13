@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -130,7 +131,8 @@ std::unique_ptr<GRPCClient> CreateAndStartClient(
     int32_t max_outstanding_rpcs, bool compress, bool checksum,
     bool skip_loopback, std::vector<std::string> peers, int32_t max_peers,
     int32_t connections_per_peer, std::string logstats_output_path,
-    std::string req_delay_us_dist, uint64_t program_idx) {
+    std::string req_delay_us_dist, uint64_t program_idx,
+    std::function<bool()> keep_running) {
   // First parse the distributions.
   fleetbench::rpc::DistributionArgs req_delay_us_dist_args =
       ParseDistributionArgs(req_delay_us_dist,
@@ -153,12 +155,12 @@ std::unique_ptr<GRPCClient> CreateAndStartClient(
       absl::GetFlag(FLAGS_grpc_tx_zerocopy_threshold_bytes);
 
   return fleetbench::rpc::StartGRPCClient(client_opts, logstats_output_path,
-                                          req_delay_us_dist_args, program_idx);
+                                          req_delay_us_dist_args, program_idx,
+                                          keep_running);
 }
 
-void Stop(std::shared_ptr<GRPCServer> server,
-          std::shared_ptr<GRPCClient> client) {
-  client->Shutdown();
+void Wait(std::unique_ptr<GRPCServer> server,
+          std::unique_ptr<GRPCClient> client) {
   client->Wait();  // wait for all RPCs to be stopped sending
   server->Shutdown();
   server->Wait();  // wait for server completion
