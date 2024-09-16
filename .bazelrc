@@ -23,7 +23,10 @@ build --noenable_bzlmod
 
 # Enable libpfm (performance counters) by default.
 build --define=pfm=1
-
+# Disable RLS and XDS support in gRPC. We don't need these and they take
+# a long time to build.
+build --@com_github_grpc_grpc//:disable_grpc_rls
+build --define=grpc_no_xds=true
 test --test_timeout=1500
 
 # Define the --config=asan-libfuzzer configuration.
