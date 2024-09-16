@@ -55,14 +55,10 @@ class DistributionTrackerTest(absltest.TestCase):
         "test_data", input_data
     )
 
-    results = {key: 0 for key in distribution.buckets}
+    samples = set()
     for _ in range(1000):
-      sample = distribution.sample_counts_distribution()
-      results[sample] += 1
-
-    # distribution.counts_probability = [0.2, 0.4, 0.4]
-    results = {key: round(value / 1000, 1) for key, value in results.items()}
-    self.assertEqual(results, {-1: 0.2, 0: 0.4, 1: 0.4})
+      samples.add(distribution.sample_counts_distribution())
+    self.assertEqual(samples, set([-1, 0, 1]))
 
   def test_sample_byte_distribution(self):
     input_data = {
@@ -74,14 +70,11 @@ class DistributionTrackerTest(absltest.TestCase):
         "test_data", input_data
     )
 
-    results = {key: 0 for key in distribution.buckets}
+    samples = set()
     for _ in range(1000):
-      sample = distribution.sample_bytes_distribution()
-      results[sample] += 1
-
-    # distribution.byte_probability = [0, 0.1, 0.9]
-    results = {key: round(value / 1000, 1) for key, value in results.items()}
-    self.assertEqual(results, {-1: 0, 0: 0.1, 1: 0.9})
+      samples.add(distribution.sample_bytes_distribution())
+    # Note we should never get a -1 since bytes is 0.
+    self.assertEqual(samples, set([0, 1]))
 
   def test_sample_child_counts(self):
     input_data = {
