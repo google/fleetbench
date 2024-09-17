@@ -106,6 +106,16 @@ _UTILIZATION = flags.DEFINE_float(
     upper_bound=1,
 )
 
+_WEIGHTED_SELECTION = flags.DEFINE_bool(
+    "weighted_selection",
+    False,
+    "Adaptive Benchmark Selection: Prioritizing benchmarks where framework"
+    " performance lags behind fleet. We collected benchmark-wise and"
+    " framework's overall performance (IPC/CacheMisses/etc). If the framework"
+    " has worse performance than the fleet, we increase the weights for the"
+    " benchmarks that have better performance, and vice versa.",
+)
+
 _NUM_CPUS = flags.DEFINE_integer(
     "num_cpus",
     len(cpu.Available()),
@@ -128,6 +138,7 @@ def main(argv: Sequence[str]) -> None:
   bench = parallel_bench_lib.ParallelBench(
       cpus=cpus,
       cpu_affinity=_CPU_AFFINITY.value,
+      weighted_selection=_WEIGHTED_SELECTION.value,
       utilization=_UTILIZATION.value,
       duration=_DURATION.value,
       temp_root=_TEMP_ROOT.value,

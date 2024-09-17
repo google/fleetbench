@@ -57,6 +57,7 @@ class ParallelBenchTest(absltest.TestCase):
     pb = parallel_bench_lib.ParallelBench(
         cpus=[0, 1],
         cpu_affinity=False,
+        weighted_selection=False,
         utilization=0.5,
         duration=0.1,
         temp_root=absltest.get_default_test_tmpdir(),

@@ -164,6 +164,7 @@ class ParallelBench:
     cpus: List of CPUs to run benchmarks on.
     cpu_affinity: Whether to bind each worker to a CPU or allow the scheduler to
       move them around.
+    weighted_selection: Whether to use adaptive benchmark selection.
     benchmarks: List of benchmarks to run.
     target_utilization: Target utilization from 0 to 1.
     duration: How long in seconds to run for.
@@ -179,6 +180,7 @@ class ParallelBench:
       self,
       cpus: list[int],
       cpu_affinity: bool,
+      weighted_selection: bool,
       utilization: float,
       duration: float,
       temp_root: str,
@@ -192,6 +194,7 @@ class ParallelBench:
     self.controller_cpu = cpus[0]
     self.cpus = cpus[1:]
     self.cpu_affinity = cpu_affinity
+    self.weighted_selection = weighted_selection
     self.benchmarks: dict[str, bm.Benchmark] = {}
     self.target_utilization = utilization * 100
     self.duration = duration
@@ -260,10 +263,27 @@ class ParallelBench:
 
     inverse_weights = np.empty(len(self.runtimes.keys()))
 
+    # Weights benchmarks to catch fleet performance based on empirical data.
+    weighted_benchmarks = {
+        "COLD": 8,
+        "PROTO": 8,
+        "TCMALLOC": 2,
+        "CORD": 5,
+    }
+
     # Use the last 10 runtimes to estimate expected runtime.
-    for i, times in enumerate(self.runtimes.values()):
+    for i, (benchmark_name, times) in enumerate(self.runtimes.items()):
       last_10_wall_times = np.array([t.wall_time for t in times[-10:]])
-      inverse_weights[i] = 1 / last_10_wall_times.mean()
+      base_weight = 1 / last_10_wall_times.mean()
+
+      # If we're using adaptive benchmark selection, adjust the weight based on
+      # the benchmark's performance relative to the fleet.
+      if self.weighted_selection:
+        for keyword, weight in weighted_benchmarks.items():
+          if keyword in benchmark_name.upper():
+            base_weight *= weight
+            break
+      inverse_weights[i] = base_weight
     return inverse_weights / inverse_weights.sum()
 
   def _SelectNextBenchmarks(self, count: int) -> list[bm.Benchmark]:
