@@ -2,11 +2,13 @@ load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
 package(default_visibility = ["//visibility:public"])
 
-NUM_PROGRAMS = 10
-
 NUM_PROTOS_PER_PROGRAM_AND_TYPE = 3
 
-PROGRAMS = ["P{}".format(id) for id in range(0, NUM_PROGRAMS)]
+# The list of programs corresponds to the directory names.
+PROGRAMS = [path for path in glob(
+    ["*"],
+    exclude_directories = 0,
+) if path not in glob(["*"])]
 
 IDS = range(0, NUM_PROTOS_PER_PROGRAM_AND_TYPE)
 

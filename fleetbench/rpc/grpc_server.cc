@@ -16,7 +16,6 @@
 
 #include <chrono>  // NOLINT
 #include <cstddef>
-#include <cstdint>
 #include <memory>
 #include <utility>
 
@@ -73,18 +72,18 @@ const int kMaxValueStringSize = 1 << 20;
 
 GRPCServer::GRPCServer(const GRPCServerOptions& opts, DelayProcess delay_type,
                        std::unique_ptr<RandomDistribution> delay_dist,
-                       uint64_t program_idx)
+                       absl::string_view program)
     : opts_(opts),
       message_buffers_(fleetbench::rpc::kMaxMessagesPerProgram *
                        fleetbench::rpc::kMaxSettersPerMessage),
       s_(kMaxValueStringSize, 'a'),
       delay_type_(delay_type),
       delay_dist_(std::move(delay_dist)),
-      program_idx_(program_idx),
+      program_(program),
       callback_service_(new PerfCallback(this)) {
   for (size_t i = 0; i < message_buffers_.size(); ++i) {
     fleetbench::rpc::ResponseMessage_Set(
-        program_idx_, i % fleetbench::rpc::kMaxMessagesPerProgram,
+        program_, i % fleetbench::rpc::kMaxMessagesPerProgram,
         i % fleetbench::rpc::kMaxSettersPerMessage, &message_buffers_[i], &s_);
   }
 }
@@ -131,7 +130,7 @@ void GRPCServer::Shutdown() {
 std::unique_ptr<GRPCServer> StartGRPCServer(
     const GRPCServerOptions& opts, absl::string_view filepath,
     const DistributionArgs& resp_delay_us_dist_args,
-    grpc::ServerBuilder* builder, uint64_t program_idx) {
+    grpc::ServerBuilder* builder, absl::string_view program) {
   // Enable TCP Tx Zerocopy if requested for server.
   if (opts.tx_zerocopy) {
     builder->AddChannelArgument(GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED, 1);
@@ -146,13 +145,12 @@ std::unique_ptr<GRPCServer> StartGRPCServer(
   bool no_delay = resp_delay_dist->clamp_value() == 0;
   if (no_delay) {
     auto server = std::make_unique<GRPCServer>(opts, DelayProcess::NO_DELAY,
-                                               nullptr, program_idx);
+                                               nullptr, program);
     server->Start(filepath, builder);
     return server;
   } else {
-    auto server =
-        std::make_unique<GRPCServer>(opts, DelayProcess::RANDOM_DELAY,
-                                     std::move(resp_delay_dist), program_idx);
+    auto server = std::make_unique<GRPCServer>(
+        opts, DelayProcess::RANDOM_DELAY, std::move(resp_delay_dist), program);
     server->Start(filepath, builder);
     return server;
   }

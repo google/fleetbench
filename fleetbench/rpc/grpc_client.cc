@@ -81,11 +81,12 @@ void GRPCClient::SendOneRPC(GRPCClientStubBuffer* sb) {
 GRPCClient::GRPCClient(const GRPCClientOptions& opts,
                        absl::string_view filepath, DelayProcess delay_type,
                        std::unique_ptr<RandomDistribution> delay_dist,
-                       uint64_t program_idx, std::function<bool()> keep_running)
+                       absl::string_view program,
+                       std::function<bool()> keep_running)
     : opts_(opts),
       delay_type_(delay_type),
       delay_dist_(std::move(delay_dist)),
-      program_idx_(program_idx),
+      program_(program),
       keep_running_(keep_running),
       message_buffers_(fleetbench::rpc::kMaxMessagesPerProgram *
                        fleetbench::rpc::kMaxSettersPerMessage),
@@ -93,7 +94,7 @@ GRPCClient::GRPCClient(const GRPCClientOptions& opts,
       inflight_rpcs_count_(0) {
   for (size_t i = 0; i < message_buffers_.size(); ++i) {
     fleetbench::rpc::RequestMessage_Set(
-        program_idx_, i % fleetbench::rpc::kMaxMessagesPerProgram,
+        program_, i % fleetbench::rpc::kMaxMessagesPerProgram,
         i % fleetbench::rpc::kMaxSettersPerMessage, &message_buffers_[i], &s_);
   }
 
@@ -163,19 +164,19 @@ void GRPCClient::Delay() {
 
 std::unique_ptr<GRPCClient> StartGRPCClient(
     const GRPCClientOptions& opts, absl::string_view filepath,
-    const DistributionArgs& req_delay_us_dist_args, uint64_t program_idx,
+    const DistributionArgs& req_delay_us_dist_args, absl::string_view program,
     std::function<bool()> keep_running) {
   auto req_delay_dist =
       GetDistribution(req_delay_us_dist_args, "req_delay_usec");
   bool no_delay = req_delay_dist->clamp_value() == 0;
   if (no_delay) {
     return std::make_unique<GRPCClient>(opts, filepath, DelayProcess::NO_DELAY,
-                                        nullptr, program_idx,
+                                        nullptr, program,
                                         std::move(keep_running));
   } else {
     return std::make_unique<GRPCClient>(
         opts, filepath, DelayProcess::RANDOM_DELAY, std::move(req_delay_dist),
-        program_idx, keep_running);
+        program, keep_running);
   }
 }
 }  // namespace fleetbench::rpc

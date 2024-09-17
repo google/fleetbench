@@ -1,6 +1,6 @@
 
 
-// Copyright 2023 The Fleetbench Authors
+// Copyright 2024 The Fleetbench Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License" );
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@
 #ifndef THIRD_PARTY_FLEETBENCH_RPC_PROTOS_COMBO_H_
 #define THIRD_PARTY_FLEETBENCH_RPC_PROTOS_COMBO_H_
 
+#include <map>
 #include <string>
 
 #include "absl/log/check.h"
+#include "absl/strings/string_view.h"
 #include "fleetbench/rpc/protos/P0RequestMessage.h"
 #include "fleetbench/rpc/protos/P0ResponseMessage.h"
 #include "fleetbench/rpc/protos/P1RequestMessage.h"
@@ -49,15 +51,16 @@ namespace fleetbench::rpc {
 
 const int kMaxSettersPerMessage = 4;
 const int kMaxMessagesPerProgram = 3;
+inline const std::map<absl::string_view, int>* kPrograms = new
+std::map<absl::string_view, int>({{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3},
+{"4", 4}, {"5", 5}, {"6", 6}, {"7", 7}, {"8", 8}, {"9", 9}});
 
-const int kRequestMessageMaxPrograms = 10;
-
-inline void RequestMessage_Set(const int prog_idx, const int msg_idx,
+inline void RequestMessage_Set(absl::string_view program, const int msg_idx,
                                const int var_idx,
                                fleetbench::rpc::RequestMessage* message,
                                std::string* s) {
-  CHECK_LT(prog_idx, kRequestMessageMaxPrograms) << "Invalid prog_idx";
-  switch (prog_idx) {
+  CHECK(kPrograms->count(program)) << "Invalid program";
+  switch (kPrograms->at(program)) {
     case 0:
       fleetbench::rpc::P0RequestMessage_Set(msg_idx, var_idx,
                                             message->mutable_p0(), s);
@@ -113,14 +116,12 @@ inline void RequestMessage_Set(const int prog_idx, const int msg_idx,
   }
 }
 
-const int kResponseMessageMaxPrograms = 10;
-
-inline void ResponseMessage_Set(const int prog_idx, const int msg_idx,
+inline void ResponseMessage_Set(absl::string_view program, const int msg_idx,
                                 const int var_idx,
                                 fleetbench::rpc::ResponseMessage* message,
                                 std::string* s) {
-  CHECK_LT(prog_idx, kResponseMessageMaxPrograms) << "Invalid prog_idx";
-  switch (prog_idx) {
+  CHECK(kPrograms->count(program)) << "Invalid program";
+  switch (kPrograms->at(program)) {
     case 0:
       fleetbench::rpc::P0ResponseMessage_Set(msg_idx, var_idx,
                                              message->mutable_p0(), s);

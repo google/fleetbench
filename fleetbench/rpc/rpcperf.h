@@ -1,4 +1,4 @@
-// Copyright 2023 The Fleetbench Authors
+// Copyright 2024 The Fleetbench Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License" );
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "fleetbench/rpc/grpc_client.h"
 #include "fleetbench/rpc/grpc_server.h"
 
@@ -29,13 +30,13 @@ namespace fleetbench::rpc {
 std::unique_ptr<GRPCServer> CreateAndStartServer(
     std::vector<std::string> ports, int32_t workers, bool compress,
     bool checksum, std::string logstats_output_path,
-    std::string resp_delay_us_dist, uint64_t program_idx);
+    std::string resp_delay_us_dist, absl::string_view program);
 
 std::unique_ptr<GRPCClient> CreateAndStartClient(
     int32_t max_outstanding_rpcs, bool compress, bool checksum,
     bool skip_loopback, std::vector<std::string> peers, int32_t max_peers,
     int32_t connections_per_peer, std::string logstats_output_path,
-    std::string req_delay_us_dist, uint64_t program_idx,
+    std::string req_delay_us_dist, absl::string_view program,
     std::function<bool()> keep_running);
 
 void Wait(std::unique_ptr<GRPCServer> server,

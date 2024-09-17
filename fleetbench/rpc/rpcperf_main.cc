@@ -65,9 +65,9 @@ ABSL_FLAG(std::string, req_delay_us_dist, "", distribution_help);
 ABSL_FLAG(std::string, resp_delay_us_dist, "", distribution_help);
 ABSL_FLAG(int32_t, seconds_to_run, 0,
           "Total runtime in seconds (<= 0 to run forever).");
-ABSL_FLAG(uint64_t, program_idx, 0,
-          "Program index to test with. This corresponds to the set of protos "
-          "in fleetbench/rpc/protos/P* path.");
+ABSL_FLAG(std::string, program, "Fleet",
+          "Program name to test with. This corresponds to the program names map"
+          "in fleetbench/rpc/protos/combo.h.");
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
           absl::GetFlag(FLAGS_ports), absl::GetFlag(FLAGS_workers),
           absl::GetFlag(FLAGS_compress), absl::GetFlag(FLAGS_checksum),
           logstats_output_path, absl::GetFlag(FLAGS_resp_delay_us_dist),
-          absl::GetFlag(FLAGS_program_idx));
+          absl::GetFlag(FLAGS_program));
 
   std::atomic<bool> keep_running = true;
   std::unique_ptr<fleetbench::rpc::GRPCClient> client =
@@ -103,8 +103,7 @@ int main(int argc, char** argv) {
           absl::GetFlag(FLAGS_skip_loopback), absl::GetFlag(FLAGS_peers),
           absl::GetFlag(FLAGS_max_peers),
           absl::GetFlag(FLAGS_connections_per_peer), logstats_output_path,
-          absl::GetFlag(FLAGS_req_delay_us_dist),
-          absl::GetFlag(FLAGS_program_idx),
+          absl::GetFlag(FLAGS_req_delay_us_dist), absl::GetFlag(FLAGS_program),
           [&keep_running]() { return keep_running.load(); });
 
   LOG(INFO) << "Waiting for termination ...";

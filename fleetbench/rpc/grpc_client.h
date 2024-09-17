@@ -71,7 +71,8 @@ class GRPCClient {
   explicit GRPCClient(const GRPCClientOptions& opts, absl::string_view filepath,
                       DelayProcess delay_type,
                       std::unique_ptr<RandomDistribution> delay_dist,
-                      uint64_t program_idx, std::function<bool()> keep_running);
+                      absl::string_view program,
+                      std::function<bool()> keep_running);
   GRPCClient(const GRPCClient&) = delete;
   GRPCClient& operator=(const GRPCClient&) = delete;
 
@@ -100,9 +101,9 @@ class GRPCClient {
   const DelayProcess delay_type_;
   std::unique_ptr<RandomDistribution> delay_dist_;
 
-  // Index into submessage `P<program_idx_>RequestMessage` of `RequestMessage`
-  // proto
-  uint64_t program_idx_;
+  // Used to index into submessage `P<index>RequestMessage` of `RequestMessage`
+  // proto, based on the program to index mapping in combo.h.
+  absl::string_view program_;
 
   // Check if client should send another RPC.
   std::function<bool()> keep_running_;
@@ -118,7 +119,7 @@ class GRPCClient {
 
 std::unique_ptr<GRPCClient> StartGRPCClient(
     const GRPCClientOptions& opts, absl::string_view filepath,
-    const DistributionArgs& req_delay_us_dist_args, uint64_t program_idx,
+    const DistributionArgs& req_delay_us_dist_args, absl::string_view program,
     std::function<bool()> keep_running);
 
 }  // namespace fleetbench::rpc

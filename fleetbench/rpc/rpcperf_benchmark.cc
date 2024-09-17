@@ -1,4 +1,4 @@
-// Copyright 2023 The Fleetbench Authors
+// Copyright 2024 The Fleetbench Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License" );
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/synchronization/mutex.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/dynamic_registrar.h"
@@ -28,17 +29,15 @@
 
 namespace fleetbench::rpc {
 
-void BM_Rpc(benchmark::State &state, int program_idx) {
-  CHECK_LT(program_idx, fleetbench::rpc::kRequestMessageMaxPrograms)
-      << "Invalid program_idx provided to benchmark";
-  CHECK_LT(program_idx, fleetbench::rpc::kResponseMessageMaxPrograms)
-      << "Invalid program_idx provided to benchmark";
+void BM_Rpc(benchmark::State &state, absl::string_view program) {
+  CHECK(fleetbench::rpc::kPrograms->count(program))
+      << "Invalid program name \"" << program << "\" provided to benchmark";
 
   std::unique_ptr<fleetbench::rpc::GRPCServer> server =
       fleetbench::rpc::CreateAndStartServer(
           /*ports=*/{"10000"}, /*workers=*/1, /*compress=*/false,
           /*checksum=*/false, /*logstats_output_path=*/"",
-          /*resp_delay_us_dist=*/"", /*program_idx=*/program_idx);
+          /*resp_delay_us_dist=*/"", /*program=*/program);
 
   absl::Mutex keep_running_mtx;
   std::unique_ptr<fleetbench::rpc::GRPCClient> client =
@@ -47,7 +46,7 @@ void BM_Rpc(benchmark::State &state, int program_idx) {
           /*checksum=*/false, /*skip_loopback=*/false,
           /*peers=*/{"localhost:10000"}, /*max_peers=*/-1,
           /*connections_per_peer=*/1, /*logstats_output_path=*/"",
-          /*req_delay_us_dist=*/"", /*program_idx=*/program_idx,
+          /*req_delay_us_dist=*/"", /*program=*/program,
           /*keep_running=*/[&state, &keep_running_mtx]() {
             absl::MutexLock l(&keep_running_mtx);
             return state.KeepRunning();
@@ -57,9 +56,9 @@ void BM_Rpc(benchmark::State &state, int program_idx) {
 }
 
 void RegisterBenchmarks() {
-  for (int program_idx = 0; program_idx < 10; program_idx++) {
-    std::string benchmark_name = absl::StrCat("BM_RPC_", program_idx);
-    benchmark::RegisterBenchmark(benchmark_name.c_str(), BM_Rpc, program_idx)
+  for (const auto &[program, _] : *fleetbench::rpc::kPrograms) {
+    std::string benchmark_name = absl::StrCat("BM_RPC_", program);
+    benchmark::RegisterBenchmark(benchmark_name, BM_Rpc, program)
         ->MeasureProcessCPUTime();
   }
 }

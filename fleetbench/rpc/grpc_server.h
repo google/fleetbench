@@ -49,7 +49,7 @@ class GRPCServer {
  public:
   explicit GRPCServer(const GRPCServerOptions& opts, DelayProcess delay_type,
                       std::unique_ptr<RandomDistribution> delay_dist,
-                      uint64_t program_idx);
+                      absl::string_view program);
   GRPCServer(const GRPCServer&) = delete;
   GRPCServer& operator=(const GRPCServer&) = delete;
 
@@ -86,9 +86,9 @@ class GRPCServer {
   const DelayProcess delay_type_;
   std::unique_ptr<RandomDistribution> delay_dist_;
 
-  // Index into submessage `P<program_idx_>ResponseMessage` of `ResponseMessage`
-  // proto
-  uint64_t program_idx_;
+  // Used to index into submessage `P<index>ResponseMessage` of
+  // `ResponseMessage` proto, based on the program to index mapping in combo.h.
+  absl::string_view program_;
 
   // Callback service object used to build grpc::Server
   std::unique_ptr<fleetbench::rpc::FleetBenchPerf::CallbackService>
@@ -104,7 +104,7 @@ class GRPCServer {
 std::unique_ptr<GRPCServer> StartGRPCServer(
     const GRPCServerOptions& opts, absl::string_view filepath,
     const DistributionArgs& resp_delay_us_dist_args,
-    grpc::ServerBuilder* builder, uint64_t program_idx);
+    grpc::ServerBuilder* builder, absl::string_view program);
 
 }  // namespace fleetbench::rpc
 

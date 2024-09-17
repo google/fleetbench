@@ -24,313 +24,217 @@
 
 namespace fleetbench::rpc::P3::response::Message2 {
 inline void Message2_Set_1(Message2* message, std::string* s) {
-  message->set_f_22(0x28);
-  message->set_f_16(0.122682);
-  message->set_f_18(0.672916);
-  Message2::M1* v0 = message->mutable_f_103();
-  v0->set_f_0(0xb8beec91192653);
-  Message2::M1::M22* v1 = v0->mutable_f_11();
-  v1->set_f_8(0.528117);
-  v1->set_f_62(0.257487);
-  v1->set_f_56(0x11e53a4d37b805);
-  v1->set_f_91(0xdcb34a88f815bb);
-  v1->set_f_38(0.433690);
-  v1->set_f_55(0x291c440b464f21dc);
-  v1->set_f_17(0x248f);
-  v1->set_f_4(0x5b);
-  v1->set_f_42(0x51856bf837c4ce24);
-  v1->set_f_47(0.284057);
-  v1->set_f_106(0xf9b920e147d9c8);
-  v1->add_f_24(true);
-  v1->set_f_25(0xc029fbbbe1817b);
-  v1->set_f_99(0xb2d0d18efff54f);
-  v1->set_f_35(0.378869);
-  v1->set_f_43(0.288231);
-  v1->set_f_67(0.738045);
-  v1->set_f_40(0x24);
-  v1->set_f_5(0x36b4230e);
-  v1->set_f_50(0.509782);
-  v1->set_f_95(0x2b);
-  v1->set_f_44(0x1c773434a39f26b8);
-  v1->set_f_84(0.960849);
-  v1->set_f_110(0.650164);
-  v1->set_f_71(0.051031);
-  v1->set_f_81(0.595293);
-  v1->set_f_73(0.286082);
-  v1->set_f_74(0x1a);
-  v1->set_f_21(0x56);
-  v1->set_f_80(0x5e);
-  v1->set_f_19(0.113125);
-  v1->set_f_109(0.521254);
-  v1->set_f_83(0x338f155725216912);
-  v1->set_f_23(0x1568);
-  v1->set_f_16(0x5a);
-  v1->set_f_93(0.491637);
-  v1->set_f_86(0x9a66e475f8b2f62);
-  v1->set_f_52(0x70);
-  v1->set_f_104(0.519351);
-  v1->set_f_11(0x2);
-  v1->set_f_69(0x6b);
-  v1->set_f_59(0x5d);
-  v1->set_f_97(0.753420);
-  v1->set_f_22(0x37);
-  v1->set_f_14(false);
-  v1->set_f_113(0.906382);
-  v1->set_f_39(0.267044);
-  v1->set_f_2(0x4544090155f9aa5c);
-  Message2::M1::M11* v2 = v0->mutable_f_6();
-  Message2::M1::M11::M96* v3 = v2->mutable_f_50();
-  (void)v3;  // Suppresses clang-tidy.
-  Message2::M1::M11::M80* v4_0 = v2->add_f_35();
-  (void)v4_0;  // Suppresses clang-tidy.
-  Message2::M1::M11::M50* v5 = v2->mutable_f_23();
+  Message2::M6* v0 = message->mutable_f_116();
+  v0->set_f_2(0x18cf53fc96a1a5a0);
+  Message2::M6::M40* v1_0 = v0->add_f_17();
+  v1_0->set_f_3(0xbab);
+  Message2::M6::M40::M74* v2_0 = v1_0->add_f_45();
+  (void)v2_0;  // Suppresses clang-tidy.
+  Message2::M6::M40::M74* v2_1 = v1_0->add_f_45();
+  (void)v2_1;  // Suppresses clang-tidy.
+  v1_0->set_f_0(0x48);
+  v1_0->set_f_4(0.781471);
+  v1_0->set_f_1(0xc2dd96bc543713);
+  v0->set_f_1(0x7553053d679adc55);
+  message->set_f_22(0x62);
+  message->set_f_21(0x7e5711c66b8d8a86);
+  Message2::M4* v3 = message->mutable_f_107();
+  v3->set_f_3(0x57cc3a1ed6c3ac6e);
+  v3->set_f_1(0x72f50310437faf);
+  Message2::M4::M19* v4 = v3->mutable_f_20();
+  v4->set_f_0(0xf);
+  v4->set_f_1(0x7d12295d49f1a8eb);
+  Message2::M4::M19::M72* v5 = v4->mutable_f_17();
   (void)v5;  // Suppresses clang-tidy.
-  v2->set_f_0(0x528a11d469755321);
-  Message2::M1::M11::M59* v6 = v2->mutable_f_28();
-  (void)v6;  // Suppresses clang-tidy.
-  Message2::M1::M11::M73* v7 = v2->mutable_f_32();
-  v7->set_f_0(0x7820b09946fb303f);
-  message->set_f_17(0x46f8791d90e3ab5e);
-  message->set_f_13(0.149879);
-  message->set_f_3(0.659976);
-  Message2::M2* v8 = message->mutable_f_106();
-  v8->set_f_0(0x4ac1f66609544b16);
-  message->set_f_20(0.077739);
-  message->set_f_5(0.325297);
-  message->set_f_2(0x5c);
-  message->set_f_12(0x68);
-  Message2::M8* v9 = message->mutable_f_138();
-  v9->set_f_0(0.485094);
-  message->set_f_9(0.548580);
+  Message2::M4::M19::M46* v6_0 = v4->add_f_11();
+  (void)v6_0;  // Suppresses clang-tidy.
+  message->set_f_15(0.823697);
+  message->set_f_2(0.361274);
+  message->set_f_1(0.925358);
+  message->set_f_3(0x167d1e48242c66da);
+  message->set_f_9(0x65);
+  Message2::M2* v7 = message->mutable_f_103();
+  Message2::M2::M22* v8 = v7->mutable_f_14();
+  Message2::M2::M22::M55* v9_0 = v8->add_f_14();
+  v9_0->set_f_1(0.135085);
+  Message2::M2::M22::M55::M104* v10 = v9_0->mutable_f_10();
+  v10->set_f_2(0x30);
+  v10->set_f_12(0.676045);
+  v10->set_f_6(0xa366444cea557a6);
+  v10->set_f_4(0.123018);
+  v10->set_f_8(0.824688);
+  v10->set_f_1(0x48);
+  v10->set_f_13(0x32ba03785dee3f7c);
+  v10->set_f_11(0.946332);
+  v10->set_f_14(0x520262b8b7c1c15a);
+  v10->set_f_0(0.679718);
+  v9_0->set_f_0(0.245088);
+  Message2::M2::M22::M90* v11 = v8->mutable_f_17();
+  v11->set_f_0(0x7b7798083dc9bd);
+  v11->set_f_2(0x25bc6bc4ff047fea);
+  v11->set_f_1(0x72);
+  Message2::M2::M12* v12_0 = v7->add_f_11();
+  v12_0->set_f_9(0.155850);
+  v12_0->set_f_15(0x2f8e8452713b3a5b);
+  v12_0->set_f_14(0xbecd8e59d6ebc8);
+  v12_0->set_f_11(0.294760);
+  v12_0->set_f_12(0x21fa);
+  v12_0->set_f_5(0x3f);
+  v12_0->set_f_13(0.962774);
+  v7->set_f_0(0.409598);
+  Message2::M2::M28* v13_0 = v7->add_f_17();
+  (void)v13_0;  // Suppresses clang-tidy.
+  message->set_f_12(0x648);
+  Message2::E2 array_1[12] = {
+      Message2::E2_CONST_4, Message2::E2_CONST_4, Message2::E2_CONST_1,
+      Message2::E2_CONST_2, Message2::E2_CONST_2, Message2::E2_CONST_5,
+      Message2::E2_CONST_2, Message2::E2_CONST_4, Message2::E2_CONST_2,
+      Message2::E2_CONST_4, Message2::E2_CONST_3, Message2::E2_CONST_4,
+  };
+  for (auto v : array_1) {
+    message->add_f_20(v);
+  }
+  message->set_f_16(0.250394);
 }
 inline void Message2_Set_2(Message2* message, std::string* s) {
-  Message2::M4* v0 = message->mutable_f_116();
-  v0->set_f_0(0x49f180fda1db0db9);
-  Message2::M4::M20* v1 = v0->mutable_f_4();
-  Message2::M4::M20::M25* v2_0 = v1->add_f_26();
-  v2_0->set_f_2(0x21cb);
-  v2_0->set_f_1(0.664816);
-  v1->set_f_2(0x26);
-  Message2::M4::M20::M23* v3 = v1->mutable_f_24();
-  Message2::M4::M20::M23::M102* v4_0 = v3->add_f_5();
-  v4_0->set_f_0(0.181262);
-  v1->set_f_3(0x2c);
-  Message2::M4::M20::M76* v5 = v1->mutable_f_51();
-  v5->set_f_0(0x1c);
-  v5->set_f_1(0.377709);
-  Message2::M4::M20::M56* v6 = v1->mutable_f_43();
+  Message2::M1* v0 = message->mutable_f_101();
+  (void)v0;  // Suppresses clang-tidy.
+  message->add_f_20(Message2::E2_CONST_1);
+  Message2::M2* v1 = message->mutable_f_103();
+  v1->set_f_0(0.104952);
+  Message2::M4* v2 = message->mutable_f_107();
+  Message2::M4::M19* v3 = v2->mutable_f_20();
+  v3->set_f_1(0x36b61ca496a97b74);
+  v2->set_f_2(0.548358);
+  Message2::M4::M34* v4 = v2->mutable_f_24();
+  Message2::M4::M34::M86* v5 = v4->mutable_f_14();
+  (void)v5;  // Suppresses clang-tidy.
+  Message2::M4::M34::M45* v6 = v4->mutable_f_6();
   (void)v6;  // Suppresses clang-tidy.
-  v1->set_f_4(0.368364);
-  v1->set_f_5(0x58dcd1b8a4d16d7e);
-  Message2::M4::M20::M44* v7 = v1->mutable_f_33();
-  (void)v7;  // Suppresses clang-tidy.
-  v1->set_f_0(0x7955fab3faacb2a0);
-  Message2::M6* v8 = message->mutable_f_131();
-  Message2::M6::M13* v9 = v8->mutable_f_7();
-  v9->set_f_6(0x52693cd35c3800fe);
-  Message2::M6::M13::M30* v10_0 = v9->add_f_43();
-  (void)v10_0;  // Suppresses clang-tidy.
-  v9->set_f_7(0x8e9443509e89aa);
-  v9->set_f_5(0x57ca5f8786f552aa);
-  v9->set_f_1(0x473e63c09c07d9cb);
-  Message2::M6::M13::M35* v11 = v9->mutable_f_48();
-  Message2::M6::M13::M35::M104* v12_0 = v11->add_f_5();
-  v12_0->set_f_0(0x4cb75e58fae28302);
-  v8->set_f_0(0x652b0547919fe218);
-  message->set_f_13(0.793487);
-  message->set_f_23(0.546329);
-  message->set_f_15(false);
-  Message2::M5* v13_0 = message->add_f_124();
-  Message2::M5::M12* v14 = v13_0->mutable_f_10();
-  Message2::M5::M12::M65* v15 = v14->mutable_f_15();
-  (void)v15;  // Suppresses clang-tidy.
-  v14->set_f_0(0x53);
-  Message2::M5::M12::M29* v16 = v14->mutable_f_9();
-  (void)v16;  // Suppresses clang-tidy.
-  Message2::M5::M12::M75* v17 = v14->mutable_f_19();
-  v17->set_f_11(0.799961);
-  v17->set_f_9(0x6a);
-  v17->set_f_4(0x5a);
-  v17->set_f_3(Message2::M5::M12::M75::E2_CONST_5);
-  v17->set_f_1(0x229fe18ec6f33e);
-  v17->set_f_14(0.910578);
-  v17->set_f_10(0.631925);
-  v17->set_f_8(0.832687);
-  v17->set_f_12(0.087119);
-  Message2::M5::M12::M46* v18 = v14->mutable_f_13();
-  (void)v18;  // Suppresses clang-tidy.
-  Message2::M7* v19 = message->mutable_f_134();
-  Message2::M7::M10* v20_0 = v19->add_f_8();
-  v20_0->set_f_4(0x6d36011f0d610483);
-  Message2::M7::M10::M93* v21_0 = v20_0->add_f_39();
-  v21_0->set_f_0(true);
-  v20_0->set_f_2(0x44bebcf036aa596e);
-  v20_0->set_f_1(0x2236);
-  v20_0->set_f_3(0x2b8eba3a9a70bd);
-  message->set_f_17(0x4d831a420a65f66f);
-  message->set_f_12(0x44);
-  message->set_f_10(0x37);
-  Message2::M2* v22 = message->mutable_f_106();
-  Message2::M2::M21* v23 = v22->mutable_f_6();
-  Message2::M2::M21::M55* v24 = v23->mutable_f_11();
-  v24->set_f_0(0.894573);
-  v23->set_f_0(0.403136);
-  message->set_f_9(0.515018);
-  message->set_f_11(0.981059);
-  Message2::M3* v25 = message->mutable_f_111();
-  Message2::M3::M16* v26 = v25->mutable_f_35();
-  Message2::M3::M16::M77* v27_0 = v26->add_f_20();
-  (void)v27_0;  // Suppresses clang-tidy.
-  Message2::M3::M16::M71* v28_0 = v26->add_f_19();
-  v28_0->set_f_0(0.682048);
-  Message2::M3::M16::M71::M107* v29 = v28_0->mutable_f_8();
-  (void)v29;  // Suppresses clang-tidy.
-  Message2::M3::M16::M37* v30 = v26->mutable_f_9();
-  v30->set_f_3(0x59);
-  v30->set_f_6(0x1359);
-  v30->set_f_2(0.913603);
-  v25->set_f_3(0x69);
-  message->set_f_4(0.072376);
-  Message2::M9* v31 = message->mutable_f_139();
-  v31->set_f_2(0x563de6524f372de5);
-  v31->set_f_10(0.948350);
-  v31->set_f_4(0x11020df1f5b1be);
-  v31->set_f_20(0x3e);
-  v31->set_f_16(0.142428);
-  v31->set_f_7(0.198895);
-  v31->set_f_1(0.642466);
-  v31->set_f_9(0x4d);
-  v31->set_f_8(0.673565);
-  message->set_f_22(0x75);
-  message->set_f_8(0.546317);
+  Message2::M4::M34::M99* v7_0 = v4->add_f_19();
+  (void)v7_0;  // Suppresses clang-tidy.
+  Message2::M4::M34::M99* v7_1 = v4->add_f_19();
+  (void)v7_1;  // Suppresses clang-tidy.
+  Message2::M4::M34::M79* v8_0 = v4->add_f_8();
+  (void)v8_0;  // Suppresses clang-tidy.
+  Message2::M3* v9 = message->mutable_f_106();
+  Message2::M3::M15* v10 = v9->mutable_f_5();
+  v10->set_f_0(0xeabc5d400e69da7);
+  Message2::M3::M15::M68* v11 = v10->mutable_f_6();
+  v11->set_f_0(0.584653);
+  Message2::M3::M24* v12_0 = v9->add_f_13();
+  v12_0->set_f_0(0x233fa74);
+  v9->set_f_0(0.020564);
+  Message2::M3::M16* v13 = v9->mutable_f_9();
+  Message2::M3::M16::M61* v14 = v13->mutable_f_6();
+  (void)v14;  // Suppresses clang-tidy.
+  message->set_f_19(0.915939);
+  message->set_f_3(0x3f7c73a101621be);
+  message->set_f_17(0x51c212711c200f33);
+  message->set_f_8(0.647055);
+  message->set_f_22(0x25);
+  message->set_f_24(0x2d);
+  Message2::M8* v15_0 = message->add_f_122();
+  Message2::M8::M38* v16 = v15_0->mutable_f_24();
+  v16->set_f_0(0xa8944d7e8539e4);
+  message->set_f_5(s->substr(0, 8));
+  message->set_f_16(0.677635);
 }
 inline void Message2_Set_3(Message2* message, std::string* s) {
-  message->set_f_23(0.122391);
-  message->set_f_20(0.102894);
-  message->set_f_14(0x4e);
-  message->set_f_1(0x3bf5);
-  message->set_f_18(0.257298);
-  message->set_f_2(0x7);
-  message->set_f_3(0.687487);
-  message->set_f_8(0.157850);
-  message->set_f_17(0x382040d056bf42d0);
-  Message2::M6* v0 = message->mutable_f_131();
-  Message2::M6::M19* v1 = v0->mutable_f_10();
-  Message2::M6::M19::M95* v2_0 = v1->add_f_20();
-  (void)v2_0;  // Suppresses clang-tidy.
-  Message2::M6::M19::M54* v3 = v1->mutable_f_9();
-  v3->set_f_0(0.068513);
-  v0->set_f_0(0x5f8f78986d7581e1);
-  Message2::M1* v4 = message->mutable_f_103();
-  Message2::M1::M11* v5 = v4->mutable_f_6();
-  Message2::M1::M11::M33* v6_0 = v5->add_f_10();
-  v6_0->set_f_2(0.528344);
-  Message2::M1::M11::M80* v7_0 = v5->add_f_35();
-  (void)v7_0;  // Suppresses clang-tidy.
-  v4->set_f_0(0xcb8fcf16e4c1d9);
-  message->set_f_24(0.867444);
-  message->set_f_9(0.643866);
-  message->set_f_7(0.766232);
-  message->set_f_6(0.415114);
-  message->set_f_21(0.741684);
-  Message2::M8* v8 = message->mutable_f_138();
-  v8->set_f_0(0.564386);
-  message->add_f_19(true);
-  message->set_f_13(0.718505);
-  Message2::M7* v9 = message->mutable_f_134();
-  Message2::M7::M18* v10_0 = v9->add_f_11();
-  v10_0->set_f_3(0x120f6655d7eef550);
-  v10_0->set_f_4(0x16);
-  Message2::M7::M18::M43* v11_0 = v10_0->add_f_25();
-  (void)v11_0;  // Suppresses clang-tidy.
-  Message2::M7::M18::M66* v12 = v10_0->mutable_f_31();
-  (void)v12;  // Suppresses clang-tidy.
-  v10_0->set_f_6(0.089462);
-  v10_0->set_f_0(0.001228);
-  Message2::M7::M18::M62* v13 = v10_0->mutable_f_28();
-  v13->set_f_1(0x121577c88756460d);
-  v10_0->set_f_2(0.680588);
-  v9->set_f_0(0.889277);
+  message->set_f_23(0x9c0eb524979924);
+  message->set_f_2(0.073230);
+  Message2::M11* v0_0 = message->add_f_133();
+  v0_0->set_f_1(0x6b);
+  Message2::M9* v1 = message->mutable_f_125();
+  (void)v1;  // Suppresses clang-tidy.
+  message->set_f_19(0.604378);
+  message->set_f_15(0.685192);
+  message->set_f_9(0x2a);
+  Message2::M5* v2 = message->mutable_f_112();
+  v2->set_f_2(0x17);
+  Message2::M5::M17* v3_0 = v2->add_f_13();
+  v3_0->set_f_0(0x4d);
+  Message2::M5::M17::M100* v4 = v3_0->mutable_f_14();
+  v4->set_f_1(0x72b7171347722e58);
+  v4->set_f_0(0x66);
+  Message2::M6* v5 = message->mutable_f_116();
+  v5->set_f_1(0x15fa8a43f2b0f469);
+  v5->set_f_2(0x2464845831f9479b);
+  Message2::M2* v6 = message->mutable_f_103();
+  Message2::M2::M22* v7 = v6->mutable_f_14();
+  Message2::M2::M22::M50* v8_0 = v7->add_f_7();
+  (void)v8_0;  // Suppresses clang-tidy.
+  v7->set_f_0(0x4f20b1be924464cc);
+  Message2::M2::M28* v9_0 = v6->add_f_17();
+  Message2::M2::M28::M73* v10 = v9_0->mutable_f_11();
+  (void)v10;  // Suppresses clang-tidy.
+  Message2::M2::M28* v9_1 = v6->add_f_17();
+  Message2::M2::M28::M73* v11 = v9_1->mutable_f_11();
+  v11->set_f_0(0x1b1ddd19286bcf3c);
+  message->set_f_24(0xd);
+  message->set_f_14(0x32);
+  Message2::M7* v12 = message->mutable_f_120();
+  Message2::M7::M35* v13_0 = v12->add_f_5();
+  Message2::M7::M35::M58* v14 = v13_0->mutable_f_15();
+  v14->set_f_13(0.760845);
+  v14->set_f_28(false);
+  v14->set_f_44(0.254627);
+  v14->set_f_2(0.247141);
+  v14->set_f_40(0.690946);
+  v14->set_f_25(0x3e7dd481d4b7992a);
+  v14->set_f_10(0.880629);
+  v14->set_f_35(0x6d7f6c52a9cb4988);
+  v14->set_f_30(0x79a271c5c32993);
+  v14->set_f_5(0x140c4e97763495a5);
+  v14->set_f_20(0.278467);
+  v14->set_f_6(0x1a94436cc9b2927e);
+  v14->set_f_1(0x45b47900be985aae);
+  v14->set_f_8(0.259865);
+  v14->set_f_36(Message2::M7::M35::M58::E23_CONST_1);
+  v14->set_f_33(0x1079b1112e949b1b);
+  v14->set_f_39(0.355144);
+  v14->set_f_57(0x5ec833e9d73258e3);
+  v14->set_f_32(0x9f75e2826dab72);
+  v14->set_f_55(0xab5edd6);
+  v14->set_f_15(0x595d5988ffd93722);
+  v14->set_f_62(0xf4c2c2318168fe);
+  v14->set_f_12(0x7a);
+  v14->set_f_3(0x1c);
+  v14->set_f_41(0.338845);
+  v14->set_f_45(0x6);
+  v13_0->set_f_1(0.893966);
+  v13_0->add_f_2(Message2::M7::M35::E13_CONST_5);
+  v13_0->add_f_2(Message2::M7::M35::E13_CONST_5);
+  v13_0->add_f_2(Message2::M7::M35::E13_CONST_2);
+  v13_0->add_f_0(Message2::M7::M35::E12_CONST_5);
+  v12->set_f_0(0x11e011fcbd967e9b);
 }
 inline void Message2_Set_4(Message2* message, std::string* s) {
-  message->set_f_9(0.588949);
-  message->set_f_18(0.558763);
-  message->set_f_14(0x3a);
-  message->add_f_19(false);
-  Message2::M5* v0_0 = message->add_f_124();
-  Message2::M5::M12* v1 = v0_0->mutable_f_10();
-  Message2::M5::M12::M65* v2 = v1->mutable_f_15();
-  v2->set_f_0(0x3c3f7be45d78c02f);
-  Message2::M5::M12::M29* v3 = v1->mutable_f_9();
-  v3->set_f_0(0xd0ac3a68e0485b);
-  v0_0->set_f_0(0x3d);
-  message->set_f_10(0x39);
-  message->set_f_5(0.974970);
-  message->set_f_4(0.319861);
-  message->set_f_17(0x61a23b725335e9d3);
-  Message2::M1* v4 = message->mutable_f_103();
-  Message2::M1::M11* v5 = v4->mutable_f_6();
-  Message2::M1::M11::M80* v6_0 = v5->add_f_35();
-  (void)v6_0;  // Suppresses clang-tidy.
-  Message2::M1::M11::M73* v7 = v5->mutable_f_32();
-  v7->set_f_0(0x915001a7ee9196d);
-  Message2::M1::M11::M96* v8 = v5->mutable_f_50();
-  (void)v8;  // Suppresses clang-tidy.
-  v5->set_f_0(0x7995bbbde71379e0);
-  Message2::M1::M11::M59* v9 = v5->mutable_f_28();
-  (void)v9;  // Suppresses clang-tidy.
-  Message2::M1::M11::M83* v10_0 = v5->add_f_40();
-  v10_0->set_f_0(0x7e);
-  v4->set_f_0(0xbcb36eb8576db5);
-  message->set_f_12(0x37);
-  Message2::M7* v11 = message->mutable_f_134();
-  Message2::M7::M18* v12_0 = v11->add_f_11();
-  Message2::M7::M18::M94* v13 = v12_0->mutable_f_46();
-  v13->set_f_0(0x7445d5ed09b3b873);
-  v12_0->set_f_5(0x1c78);
-  Message2::M7::M18::M66* v14 = v12_0->mutable_f_31();
-  (void)v14;  // Suppresses clang-tidy.
-  v12_0->set_f_1(0.653052);
-  v12_0->set_f_0(0.680724);
-  Message2::M7::M18::M87* v15 = v12_0->mutable_f_37();
-  v15->set_f_7(0xa7e2940260d44f0);
-  v15->set_f_0(0.795780);
-  v15->set_f_9(0.707782);
-  v15->set_f_16(0.334610);
-  v15->set_f_18(0x656fdb105ed98ece);
-  v15->set_f_12(0.067805);
-  Message2::M7::M18::M87::M106* v16_0 = v15->add_f_81();
-  (void)v16_0;  // Suppresses clang-tidy.
-  v15->set_f_8(0x28e6500d7420090e);
-  v15->set_f_15(0x62a1f4d45db3a5cf);
-  v15->set_f_5(0x35);
-  Message2::M7::M10* v17_0 = v11->add_f_8();
-  v17_0->set_f_4(0x5bd118362fef798e);
-  Message2::M7::M10::M89* v18 = v17_0->mutable_f_36();
-  (void)v18;  // Suppresses clang-tidy.
-  Message2::M7::M10::M39* v19_0 = v17_0->add_f_33();
-  (void)v19_0;  // Suppresses clang-tidy.
-  Message2::M7::M10::M52* v20 = v17_0->mutable_f_35();
-  v20->set_f_0(0x4d);
-  Message2::M7::M10::M93* v21_0 = v17_0->add_f_39();
-  v21_0->set_f_1(0.390055);
-  v17_0->set_f_3(0x6d9cc8dd6763bd);
-  message->set_f_13(0.720983);
-  message->set_f_0(0.660512);
-  Message2::M6* v22 = message->mutable_f_131();
-  v22->set_f_0(0x20b3f56ba16a03c1);
-  message->set_f_16(0.949490);
-  message->set_f_24(0.599913);
-  Message2::M9* v23 = message->mutable_f_139();
-  v23->set_f_10(0.765672);
-  v23->set_f_2(0x59f3e2eb647e41ad);
-  v23->set_f_3(0.228564);
-  v23->set_f_16(0.297173);
-  v23->set_f_0(0.752134);
-  v23->set_f_1(0.358866);
-  v23->set_f_17(0x5aeba266eaf0cdf2);
-  v23->set_f_19(0.311963);
-  v23->set_f_13(0.198694);
+  message->set_f_0(Message2::E1_CONST_2);
+  message->set_f_24(0x7a);
+  message->set_f_22(0x30);
+  message->set_f_13(0.317695);
+  Message2::M9* v0 = message->mutable_f_125();
+  Message2::M9::M30* v1 = v0->mutable_f_11();
+  Message2::M9::M30::M44* v2 = v1->mutable_f_6();
+  v2->set_f_3(0.866290);
+  v2->set_f_4(0.470500);
+  v2->set_f_0(0x28c8f6fb5c7fa033);
+  Message2::M9::M31* v3_0 = v0->add_f_18();
+  Message2::M9::M31::M84* v4 = v3_0->mutable_f_14();
+  v4->set_f_4(0x2fbbcc5bf3289648);
+  Message2::M2* v5 = message->mutable_f_103();
+  v5->set_f_0(0.483514);
+  Message2::M11* v6_0 = message->add_f_133();
+  v6_0->add_f_2(Message2::M11::E3_CONST_5);
+  v6_0->set_f_1(0x94bb0014600836);
+  Message2::M11::M39* v7_0 = v6_0->add_f_24();
+  (void)v7_0;  // Suppresses clang-tidy.
+  Message2::M5* v8 = message->mutable_f_112();
+  v8->set_f_3(0x8beeaa4385e403);
+  v8->set_f_1(0xd);
+  v8->set_f_0(0x4cee6b0453144f2a);
+  message->set_f_6(0.728034);
 }
 const int kMessage2MaxProtoSetters = 4;
 inline void Message2_Set(const int i, Message2* message, std::string* s) {

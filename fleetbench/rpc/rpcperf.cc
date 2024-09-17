@@ -1,4 +1,4 @@
-// Copyright 2023 The Fleetbench Authors
+// Copyright 2024 The Fleetbench Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License" );
 // you may not use this file except in compliance with the License.
@@ -94,7 +94,7 @@ std::string HostPortString(absl::string_view host, uint16_t port) {
 std::unique_ptr<GRPCServer> CreateAndStartServer(
     std::vector<std::string> ports, int32_t workers, bool compress,
     bool checksum, std::string logstats_output_path,
-    std::string resp_delay_us_dist, uint64_t program_idx) {
+    std::string resp_delay_us_dist, absl::string_view program) {
   // First parse the distributions.
   fleetbench::rpc::DistributionArgs resp_delay_us_dist_args =
       ParseDistributionArgs(resp_delay_us_dist, "<Response delay distribution>",
@@ -124,14 +124,14 @@ std::unique_ptr<GRPCServer> CreateAndStartServer(
   opts.tx_zerocopy_threshold_bytes =
       absl::GetFlag(FLAGS_grpc_tx_zerocopy_threshold_bytes);
   return StartGRPCServer(opts, logstats_output_path, resp_delay_us_dist_args,
-                         &builder, program_idx);
+                         &builder, program);
 }
 
 std::unique_ptr<GRPCClient> CreateAndStartClient(
     int32_t max_outstanding_rpcs, bool compress, bool checksum,
     bool skip_loopback, std::vector<std::string> peers, int32_t max_peers,
     int32_t connections_per_peer, std::string logstats_output_path,
-    std::string req_delay_us_dist, uint64_t program_idx,
+    std::string req_delay_us_dist, absl::string_view program,
     std::function<bool()> keep_running) {
   // First parse the distributions.
   fleetbench::rpc::DistributionArgs req_delay_us_dist_args =
@@ -155,7 +155,7 @@ std::unique_ptr<GRPCClient> CreateAndStartClient(
       absl::GetFlag(FLAGS_grpc_tx_zerocopy_threshold_bytes);
 
   return fleetbench::rpc::StartGRPCClient(client_opts, logstats_output_path,
-                                          req_delay_us_dist_args, program_idx,
+                                          req_delay_us_dist_args, program,
                                           keep_running);
 }
 
