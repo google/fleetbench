@@ -519,7 +519,7 @@ void RegisterBenchmarks() {
         std::string benchmark_name =
             absl::StrCat("BM_LIBC_", distribution_name, "_", cache_name);
         benchmark::RegisterBenchmark(
-            benchmark_name.c_str(), memory_benchmark, memory_size_distribution,
+            benchmark_name, memory_benchmark, memory_size_distribution,
             overlap_probability, alignment_distribution, buffer_counter,
             memory_function, cache_size, suffix_name);
       }

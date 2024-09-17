@@ -236,7 +236,7 @@ void RegisterBenchmarks() {
       for (const auto &[hot_str, hot] : cache_resident_info) {
         std::string benchmark_name =
             absl::StrCat("BM_HASHING_", application, "_", hot_str);
-        benchmark::RegisterBenchmark(benchmark_name.c_str(), BM_Hashing,
+        benchmark::RegisterBenchmark(benchmark_name, BM_Hashing,
                                      hashing_size_distribution, hash_function,
                                      hot, suffix_name);
       }
