@@ -86,6 +86,7 @@ py_test(
         ":run",
         "@com_google_absl_py//absl/testing:absltest",
         "@com_google_absl_py//absl/testing:flagsaver",
+        requirement("pandas"),
     ],
 )
 

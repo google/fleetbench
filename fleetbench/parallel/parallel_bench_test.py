@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import flagsaver
+import pandas as pd
 
 from fleetbench.parallel import benchmark as bm
 from fleetbench.parallel import cpu
@@ -182,6 +184,63 @@ class ParallelBenchTest(absltest.TestCase):
             "fake_bench (BM_PROTO_Test1)",
             "fake_bench (BM_PROTO_Test2)",
             "fake_bench (BM_CORD_Test1)",
+        ],
+    )
+
+  def test_convert_to_dataframe(self):
+    pb = parallel_bench_lib.ParallelBench(
+        cpus=[0, 1],
+        cpu_affinity=False,
+        weighted_selection=False,
+        utilization=0.5,
+        duration=0.1,
+        temp_root=absltest.get_default_test_tmpdir(),
+    )
+
+    # First entries are fake durations, the second entries are real durations.
+    pb.runtimes["BM_Test1"] = [
+        parallel_bench_lib.BenchmarkTimes(wall_time=1, cpu_time=1),
+        parallel_bench_lib.BenchmarkTimes(wall_time=2, cpu_time=3),
+    ]
+    pb.runtimes["BM_Test2"] = [
+        parallel_bench_lib.BenchmarkTimes(wall_time=1, cpu_time=1),
+        parallel_bench_lib.BenchmarkTimes(wall_time=4, cpu_time=5),
+    ]
+    pb.utilization_samples.append((pd.Timestamp.now(), 0.5))
+
+    df = pb.ConvertToDataFrame()
+    self.assertEqual(
+        df.to_dict("records"),
+        [
+            {"Benchmark": "BM_Test1", "Duration": 2, "CPUTimes": 3},
+            {"Benchmark": "BM_Test2", "Duration": 4, "CPUTimes": 5},
+        ],
+    )
+
+  def test_save_benchmark_results(self):
+    pb = parallel_bench_lib.ParallelBench(
+        cpus=[0, 1],
+        cpu_affinity=False,
+        weighted_selection=False,
+        utilization=0.5,
+        duration=0.1,
+        temp_root=absltest.get_default_test_tmpdir(),
+    )
+    df = pd.DataFrame([
+        {"Benchmark": "BM_Test1", "Duration": 1, "CPUTimes": 1},
+        {"Benchmark": "BM_Test2", "Duration": 1, "CPUTimes": 2},
+    ])
+
+    pb.SaveBenchmarkResults(df)
+    file_name = os.path.join(absltest.get_default_test_tmpdir(), "results.json")
+    self.assertTrue(os.path.exists(file_name))
+    with open(file_name, "r") as json_file:
+      data = json.load(json_file)
+    self.assertEqual(
+        data,
+        [
+            {"name": "BM_Test1", "Duration": 1, "cpu_time": 1},
+            {"name": "BM_Test2", "Duration": 1, "cpu_time": 2},
         ],
     )
 

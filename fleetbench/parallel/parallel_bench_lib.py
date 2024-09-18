@@ -370,29 +370,11 @@ class ParallelBench:
               BenchmarkTimes(wall_time=r.duration, cpu_time=r.bm_cpu_time)
           )
 
-  def GenerateBenchmarkReport(self) -> None:
+  def GenerateBenchmarkReport(self, df: pd.DataFrame) -> None:
     """Print some aggregated results of the benchmark runs."""
-    utilization = pd.DataFrame(
-        self.utilization_samples, columns=["timestamp", "utilization"]
-    )
-    data = []
-    for benchmark, times_list in self.runtimes.items():
-      for t in times_list[1:]:
-        entry = {
-            "Benchmark": benchmark,
-            "Duration": t.wall_time,
-            "CPUTimes": t.cpu_time,
-        }
-        data.append(entry)
-    runtimes = pd.DataFrame(data)
-
-    # TODO(rjogrady): We can do more here - plot utilization over time, etc.
-    logging.info("Ran %d total benchmarks", runtimes["Benchmark"].count())
-    logging.info("Median Utilization: %f", utilization["utilization"].median())
-    logging.info("Benchmark runtimes report:")
 
     grouped_results = (
-        runtimes.groupby("Benchmark")
+        df.groupby("Benchmark")
         .agg(
             Count=("Duration", "count"),
             Median_Duration=("Duration", "median"),
@@ -401,6 +383,32 @@ class ParallelBench:
         .round(3)
     )
     print(grouped_results.to_string())
+
+  def SaveBenchmarkResults(self, df: pd.DataFrame) -> None:
+    """Saves benchmark results to a JSON file for predictiveness analysis."""
+
+    file_name = os.path.join(self.temp_root, "results.json")
+    try:
+      # Convert DataFrame to a list of dictionaries (one for each row)
+      # Rename the column "Benchmark" to "Name"
+      df = df.rename(columns={"Benchmark": "name"})
+      df = df.rename(columns={"CPUTimes": "cpu_time"})
+
+      # Remove "fleetbench (" prefix and ")" suffix
+      df["name"] = (
+          df["name"]
+          .astype(str)
+          .str.replace(r"fleetbench \((.*)\)", r"\1", regex=True)
+      )
+      data = df.to_dict(orient="records")
+
+      with open(file_name, "w") as json_file:
+        json.dump(
+            data, json_file, indent=4
+        )  # Serialize and write with indentation
+        logging.info("Summary results successfully written to %s", file_name)
+    except (IOError, json.JSONDecodeError) as e:
+      print(f"Error writing JSON data: {e}")
 
   def GeneratePerfCounterReport(self, counters: list[str]) -> None:
     """Generate a report of the perf counters for each benchmark."""
@@ -436,6 +444,43 @@ class ParallelBench:
     perf_counters_results.to_csv(
         os.path.join(self.temp_root, "perf_counters.csv")
     )
+
+  def ConvertToDataFrame(self) -> pd.DataFrame:
+    """Converts benchmark results to a DataFrame."""
+    utilization = pd.DataFrame(
+        self.utilization_samples, columns=["timestamp", "utilization"]
+    )
+    data = []
+
+    for benchmark, times_list in self.runtimes.items():
+      for t in times_list[1:]:
+        entry = {
+            "Benchmark": benchmark,
+            "Duration": t.wall_time,
+            "CPUTimes": t.cpu_time,
+        }
+        data.append(entry)
+    runtimes = pd.DataFrame(data)
+
+    # TODO(rjogrady): We can do more here - plot utilization over time, etc.
+    logging.info("Ran %d total benchmarks", runtimes["Benchmark"].count())
+    logging.info("Median Utilization: %f", utilization["utilization"].median())
+    return runtimes
+
+  def PostProcessBenchmarkResults(self, benchmark_perf_counters: str) -> None:
+    """Generate benchmark reports and save results to a JSON file.
+
+    If benchmark_perf_counters is specified, also generate a report of the perf
+    counters for each benchmark.
+    """
+
+    df = self.ConvertToDataFrame()
+    self.SaveBenchmarkResults(df)
+    self.GenerateBenchmarkReport(df)
+
+    if benchmark_perf_counters:
+      counters = benchmark_perf_counters.split(",")
+      self.GeneratePerfCounterReport(counters)
 
   def Run(
       self,
@@ -483,8 +528,5 @@ class ParallelBench:
       logging.debug("Joining worker on CPU %d", cpu_id)
       w.join()
 
-    self.GenerateBenchmarkReport()
-
-    if benchmark_perf_counters:
-      counters = benchmark_perf_counters.split(",")
-      self.GeneratePerfCounterReport(counters)
+    # Post-process benchmark results
+    self.PostProcessBenchmarkResults(benchmark_perf_counters)
