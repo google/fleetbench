@@ -86,7 +86,7 @@ std::vector<std::vector<std::string>> ReadCsv(std::filesystem::path file,
 absl::btree_map<int, double> ConvertLine(const std::vector<std::string>& line);
 
 // Returns the runtime path of a runfile in the fleetbench directory.
-std::string GetFleetbenchRuntimePath(const absl::string_view path);
+std::string GetFleetbenchRuntimePath(absl::string_view path);
 
 int GetCacheSize(int cache_level, absl::string_view cache_type = "");
 

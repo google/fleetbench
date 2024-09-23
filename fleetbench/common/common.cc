@@ -145,15 +145,28 @@ absl::btree_map<int, double> ConvertLine(const std::vector<std::string>& line) {
   return result;
 }
 
+std::string GetSelfPath() {
+  char buf[PATH_MAX + 1];
+  ssize_t len = readlink("/proc/self/exe", buf, sizeof(buf));
+  PCHECK(len != -1) << "Failed to get executable path";
+  CHECK_LT(len, PATH_MAX) << "Executable path is too long";
+  return std::string(buf, len);
+}
+
 std::string GetFleetbenchRuntimePath(const absl::string_view path) {
   //github.com/bazelbuild/bazel/blob/master/tools/cpp/runfiles/runfiles_src.h
   std::string error;
-  const char* program_path = std::getenv("FLEETBENCH_PROGRAM_PATH");
-  std::unique_ptr<Runfiles> runfiles(Runfiles::Create(program_path, &error));
-  if (runfiles == nullptr)
-    LOG(FATAL) << "Can't find runfile directory: " << error;
-  return runfiles->Rlocation(
-      absl::StrCat("com_google_fleetbench/fleetbench/", path));
+  std::filesystem::path program_path = GetSelfPath();
+  auto runfiles = Runfiles::Create(program_path.string(), &error);
+  if (runfiles != nullptr) {
+    return runfiles->Rlocation(
+        absl::StrCat("com_google_fleetbench/fleetbench/", path));
+  }
+  // Fall back to looking in the current directory.
+  std::filesystem::path runtime_path = program_path.parent_path() / path;
+  if (std::filesystem::is_directory(runtime_path)) {
+    return runtime_path.string();
+  }
 }
 
 int GetCacheSize(int cache_level, absl::string_view cache_type) {
