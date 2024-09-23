@@ -106,6 +106,7 @@ py_test(
     deps = [
         ":cpu",
         "@com_google_absl_py//absl/testing:absltest",
+        requirement("psutil"),
     ],
 )
 

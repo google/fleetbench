@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from unittest import mock
+
 from absl.testing import absltest
+import psutil
+
 from fleetbench.parallel import cpu
 
 
@@ -21,9 +25,12 @@ class CpuTest(absltest.TestCase):
   def test_Available(self):
     self.assertGreaterEqual(len(cpu.Available()), 1)
 
-  def test_Utilization(self):
-    average, per_cpu, busy_cpu = cpu.Utilization([1])
-    self.assertEqual(average, per_cpu[1])
+  @mock.patch.object(psutil, "cpu_percent")
+  def test_Utilization(self, mock_cpu_percent):
+    mock_cpu_percent.return_value = [10, 100, 25, 0]
+    average, per_cpu, busy_cpu = cpu.Utilization([1, 3])
+    self.assertEqual(per_cpu, {1: 100, 3: 0})
+    self.assertEqual(average, 50)
     self.assertEqual(busy_cpu, 1)
 
     with self.assertRaises(ValueError):
