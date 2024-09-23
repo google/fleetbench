@@ -19,12 +19,22 @@ import re
 import subprocess
 
 from absl import flags
+from absl import logging
+
 
 _BENCHMARK_DIR = flags.DEFINE_string(
     "benchmark_dir",
     None,
     "Directory containing benchmarks.",
 )
+
+
+def CleanEnv() -> dict[str, str]:
+  """Returns a copy of the current environment suitable for subprocesses."""
+  env = os.environ.copy()
+  # Subprocesses don't share the same runfiles as this script.
+  env.pop("RUNFILES_MANIFEST_FILE", None)
+  return env
 
 
 def _FindBenchmarkPath(benchmark: str) -> str:
@@ -59,7 +69,13 @@ def GetSubBenchmarks(benchmark_path: str, workload: str = "") -> list[str]:
     cmd += [
         f"--benchmark_filter=BM_{workload.upper()}",
     ]
-  p = subprocess.run(cmd, capture_output=True, text=True, check=True)
+  try:
+    p = subprocess.run(
+        cmd, capture_output=True, text=True, check=True, env=CleanEnv()
+    )
+  except subprocess.CalledProcessError as e:
+    logging.exception("Failed to get sub-benchmarks: %s (%s)", cmd, e.stderr)
+    raise
   return p.stdout.split("\n")[:-1]
 
 

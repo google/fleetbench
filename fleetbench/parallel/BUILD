@@ -42,7 +42,10 @@ py_library(
 py_library(
     name = "benchmark",
     srcs = ["benchmark.py"],
-    deps = ["@com_google_absl_py//absl/flags"],
+    deps = [
+        "@com_google_absl_py//absl/flags",
+        "@com_google_absl_py//absl/logging",
+    ],
 )
 
 py_library(

@@ -37,7 +37,9 @@ class Run:
     logging.debug("running %s", command)
     try:
       start = time.time()
-      proc = subprocess.run(command, capture_output=True, check=True, text=True)
+      proc = subprocess.run(
+          command, capture_output=True, check=True, text=True, env=bm.CleanEnv()
+      )
       end = time.time()
     except subprocess.CalledProcessError as e:
       logging.exception("Run failed: %s (%s)", command, e.stderr)

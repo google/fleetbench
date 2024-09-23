@@ -144,6 +144,7 @@ class BenchmarkTest(absltest.TestCase):
         capture_output=True,
         text=True,
         check=True,
+        env=mock.ANY,
     )
 
 
