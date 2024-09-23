@@ -165,6 +165,7 @@ cc_binary(
     srcs = [
         "rpcperf_main.cc",
     ],
+    args = ["--grpc_experiments=-work_serializer_dispatch"],
     deps = [
         ":grpc_client",
         ":grpc_server",
@@ -180,6 +181,7 @@ cc_binary(
 cc_test(
     name = "rpc_benchmark",
     srcs = ["rpcperf_benchmark.cc"],
+    args = ["--grpc_experiments=-work_serializer_dispatch"],
     linkstatic = 1,
     deps = [
         ":grpc_client",
