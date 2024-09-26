@@ -19,8 +19,11 @@ package fleetbench.rpc;
 import "fleetbench/rpc/protos/RequestMessage.proto";
 import "fleetbench/rpc/protos/ResponseMessage.proto";
 
+// FleetBenchPerf is a service for benchmarking RPC performance by sending
+// and receiving fleet-representative messages.
 service FleetBenchPerf {
+  // Handles a message and returns a random response. May add a delay depending
+  // on service configuration.
   rpc Message(fleetbench.rpc.RequestMessage)
-      returns (fleetbench.rpc.ResponseMessage) {
-  }
+      returns (fleetbench.rpc.ResponseMessage) {}
 }
