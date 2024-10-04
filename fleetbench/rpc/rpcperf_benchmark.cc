@@ -67,6 +67,7 @@ class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_RPC_Fleet");
   }
 };
 
