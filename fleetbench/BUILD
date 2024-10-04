@@ -82,6 +82,7 @@ selects.config_setting_group(
 
 cc_test(
     name = "fleetbench",
+    args = ["--grpc_experiments=-work_serializer_dispatch"],
     data = ["//fleetbench/compression:corpus"],
     linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
@@ -91,6 +92,7 @@ cc_test(
         "//fleetbench/hashing:hashing_benchmark_lib",
         "//fleetbench/libc:mem_benchmark_lib",
         "//fleetbench/proto:proto_benchmark_lib",
+        "//fleetbench/rpc:rpc_benchmark_lib",
         "//fleetbench/stl:cord_benchmark_lib",
         "//fleetbench/swissmap:swissmap_benchmark_lib",
         "//fleetbench/tcmalloc:empirical_driver_lib",

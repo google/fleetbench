@@ -178,11 +178,11 @@ cc_binary(
     ],
 )
 
-cc_test(
-    name = "rpc_benchmark",
+cc_library(
+    name = "rpc_benchmark_lib",
+    testonly = True,
     srcs = ["rpcperf_benchmark.cc"],
-    args = ["--grpc_experiments=-work_serializer_dispatch"],
-    linkstatic = 1,
+    visibility = ["//fleetbench:__pkg__"],
     deps = [
         ":grpc_client",
         ":grpc_server",
@@ -194,5 +194,16 @@ cc_test(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
         "@com_google_benchmark//:benchmark",
+    ],
+    alwayslink = True,
+)
+
+cc_test(
+    name = "rpc_benchmark",
+    args = ["--grpc_experiments=-work_serializer_dispatch"],
+    linkstatic = 1,
+    deps = [
+        ":rpc_benchmark_lib",
+        "//fleetbench:benchmark_main",
     ],
 )
