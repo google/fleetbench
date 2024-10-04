@@ -21,6 +21,7 @@ syntax = "proto2";
 package fleetbench.rpc;
 
 import "fleetbench/rpc/protos/P0ResponseMessage.proto";
+import "fleetbench/rpc/protos/P10ResponseMessage.proto";
 import "fleetbench/rpc/protos/P1ResponseMessage.proto";
 import "fleetbench/rpc/protos/P2ResponseMessage.proto";
 import "fleetbench/rpc/protos/P3ResponseMessage.proto";
@@ -43,5 +44,6 @@ message ResponseMessage {
     P7ResponseMessage p7 = 8;
     P8ResponseMessage p8 = 9;
     P9ResponseMessage p9 = 10;
+    P10ResponseMessage p10 = 11;
   }
 }

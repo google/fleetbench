@@ -26,6 +26,8 @@
 #include "absl/strings/string_view.h"
 #include "fleetbench/rpc/protos/P0RequestMessage.h"
 #include "fleetbench/rpc/protos/P0ResponseMessage.h"
+#include "fleetbench/rpc/protos/P10RequestMessage.h"
+#include "fleetbench/rpc/protos/P10ResponseMessage.h"
 #include "fleetbench/rpc/protos/P1RequestMessage.h"
 #include "fleetbench/rpc/protos/P1ResponseMessage.h"
 #include "fleetbench/rpc/protos/P2RequestMessage.h"
@@ -53,7 +55,7 @@ const int kMaxSettersPerMessage = 4;
 const int kMaxMessagesPerProgram = 3;
 inline const std::map<absl::string_view, int>* kPrograms = new
 std::map<absl::string_view, int>({{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3},
-{"4", 4}, {"5", 5}, {"6", 6}, {"7", 7}, {"8", 8}, {"9", 9}});
+{"4", 4}, {"5", 5}, {"6", 6}, {"7", 7}, {"8", 8}, {"9", 9}, {"Fleet", 10}});
 
 inline void RequestMessage_Set(absl::string_view program, const int msg_idx,
                                const int var_idx,
@@ -109,6 +111,11 @@ inline void RequestMessage_Set(absl::string_view program, const int msg_idx,
     case 9:
       fleetbench::rpc::P9RequestMessage_Set(msg_idx, var_idx,
                                             message->mutable_p9(), s);
+      break;
+
+    case 10:
+      fleetbench::rpc::P10RequestMessage_Set(msg_idx, var_idx,
+                                             message->mutable_p10(), s);
       break;
 
     default:
@@ -170,6 +177,11 @@ inline void ResponseMessage_Set(absl::string_view program, const int msg_idx,
     case 9:
       fleetbench::rpc::P9ResponseMessage_Set(msg_idx, var_idx,
                                              message->mutable_p9(), s);
+      break;
+
+    case 10:
+      fleetbench::rpc::P10ResponseMessage_Set(msg_idx, var_idx,
+                                              message->mutable_p10(), s);
       break;
 
     default:
