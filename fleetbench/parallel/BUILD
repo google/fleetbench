@@ -10,6 +10,7 @@ py_library(
     name = "cpu",
     srcs = ["cpu.py"],
     deps = [
+        "@com_google_absl_py//absl/logging",
         requirement("psutil"),
     ],
 )
@@ -109,6 +110,7 @@ py_test(
     deps = [
         ":cpu",
         "@com_google_absl_py//absl/testing:absltest",
+        "@com_google_absl_py//absl/testing:parameterized",
         requirement("psutil"),
     ],
 )

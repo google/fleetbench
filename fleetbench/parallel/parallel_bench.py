@@ -60,7 +60,6 @@ _BENCHMARK_FILTER = flags.DEFINE_multi_string(
     """,
 )
 
-
 _WORKLOAD_FILTER = flags.DEFINE_multi_string(
     "workload_filter",
     [],
@@ -126,6 +125,19 @@ _NUM_CPUS = flags.DEFINE_integer(
     upper_bound=len(cpu.Available()),
 )
 
+_HYPERTHREADING_MODE = flags.DEFINE_enum_class(
+    "hyperthreading_mode",
+    cpu.HyperthreadingMode.DYNAMIC,
+    cpu.HyperthreadingMode,
+    "The scheduling_mode to use. If particular, this controls the SMT state. If"
+    " set to DISABLE, SMT will be disabled. If set to DYNAMIC, SMT will be"
+    " enabled and the scheduler will be allowed to pin workloads. If set to"
+    " SKEWED, SMT will be enabled and workloads will be pinned to Socket0 and"
+    " lower hyperthreads as primary and higher hyperthreads as secondary. If"
+    " set to BALANCED, SMT will be enabled and workloads will be balanced"
+    " across sockets and hyperthreads.",
+)
+
 
 def main(argv: Sequence[str]) -> None:
   if len(argv) > 1:
@@ -134,12 +146,18 @@ def main(argv: Sequence[str]) -> None:
   shutil.rmtree(_TEMP_ROOT.value, ignore_errors=True)
   os.makedirs(_TEMP_ROOT.value, exist_ok=True)
 
-  cpus = list(cpu.Available())[: _NUM_CPUS.value]
+  scheduling_mode = cpu.CpuSchedulingMode(
+      num_cpus=_NUM_CPUS.value,
+      utilization=_UTILIZATION.value,
+      hyperthreading_mode=_HYPERTHREADING_MODE.value,
+  )
+  cpus, target_utilization = scheduling_mode.SelectCPURangeAndSetUtilization()
+
   bench = parallel_bench_lib.ParallelBench(
       cpus=cpus,
       cpu_affinity=_CPU_AFFINITY.value,
       weighted_selection=_WEIGHTED_SELECTION.value,
-      utilization=_UTILIZATION.value,
+      utilization=target_utilization,
       duration=_DURATION.value,
       temp_root=_TEMP_ROOT.value,
   )
