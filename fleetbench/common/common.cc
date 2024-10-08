@@ -164,9 +164,9 @@ std::string GetFleetbenchRuntimePath(const absl::string_view path) {
   }
   // Fall back to looking in the current directory.
   std::filesystem::path runtime_path = program_path.parent_path() / path;
-  if (std::filesystem::is_directory(runtime_path)) {
-    return runtime_path.string();
-  }
+  CHECK(std::filesystem::is_directory(runtime_path))
+      << "Runtime path not found: " << runtime_path;
+  return runtime_path.string();
 }
 
 int GetCacheSize(int cache_level, absl::string_view cache_type) {
