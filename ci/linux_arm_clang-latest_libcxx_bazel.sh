@@ -48,5 +48,5 @@ TOOLCHAIN_TYPE="aarch64-unknown-linux-gnu"
 for std in ${STD}; do
   run_generic_tests \
     "-e PATH=${PATH}:${CLANG_PATH}/bin -e BAZEL_CXXOPTS=-std=${std}:-nostdinc++ -e BAZEL_LINKOPTS=-L${CLANG_PATH}/lib/${TOOLCHAIN_TYPE}:-lc++:-lc++abi:-lm:-Wl,-rpath=${CLANG_PATH}/lib/${TOOLCHAIN_TYPE} -e CPLUS_INCLUDE_PATH=${CLANG_PATH}/include/${TOOLCHAIN_TYPE}/c++/v1:${CLANG_PATH}/include/c++/v1" \
-    "--config=clang"
+    "--config=clang --config=arm"
 done
