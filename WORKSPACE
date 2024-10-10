@@ -212,7 +212,7 @@ py_repositories()
 
 python_register_toolchains(
     name = "python3_12",
-    # TODO(rjogrady): Consider running the Docker build as non-root.
+    # TODO: Consider running the Docker build as non-root.
     ignore_root_user_error = True,
     python_version = "3.12",
 )

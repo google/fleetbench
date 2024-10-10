@@ -462,7 +462,7 @@ class ParallelBench:
         data.append(entry)
     runtimes = pd.DataFrame(data)
 
-    # TODO(rjogrady): We can do more here - plot utilization over time, etc.
+    # TODO: We can do more here - plot utilization over time, etc.
     logging.info("Ran %d total benchmarks", runtimes["Benchmark"].count())
     logging.info("Median Utilization: %f", utilization["utilization"].median())
     return runtimes
