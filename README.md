@@ -74,6 +74,8 @@ STL-Cord    | Instruction-focused.
 
 We support Bazel version 6 and 7.
 
+NOTE: Our setup uses Bazel 7.0.1 and LLVM 17.0.1.
+
 As an example, to run the Swissmap benchmarks:
 
 ```
@@ -89,16 +91,39 @@ Replacing the `$WORK_LOAD` and `$BUILD_TARGET` with one of the entry in the
 table to build and run the benchmark. The reasons why we add each build flag are
 explained in the next few sections.
 
+<section class="tabs">
+
+#### X86 {.new-tab}
+
 ```
-GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel build --config=clang --config=opt --config=haswell fleetbench/WORK_LOAD:BUILD_TARGET
+GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel build --config=clang --config=opt \
+--config=haswell fleetbench/WORK_LOAD:BUILD_TARGET
 bazel-bin/fleetbench/WORK_LOAD/BUILD_TARGET
 ```
 
 Or combining build and run together:
 
 ```
-GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel run --config=clang --config=opt --config=haswell fleetbench/WORK_LOAD:BUILD_TARGET
+GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel run --config=clang --config=opt \
+--config=haswell fleetbench/WORK_LOAD:BUILD_TARGET
 ```
+
+#### Arm {.new-tab}
+
+```
+GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel build --config=clang --config=opt \
+--config=arm fleetbench/WORK_LOAD:BUILD_TARGET
+bazel-bin/fleetbench/WORK_LOAD/BUILD_TARGET
+```
+
+Or combining build and run together:
+
+```
+GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel run --config=clang --config=opt \
+--config=arm fleetbench/WORK_LOAD:BUILD_TARGET
+```
+
+</section>
 
 Benchmark   | WORKLOAD    | BUILD_TARGET          | Binary run flags
 ----------- | ----------- | --------------------- | ----------------
@@ -181,7 +206,8 @@ Note: to make this setting the default, add `build --config=clang` to your
 If running on an x86 Haswell or above machine, we suggest adding
 `--config=haswell` for consistency with our compiler flags.
 
-Use `--config=westmere` for Westmere-era processors.
+Use `--config=westmere` for Westmere-era processors, and `--config=arm` for ARM
+ones.
 
 ### Reducing run-to-run variance
 
