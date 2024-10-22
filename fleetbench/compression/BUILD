@@ -113,6 +113,7 @@ cc_library(
 cc_test(
     name = "compression_benchmark",
     data = [":corpus"],
+    linkstatic = 1,
     tags = ["manual"],
     deps = [
         ":compression_benchmark_lib",
