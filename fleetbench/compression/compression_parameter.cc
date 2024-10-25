@@ -14,10 +14,11 @@
 
 #include "fleetbench/compression/compression_parameter.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <fstream>
 #include <ios>
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
@@ -35,8 +36,9 @@ GetCompressionLevelsMap() {
                       absl::flat_hash_map<std::string, std::vector<int64_t> > >
       compression_levels_map;
 
-  std::string path = GetFleetbenchRuntimePath(
-      "compression/compression_parameters/compression_level_external.csv");
+  std::string path = absl::StrCat(
+      GetFleetbenchRuntimePath("compression/compression_parameters/"),
+      "compression_level_external.csv");
 
   std::string line;
   std::fstream file(path, std::ios_base::in);

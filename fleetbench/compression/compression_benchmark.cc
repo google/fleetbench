@@ -49,7 +49,8 @@ class CompressionCorpus {
     // Open the zip file and read the entries.
     // Store the names, sizes and indices of the entries.
     int error = 0;
-    auto corpus_path = GetFleetbenchRuntimePath("compression/corpus.zip");
+    auto corpus_path =
+        absl::StrCat(GetFleetbenchRuntimePath("compression/"), "corpus.zip");
     archive_ = zip_open(corpus_path.c_str(), 0, &error);
     if (archive_ == nullptr) {
       LOG(FATAL) << "Failed to open zip archive: " << corpus_path
