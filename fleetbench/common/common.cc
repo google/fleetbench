@@ -183,8 +183,28 @@ int GetCacheSize(int cache_level, absl::string_view cache_type) {
 
   for (const CacheInfo& ci : benchmark::CPUInfo::Get().caches) {
     if (ci.level == cache_level) {
-      if ((cache_level == 1 && ci.type == cache_type) || (cache_level > 1))
+      if ((cache_level == 1 && ci.type == cache_type) || (cache_level == 2)) {
         return ci.size;
+      } else if (cache_level == 3) {
+        int l3_size = ci.size;
+#if defined(__x86_64__)
+        // l3_size has different meanings on different platforms. On Intel
+        // platforms, it is the unified L3 cache size per socket. On AMDs,
+        // however, it is the sharded L3 cache size per CCX.
+        // "divide by 2" accounts for the fact that x86 platforms have two
+        // hyperthreads per core.
+        // Thus, we need to find the "actual" L3 cache size per socket.
+        int multiplier =
+            benchmark::CPUInfo::Get().num_cpus / ci.num_sharing / 2;
+        l3_size *= multiplier;
+#endif
+
+        return l3_size;
+      } else {
+        LOG(FATAL) << "Cache size could not be detected. You can use the "
+                      "--L1_data_size, --L2_size, and --L3_size flags to "
+                      "specify the cache sizes (in bytes) manually.";
+      }
     }
   }
 
