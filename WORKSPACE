@@ -107,7 +107,7 @@ http_archive(
 
 # libpfm4, for perf counters
 http_archive(
-    name = "libpfm",  # 2023-01-12
+    name = "libpfm",  # 2024-10-30
     # use our own build file, based from google/benchmark/tools, but modified to
     # disable use-after-free, which is emitted when building libpfm.
     build_file_content = """
@@ -130,10 +130,10 @@ make(
     ],
 )
     """,
-    sha256 = "5da5f8872bde14b3634c9688d980f68bda28b510268723cc12973eedbab9fecc",
-    strip_prefix = "libpfm-4.11.0",
+    integrity = "sha256-0YuXdkx1VSjBBR03bjNUXQ62DG6/hWgENoE/pbBMw9E=",
+    strip_prefix = "libpfm-4.13.0",
     type = "tar.gz",
-    urls = ["https://sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz/download"],
+    urls = ["https://sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.13.0.tar.gz/download"],
 )
 
 # TCMalloc
