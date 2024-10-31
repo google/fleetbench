@@ -108,28 +108,7 @@ http_archive(
 # libpfm4, for perf counters
 http_archive(
     name = "libpfm",  # 2024-10-30
-    # use our own build file, based from google/benchmark/tools, but modified to
-    # disable use-after-free, which is emitted when building libpfm.
-    build_file_content = """
-load("@rules_foreign_cc//foreign_cc:defs.bzl", "make")
-
-filegroup(
-    name = "pfm_srcs",
-    srcs = glob(["**"]),
-)
-
-make(
-    name = "libpfm",
-    lib_source = ":pfm_srcs",
-    lib_name = "libpfm",
-    # this disables debug mode. In particular, this makes sure certain
-    # warning-as-error of libpfm aren't surfaced, which would break the build.
-    args = ["DBG="],
-    visibility = [
-        "//visibility:public",
-    ],
-)
-    """,
+    build_file = "//fleetbench:libpfm.BUILD.bazel",
     integrity = "sha256-0YuXdkx1VSjBBR03bjNUXQ62DG6/hWgENoE/pbBMw9E=",
     strip_prefix = "libpfm-4.13.0",
     type = "tar.gz",

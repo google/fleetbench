@@ -21,7 +21,9 @@ build --host_cxxopt='-std=c++17'
 # specified in WORKSPACE, and the two versions clash.
 build --noenable_bzlmod
 
-# Enable libpfm (performance counters) by default.
+# Enable libpfm (performance counters) by default. This corresponds to
+# the config setting in the benchmark library:
+# https://github.com/google/benchmark/blob/d99cdd7356de97b3056684d6b511189778d8a247/BUILD.bazel#L47
 build --define=pfm=1
 # Disable RLS and XDS support in gRPC. We don't need these and they take
 # a long time to build.
