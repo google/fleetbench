@@ -194,8 +194,8 @@ int GetCacheSize(int cache_level, absl::string_view cache_type) {
         // "divide by 2" accounts for the fact that x86 platforms have two
         // hyperthreads per core.
         // Thus, we need to find the "actual" L3 cache size per socket.
-        int multiplier =
-            benchmark::CPUInfo::Get().num_cpus / ci.num_sharing / 2;
+        int multiplier = std::max(
+            1, benchmark::CPUInfo::Get().num_cpus / ci.num_sharing / 2);
         l3_size *= multiplier;
 #endif
 
