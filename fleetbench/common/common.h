@@ -70,8 +70,8 @@ struct MemDistributionData {
 };
 
 // Similar to ReadDistributionFile(), but for a CSV file that additionally
-// contains the overlap probability in a second line. The function returns a
-// pair consisting of the distribution and the overlap probability.
+// contains the overlap probability in a second line, and the alignment
+// distribution in a third line.
 MemDistributionData ReadMemDistributionFile(std::filesystem::path file);
 
 // Similar to ReadDistributionFile, except this function accepts file that has
