@@ -47,8 +47,7 @@ build:opt --compilation_mode=opt
 build:opt --copt='-O3'
 build:opt --copt='-momit-leaf-frame-pointer'
 
-# TODO- enable PIE in opt mode. This doesn't work with libpfm.
-# build:opt --force_pic
+build:opt --force_pic
 
 # Clang-specific flags and settings.
 # Define --config=clang. clang must be in the PATH.
