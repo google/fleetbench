@@ -166,6 +166,7 @@ cc_binary(
         "rpcperf_main.cc",
     ],
     args = ["--grpc_experiments=-work_serializer_dispatch"],
+    malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
         ":grpc_client",
         ":grpc_server",
@@ -202,6 +203,7 @@ cc_test(
     name = "rpc_benchmark",
     args = ["--grpc_experiments=-work_serializer_dispatch"],
     linkstatic = 1,
+    malloc = "@com_google_tcmalloc//tcmalloc",
     deps = [
         ":rpc_benchmark_lib",
         "//fleetbench:benchmark_main",
