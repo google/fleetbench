@@ -47,6 +47,7 @@ start_docker_container() {
     --workdir=/fleetbench \
     --cap-add=SYS_PTRACE \
     --detach=true \
+    --env=TZ="America/Los_Angeles" \
     --interactive=true \
     --tty=true \
     --rm \
