@@ -249,13 +249,7 @@ class BenchmarkRegisterer {
   BenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
 
-    // We use the fleet-wide distributions as the defaults.
-    DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_HASHING_Extendcrc32cinternal_Fleet_hot");
-    DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_HASHING_Computecrc32c_Fleet_hot");
-    DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_HASHING_Combine_contiguous_Fleet_hot");
+    // We use the fleet-wide cold distributions as the defaults.
     DynamicRegistrar::Get()->AddDefaultFilter(
         "BM_HASHING_Extendcrc32cinternal_Fleet_cold");
     DynamicRegistrar::Get()->AddDefaultFilter(
