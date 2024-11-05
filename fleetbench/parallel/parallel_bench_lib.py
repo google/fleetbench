@@ -414,7 +414,8 @@ class ParallelBench:
     """Generate a report of the perf counters for each benchmark."""
     performance_data = []
     for filename in os.listdir(self.temp_root):
-
+      if filename == "results.json":
+        continue
       file_path = os.path.join(self.temp_root, filename)
       with open(file_path, "r") as f:
         benchmark_result = json.loads(f.read())["benchmarks"][0]
