@@ -554,11 +554,12 @@ void RegisterHotBenchmarks() {
         ->ArgPair(1, 1)
         ->ArgPair(1, 7)
         ->ArgPair(6, 7)
-        ->ArgPair(0, 100)
-        ->ArgPair(1, 100)
-        ->ArgPair(13, 100)
-        ->ArgPair(70, 100)
-        ->ArgPair(255, 256);
+        ->ArgPair(0, 127)
+        ->ArgPair(1, 127)
+        ->ArgPair(13, 127)
+        ->ArgPair(70, 127)
+        ->ArgPair(100, 255)
+        ->ArgPair(255, 255);
   };
 
   REGISTER_BENCHMARK(BM_SWISSMAP_IntDestructor)->Apply(destructor_setup_fn);
