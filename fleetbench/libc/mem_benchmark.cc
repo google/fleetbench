@@ -536,6 +536,11 @@ class BenchmarkRegisterer {
     DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memcpy_Fleet_L1");
     DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memmove_Fleet_L1");
     DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memset_Fleet_L1");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Bcmp_Fleet_Cold");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memcmp_Fleet_Cold");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memcpy_Fleet_Cold");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memmove_Fleet_Cold");
+    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memset_Fleet_Cold");
   }
 };
 
