@@ -18,569 +18,133 @@ syntax = "proto2";
 package fleetbench.rpc.P4.request.Message2;
 
 message Message2 {
-  enum E1 {
-    E1_UNSPECIFIED = 0;
-    E1_CONST_1 = 108;
-    E1_CONST_2 = 10;
-    E1_CONST_3 = 111;
-    E1_CONST_4 = 54;
-    E1_CONST_5 = 61;
-  }
-  repeated E1 f_0 = 1 [packed = true];
-  optional double f_1 = 2;
-  optional int32 f_2 = 3;
-  optional int32 f_3 = 5;
-  optional int32 f_4 = 7;
-  optional bool f_5 = 8;
-  optional fixed64 f_6 = 9;
-  optional int32 f_7 = 10;
-  enum E2 {
-    E2_UNSPECIFIED = 0;
-    E2_CONST_1 = 41;
-    E2_CONST_2 = 122;
-    E2_CONST_3 = 11;
-    E2_CONST_4 = 1;
-    E2_CONST_5 = 67;
-  }
-  optional E2 f_8 = 12;
-  optional string f_9 = 14;
-  optional fixed64 f_10 = 15;
-  optional int32 f_11 = 16;
-  optional fixed32 f_12 = 18;
-  optional int32 f_13 = 20;
-  optional fixed64 f_14 = 24;
-  optional fixed64 f_15 = 26;
-  optional bool f_16 = 28;
-  optional fixed64 f_17 = 29;
-  optional string f_18 = 30;
-  optional int32 f_19 = 31;
-  optional int32 f_20 = 32;
-  optional string f_21 = 34;
-  optional fixed64 f_22 = 35;
-  optional string f_23 = 37;
-  optional fixed64 f_24 = 40;
-  enum E3 {
-    E3_UNSPECIFIED = 0;
-    E3_CONST_1 = 76;
-    E3_CONST_2 = 22;
-    E3_CONST_3 = 111;
-    E3_CONST_4 = 114;
-    E3_CONST_5 = 87;
-  }
-  repeated E3 f_25 = 43 [packed = true];
-  enum E4 {
-    E4_UNSPECIFIED = 0;
-    E4_CONST_1 = 92;
-    E4_CONST_2 = 114;
-    E4_CONST_3 = 43;
-    E4_CONST_4 = 34;
-    E4_CONST_5 = 31;
-  }
-  optional E4 f_26 = 45;
-  enum E5 {
-    E5_UNSPECIFIED = 0;
-    E5_CONST_1 = 51;
-    E5_CONST_2 = 63;
-    E5_CONST_3 = 17;
-    E5_CONST_4 = 90;
-    E5_CONST_5 = 93;
-  }
-  repeated E5 f_27 = 46 [packed = true];
-  optional fixed64 f_28 = 48;
-  optional int64 f_29 = 49;
+  optional int32 f_0 = 4;
+  optional string f_1 = 9;
+  optional string f_2 = 11;
+  optional bytes f_3 = 16;
+  optional bytes f_4 = 20;
+  optional string f_5 = 26;
+  optional int32 f_6 = 30;
+  optional string f_7 = 35;
+  optional string f_8 = 40;
+  optional int32 f_9 = 45;
+  optional int32 f_10 = 47;
+  optional string f_11 = 51;
   message M1 {
-    optional fixed64 f_0 = 2;
-    optional bool f_1 = 3;
-    optional fixed64 f_2 = 5;
-    optional fixed64 f_3 = 6;
-    optional bool f_4 = 7;
-    optional string f_5 = 8;
-    enum E6 {
-      E6_UNSPECIFIED = 0;
-      E6_CONST_1 = 47;
-      E6_CONST_2 = 7;
-      E6_CONST_3 = 91;
-      E6_CONST_4 = 20;
-      E6_CONST_5 = 106;
-    }
-    repeated E6 f_6 = 9 [packed = true];
-    optional string f_7 = 10;
-    optional fixed32 f_8 = 11;
-    optional double f_9 = 12;
-    message M12 {
-      optional fixed32 f_0 = 1;
-      optional fixed32 f_1 = 2;
-      optional fixed64 f_2 = 3;
-      optional int32 f_3 = 4;
-    }
-    optional M12 f_14 = 14;
+    optional string f_0 = 2;
   }
-  optional M1 f_50 = 50;
+  optional M1 f_53 = 53;
   message M2 {
-    optional string f_0 = 3;
-    message M18 {
-      optional bool f_0 = 1;
-      optional fixed64 f_1 = 2;
-      optional int32 f_2 = 4;
-      optional double f_3 = 5;
+    optional int32 f_0 = 5;
+    optional bytes f_1 = 9;
+    optional string f_2 = 12;
+    optional int32 f_3 = 19;
+    optional bytes f_4 = 23;
+    optional bytes f_5 = 28;
+    optional string f_6 = 31;
+    optional int32 f_7 = 34;
+    optional bytes f_8 = 37;
+    optional int32 f_9 = 42;
+    message M8 {
+      optional string f_0 = 3;
     }
-    optional M18 f_4 = 4;
-    message M19 {
-      optional string f_0 = 1;
-      optional fixed64 f_1 = 2;
-    }
-    optional M19 f_6 = 6;
-    message M25 {
-      optional int32 f_0 = 2;
-    }
-    repeated M25 f_7 = 7;
-    message M33 {
-      optional string f_0 = 2;
-    }
-    repeated M33 f_8 = 8;
-  }
-  optional M2 f_51 = 51;
-  message M3 {
-    optional int64 f_0 = 1;
-    optional string f_1 = 2;
-    optional int64 f_2 = 4;
-    message M20 {
-      optional int32 f_0 = 1;
-    }
-    repeated M20 f_5 = 5;
-    message M30 {
-      enum E9 {
-        E9_UNSPECIFIED = 0;
-        E9_CONST_1 = 93;
-        E9_CONST_2 = 72;
-        E9_CONST_3 = 54;
-        E9_CONST_4 = 78;
-        E9_CONST_5 = 52;
-      }
-      optional E9 f_0 = 2;
-      optional string f_1 = 3;
-    }
-    optional M30 f_6 = 6;
-  }
-  optional M3 f_52 = 52;
-  message M4 {
-    optional bool f_0 = 1;
-    optional fixed64 f_1 = 2;
-    message M13 {
-      optional fixed64 f_0 = 3;
-    }
-    optional M13 f_3 = 3;
-  }
-  optional M4 f_53 = 53;
-  message M5 {
-    optional bool f_0 = 3;
-    optional string f_1 = 4;
-    optional string f_2 = 5;
-    enum E7 {
-      E7_UNSPECIFIED = 0;
-      E7_CONST_1 = 117;
-      E7_CONST_2 = 86;
-      E7_CONST_3 = 1;
-      E7_CONST_4 = 94;
-      E7_CONST_5 = 99;
-    }
-    repeated E7 f_3 = 6 [packed = true];
-    message M28 {
-      optional double f_0 = 1;
-    }
-    optional M28 f_8 = 8;
-  }
-  optional M5 f_54 = 54;
-  message M6 {
-    optional bool f_0 = 1;
-    message M21 {
-      optional int32 f_0 = 2;
-    }
-    optional M21 f_2 = 2;
-    message M22 {
-      optional int32 f_0 = 2;
-    }
-    repeated M22 f_3 = 3;
-    message M26 {
-      optional string f_0 = 1;
-      optional int32 f_1 = 2;
-      optional string f_2 = 5;
-      optional string f_3 = 6;
-    }
-    optional M26 f_4 = 4;
-  }
-  optional M6 f_56 = 56;
-  message M7 {
-    optional fixed64 f_0 = 1;
-    optional int32 f_1 = 3;
-    optional int32 f_2 = 4;
-    optional fixed64 f_3 = 5;
-    optional string f_4 = 6;
-    message M11 {
-      optional fixed64 f_0 = 4;
-    }
-    optional M11 f_7 = 7;
-    message M27 {
-      optional int32 f_0 = 1;
-    }
-    repeated M27 f_9 = 9;
-    message M35 {
-      optional int32 f_0 = 2;
-    }
-    repeated M35 f_12 = 12;
-  }
-  optional M7 f_57 = 57;
-  message M8 {
-    optional string f_0 = 1;
-    message M14 {
-      optional int32 f_0 = 2;
-      optional string f_1 = 3;
-      optional int32 f_2 = 7;
-      optional fixed32 f_3 = 8;
-      message M37 {
-        optional int32 f_0 = 2;
-        optional fixed32 f_1 = 3;
-        optional string f_2 = 4;
-        optional int64 f_3 = 6;
-        optional fixed32 f_4 = 7;
-        optional int32 f_5 = 9;
-        optional fixed64 f_6 = 10;
-        optional fixed32 f_7 = 11;
-        optional int32 f_8 = 13;
-        enum E12 {
-          E12_UNSPECIFIED = 0;
-          E12_CONST_1 = 117;
-          E12_CONST_2 = 30;
-          E12_CONST_3 = 13;
-          E12_CONST_4 = 91;
-          E12_CONST_5 = 72;
-        }
-        optional E12 f_9 = 14;
-        optional string f_10 = 15;
-      }
-      repeated M37 f_9 = 9;
-      message M39 {
-        optional int32 f_0 = 1;
-        optional int32 f_1 = 3;
-        optional int32 f_2 = 4;
-      }
-      optional M39 f_10 = 10;
-    }
-    optional M14 f_3 = 3;
-    message M15 {
-      optional int32 f_0 = 1;
-      optional int64 f_1 = 2;
-      enum E8 {
-        E8_UNSPECIFIED = 0;
-        E8_CONST_1 = 95;
-        E8_CONST_2 = 120;
-        E8_CONST_3 = 79;
-        E8_CONST_4 = 42;
-        E8_CONST_5 = 41;
-      }
-      repeated E8 f_2 = 3 [packed = true];
-      message M38 {
-        optional int32 f_0 = 1;
-      }
-      repeated M38 f_4 = 4;
-    }
-    optional M15 f_4 = 4;
-    message M17 {
-      optional int32 f_0 = 1;
-    }
-    optional M17 f_5 = 5;
-    message M34 {
-      optional fixed64 f_0 = 1;
-    }
-    optional M34 f_6 = 6;
-  }
-  optional M8 f_59 = 59;
-  message M9 {
-    optional int32 f_0 = 2;
-    optional string f_1 = 4;
-    optional bool f_2 = 6;
-    message M16 {
-      optional int32 f_0 = 2;
-      optional bool f_1 = 3;
-      optional bool f_2 = 6;
-      optional fixed64 f_3 = 7;
-    }
-    repeated M16 f_8 = 8;
-    message M31 {
-      enum E10 {
-        E10_UNSPECIFIED = 0;
-        E10_CONST_1 = 24;
-        E10_CONST_2 = 8;
-        E10_CONST_3 = 107;
-        E10_CONST_4 = 35;
-        E10_CONST_5 = 17;
-      }
-      repeated E10 f_0 = 1 [packed = true];
-      message M40 {
-        optional string f_0 = 3;
-        optional string f_1 = 4;
-        optional string f_2 = 6;
-        enum E13 {
-          E13_UNSPECIFIED = 0;
-          E13_CONST_1 = 78;
-          E13_CONST_2 = 65;
-          E13_CONST_3 = 45;
-          E13_CONST_4 = 24;
-          E13_CONST_5 = 92;
-        }
-        repeated E13 f_3 = 7 [packed = true];
-        optional bool f_4 = 9;
-        optional int32 f_5 = 10;
-      }
-      optional M40 f_2 = 2;
-    }
-    optional M31 f_9 = 9;
-  }
-  optional M9 f_60 = 60;
-  message M10 {
-    optional fixed64 f_0 = 1;
-    optional fixed32 f_1 = 2;
-    optional fixed64 f_2 = 3;
-    optional string f_3 = 4;
-    optional fixed32 f_4 = 5;
-    message M23 {
-      optional fixed64 f_0 = 1;
-      optional bool f_1 = 2;
-      optional string f_2 = 3;
-      optional int32 f_3 = 5;
-      optional fixed64 f_4 = 6;
-      optional int32 f_5 = 7;
-      optional fixed64 f_6 = 10;
-      optional int32 f_7 = 11;
-      optional fixed64 f_8 = 12;
-    }
-    optional M23 f_6 = 6;
-    message M24 {
+    repeated M8 f_49 = 49;
+    message M9 {
       optional int64 f_0 = 1;
-    }
-    optional M24 f_7 = 7;
-    message M29 {
-      optional int32 f_0 = 1;
-    }
-    repeated M29 f_8 = 8;
-    message M32 {
-      optional string f_0 = 1;
-      optional bool f_1 = 2;
-      optional double f_2 = 3;
-      enum E11 {
-        E11_UNSPECIFIED = 0;
-        E11_CONST_1 = 68;
-        E11_CONST_2 = 4;
-        E11_CONST_3 = 5;
-        E11_CONST_4 = 74;
-        E11_CONST_5 = 33;
+      message M13 {
+        optional string f_0 = 7;
+        optional string f_1 = 12;
+        optional string f_2 = 18;
+        optional string f_3 = 22;
+        optional int32 f_4 = 25;
+        optional string f_5 = 26;
+        optional int32 f_6 = 30;
+        optional int32 f_7 = 32;
+        optional string f_8 = 38;
+        optional string f_9 = 40;
+        optional bool f_10 = 43;
+        optional int64 f_11 = 46;
+        optional int32 f_12 = 49;
+        optional string f_13 = 54;
+        optional int64 f_14 = 59;
+        optional bytes f_15 = 63;
       }
-      optional E11 f_3 = 5;
-      optional int32 f_4 = 7;
+      repeated M13 f_2 = 2;
     }
-    repeated M32 f_10 = 10;
-    message M36 {
-      optional string f_0 = 2;
-      optional int32 f_1 = 4;
-      optional int32 f_2 = 5;
-      optional string f_3 = 7;
-      optional fixed32 f_4 = 8;
-      optional double f_5 = 9;
-      optional int64 f_6 = 10;
-      message M41 {
-        optional int64 f_0 = 1;
-        optional int32 f_1 = 2;
-        optional fixed64 f_2 = 3;
-        optional fixed64 f_3 = 4;
-        optional fixed64 f_4 = 5;
-        optional fixed64 f_5 = 6;
-        optional bytes f_6 = 8;
-        optional fixed64 f_7 = 9;
-        optional int32 f_8 = 10;
-        optional fixed64 f_9 = 11;
-        optional int32 f_10 = 12;
-        optional int32 f_11 = 13;
-        enum E14 {
-          E14_UNSPECIFIED = 0;
-          E14_CONST_1 = 93;
-          E14_CONST_2 = 100;
-          E14_CONST_3 = 82;
-          E14_CONST_4 = 16;
-          E14_CONST_5 = 10;
-        }
-        optional E14 f_12 = 14;
-        optional fixed64 f_13 = 15;
-        optional fixed64 f_14 = 18;
-        optional int32 f_15 = 21;
-        optional fixed64 f_16 = 22;
-        optional int32 f_17 = 23;
-        optional string f_18 = 24;
-        optional int32 f_19 = 26;
-        optional int32 f_20 = 27;
-        enum E15 {
-          E15_UNSPECIFIED = 0;
-          E15_CONST_1 = 62;
-          E15_CONST_2 = 16;
-          E15_CONST_3 = 63;
-          E15_CONST_4 = 34;
-          E15_CONST_5 = 113;
-        }
-        optional E15 f_21 = 28;
-        optional fixed64 f_22 = 29;
-        optional fixed64 f_23 = 30;
-        enum E16 {
-          E16_UNSPECIFIED = 0;
-          E16_CONST_1 = 48;
-          E16_CONST_2 = 41;
-          E16_CONST_3 = 92;
-          E16_CONST_4 = 16;
-          E16_CONST_5 = 14;
-        }
-        optional E16 f_24 = 31;
-        optional string f_25 = 33;
-        optional fixed32 f_26 = 36;
-        optional string f_27 = 37;
-        optional int32 f_28 = 38;
-        optional fixed32 f_29 = 39;
-        optional int32 f_30 = 40;
-        enum E17 {
-          E17_UNSPECIFIED = 0;
-          E17_CONST_1 = 7;
-          E17_CONST_2 = 59;
-          E17_CONST_3 = 62;
-          E17_CONST_4 = 34;
-          E17_CONST_5 = 114;
-        }
-        optional E17 f_31 = 41;
-        message M42 {
-          optional fixed64 f_0 = 1;
-          enum E18 {
-            E18_UNSPECIFIED = 0;
-            E18_CONST_1 = 79;
-            E18_CONST_2 = 38;
-            E18_CONST_3 = 97;
-            E18_CONST_4 = 91;
-            E18_CONST_5 = 63;
-          }
-          optional E18 f_1 = 2;
-          message M45 {
-            optional fixed64 f_0 = 1;
-          }
-          optional M45 f_4 = 4;
-        }
-        optional M42 f_42 = 42;
-        message M43 {
-          optional int32 f_0 = 2;
-          enum E19 {
-            E19_UNSPECIFIED = 0;
-            E19_CONST_1 = 96;
-            E19_CONST_2 = 63;
-            E19_CONST_3 = 42;
-            E19_CONST_4 = 84;
-            E19_CONST_5 = 49;
-          }
-          repeated E19 f_1 = 4 [packed = true];
-          optional int64 f_2 = 5;
-          enum E20 {
-            E20_UNSPECIFIED = 0;
-            E20_CONST_1 = 19;
-            E20_CONST_2 = 61;
-            E20_CONST_3 = 105;
-            E20_CONST_4 = 52;
-            E20_CONST_5 = 107;
-          }
-          optional E20 f_3 = 6;
-          optional int32 f_4 = 9;
-          optional string f_5 = 10;
-          enum E21 {
-            E21_UNSPECIFIED = 0;
-            E21_CONST_1 = 112;
-            E21_CONST_2 = 80;
-            E21_CONST_3 = 32;
-            E21_CONST_4 = 117;
-            E21_CONST_5 = 54;
-          }
-          repeated E21 f_6 = 11 [packed = true];
-          optional int32 f_7 = 13;
-          optional string f_8 = 14;
-          optional fixed32 f_9 = 15;
-          optional string f_10 = 16;
-          optional int32 f_11 = 18;
-          optional int32 f_12 = 19;
-          enum E22 {
-            E22_UNSPECIFIED = 0;
-            E22_CONST_1 = 107;
-            E22_CONST_2 = 119;
-            E22_CONST_3 = 26;
-            E22_CONST_4 = 82;
-            E22_CONST_5 = 114;
-          }
-          optional E22 f_13 = 21;
-          optional double f_14 = 23;
-          optional int32 f_15 = 26;
-          enum E23 {
-            E23_UNSPECIFIED = 0;
-            E23_CONST_1 = 86;
-            E23_CONST_2 = 88;
-            E23_CONST_3 = 27;
-            E23_CONST_4 = 66;
-            E23_CONST_5 = 94;
-          }
-          repeated E23 f_16 = 27 [packed = true];
-          optional int32 f_17 = 28;
-          optional fixed64 f_18 = 30;
-          optional string f_19 = 33;
-          optional fixed64 f_20 = 36;
-          optional fixed64 f_21 = 39;
-          optional fixed32 f_22 = 40;
-          optional string f_23 = 41;
-          optional bool f_24 = 42;
-          optional fixed64 f_25 = 43;
-          optional fixed64 f_26 = 45;
-          optional fixed64 f_27 = 46;
-          optional int32 f_28 = 48;
-          optional bool f_29 = 49;
-          optional int32 f_30 = 50;
-          optional bytes f_31 = 53;
-          optional fixed64 f_32 = 55;
-          message M44 {
-            optional string f_0 = 1;
-            enum E24 {
-              E24_UNSPECIFIED = 0;
-              E24_CONST_1 = 6;
-              E24_CONST_2 = 87;
-              E24_CONST_3 = 59;
-              E24_CONST_4 = 39;
-              E24_CONST_5 = 36;
-            }
-            optional E24 f_1 = 2;
-            optional fixed64 f_2 = 3;
-            enum E25 {
-              E25_UNSPECIFIED = 0;
-              E25_CONST_1 = 88;
-              E25_CONST_2 = 56;
-              E25_CONST_3 = 18;
-              E25_CONST_4 = 55;
-              E25_CONST_5 = 61;
-            }
-            optional E25 f_3 = 4;
-            optional bool f_4 = 6;
-          }
-          repeated M44 f_56 = 56;
-          message M46 {
-            optional string f_0 = 1;
-            optional bool f_1 = 2;
-            optional string f_2 = 4;
-            optional bool f_3 = 5;
-            optional int32 f_4 = 6;
-          }
-          optional M46 f_58 = 58;
-        }
-        optional M43 f_44 = 44;
-      }
-      repeated M41 f_11 = 11;
-    }
-    repeated M36 f_11 = 11;
+    optional M9 f_54 = 54;
   }
-  optional M10 f_63 = 63;
+  optional M2 f_56 = 56;
+  message M3 {
+    optional string f_0 = 8;
+    optional string f_1 = 11;
+    optional int32 f_2 = 15;
+    optional bytes f_3 = 20;
+    optional int64 f_4 = 22;
+    optional bytes f_5 = 27;
+    optional string f_6 = 29;
+    optional bytes f_7 = 31;
+    optional int32 f_8 = 37;
+    optional int32 f_9 = 42;
+    message M5 {
+      optional string f_0 = 4;
+      optional int64 f_1 = 6;
+      optional int32 f_2 = 8;
+      optional string f_3 = 12;
+      optional string f_4 = 15;
+      optional string f_5 = 21;
+      optional bytes f_6 = 26;
+      optional int64 f_7 = 31;
+      optional string f_8 = 34;
+      optional int32 f_9 = 35;
+      optional string f_10 = 37;
+      optional bytes f_11 = 38;
+      optional string f_12 = 42;
+      message M12 {
+        optional int32 f_0 = 4;
+        message M14 {
+          optional string f_0 = 4;
+        }
+        optional M14 f_7 = 7;
+        message M15 {
+          optional int32 f_0 = 3;
+          optional int32 f_1 = 9;
+          optional int32 f_2 = 10;
+          optional int32 f_3 = 13;
+          optional int64 f_4 = 18;
+          optional string f_5 = 24;
+          optional int32 f_6 = 27;
+        }
+        optional M15 f_10 = 10;
+      }
+      optional M12 f_48 = 48;
+    }
+    optional M5 f_43 = 43;
+    message M6 {
+      optional bytes f_0 = 5;
+    }
+    repeated M6 f_47 = 47;
+    message M7 {
+      optional string f_0 = 4;
+      message M11 {
+        optional int64 f_0 = 5;
+      }
+      optional M11 f_11 = 11;
+    }
+    optional M7 f_53 = 53;
+  }
+  optional M3 f_59 = 59;
+  message M4 {
+    optional int64 f_0 = 1;
+    optional int64 f_1 = 6;
+    optional string f_2 = 12;
+    optional int32 f_3 = 13;
+    optional int32 f_4 = 16;
+    optional string f_5 = 22;
+    optional string f_6 = 26;
+    message M10 {
+      optional string f_0 = 4;
+    }
+    optional M10 f_29 = 29;
+  }
+  optional M4 f_62 = 62;
 }
