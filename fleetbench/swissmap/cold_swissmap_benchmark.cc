@@ -28,11 +28,10 @@ namespace fleetbench {
 
 using ::benchmark::DoNotOptimize;
 
-// Measures the time it takes to `find` an nonexistent element.
-//
-// assert(set.find(key) == set.end());
-template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_SWISSMAP_FindMiss_Cold(benchmark::State& state) {
+// Helper function used to implement two similar benchmarks that the given input
+// key is NOT present in the set.
+template <template <class...> class SetT, size_t kValueSizeT, bool kLookup>
+static void FindMiss_Cold(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
 
   // The larger this value, the colder the benchmark and the longer it takes
@@ -50,14 +49,36 @@ static void BM_SWISSMAP_FindMiss_Cold(benchmark::State& state) {
       for (Set& set : sets) {
         DoNotOptimize(set);
         DoNotOptimize(key);
-        auto res = set.find(key);
-        DoNotOptimize(res);
+        if (kLookup) {
+          auto res = set.find(key);
+          DoNotOptimize(res);
+        } else {
+          auto res = set.insert(key);
+          DoNotOptimize(res);
+        }
       }
     }
   }
 }
 
-// Helper function used to implement two similar benchmarks defined below.
+// Measures the time it takes to `find` an existent element.
+//
+// assert(set.find(key) == set.end());
+template <template <class...> class SetT, size_t kValueSizeT>
+static void BM_SWISSMAP_FindMiss_Cold(benchmark::State& state) {
+  return FindMiss_Cold<SetT, kValueSizeT, /*kLookup=*/true>(state);
+}
+
+// Measures the time it takes to `insert` an existent element.
+//
+//  assert(set.insert(key).second);
+template <template <class...> class SetT, size_t kValueSizeT>
+static void BM_SWISSMAP_InsertMiss_Cold(benchmark::State& state) {
+  return FindMiss_Cold<SetT, kValueSizeT, /*kLookup=*/false>(state);
+}
+
+// Helper function used to implement two similar benchmarks defined below that
+// the given input key is present in the set.
 template <template <class...> class SetT, size_t kValueSizeT, class Lookup>
 void LookupHit_Cold(benchmark::State& state, Lookup lookup) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
@@ -309,6 +330,8 @@ void RegisterColdBenchmarks() {
   std::vector<benchmark::internal::Benchmark*> benchmarks;
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_FindMiss_Cold, 4);
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_FindMiss_Cold, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_InsertMiss_Cold, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_InsertMiss_Cold, 64);
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_FindHit_Cold, 4);
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_FindHit_Cold, 64);
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_InsertHit_Cold, 4);
