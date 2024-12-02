@@ -19,6 +19,7 @@
 #include <thread>
 #include <vector>
 
+#include "absl/flags/parse.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "benchmark/benchmark.h"
@@ -27,6 +28,7 @@
 
 int main(int argc, char* argv[]) {
   benchmark::Initialize(&argc, argv);
+  absl::ParseCommandLine(argc, argv);
   auto reporter =
     absl::WrapUnique(benchmark::CreateDefaultDisplayReporter());
   static auto* background ABSL_ATTRIBUTE_UNUSED =

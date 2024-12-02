@@ -106,6 +106,7 @@ cc_library(
     deps = [
         ":dynamic_registrar",
         ":maybe_llvmlibc",
+        "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/log",
         "@com_google_absl//absl/memory",
         "@com_google_benchmark//:benchmark",
