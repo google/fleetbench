@@ -42,6 +42,10 @@ build --copt='-funsigned-char'
 build --copt='-fno-strict-aliasing'
 build --copt='-fno-omit-frame-pointer'
 
+# Compile for the native architecture. This can be overridden with
+# --config=haswell, --config=westmere or --copt=-march=xyz
+build --copt='-march=native'
+
 # Optimized build. Prefer this for benchmarking.
 build:opt --compilation_mode=opt
 build:opt --copt='-O3'
