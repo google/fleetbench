@@ -1,0 +1,26 @@
+From 225c5b55dc854f7727ba85bd82ad6c91c03ceb65 Mon Sep 17 00:00:00 2001
+From: Richard O'Grady <rjogrady@google.com>
+Date: Tue, 3 Dec 2024 15:04:05 -0800
+Subject: Replace non-standard uint32 with uint32_t.
+
+This type is not defined by anything this file includes.
+---
+ scann/scann/utils/fast_top_neighbors_impl.inc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scann/scann/utils/fast_top_neighbors_impl.inc b/scann/scann/utils/fast_top_neighbors_impl.inc
+index 4a94ce81a..31f43364e 100644
+--- a/scann/scann/utils/fast_top_neighbors_impl.inc
++++ b/scann/scann/utils/fast_top_neighbors_impl.inc
+@@ -191,7 +191,7 @@ SCANN_SIMD_INLINE size_t UseMasksToCompact(DatapointIndexT* indices,
+                                            DistT* values, uint32_t* masks,
+                                            size_t n_masks) {
+ #if HWY_TARGET <= HWY_AVX2
+-  if constexpr (IsSame<DatapointIndexT, uint32>() && IsSame<DistT, float>()) {
++  if constexpr (IsSame<DatapointIndexT, uint32_t>() && IsSame<DistT, float>()) {
+     return HwyCompact(indices, values, masks, n_masks);
+   }
+ #endif
+-- 
+2.47.0.338.g60cca15819-goog
+

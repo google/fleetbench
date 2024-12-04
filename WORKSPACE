@@ -59,6 +59,36 @@ http_archive(
     urls = ["https://github.com/google/snappy/archive/c9f9edf6d75bb065fa47468bf035e051a57bec7c.zip"],
 )
 
+# Highway
+http_archive(
+    name = "com_google_highway",  # 2024-12-01
+    strip_prefix = "highway-9689e2ccfe2bec70aaa7800d40c2d23712b26d16",
+    urls = ["https://github.com/google/highway/archive/9689e2ccfe2bec70aaa7800d40c2d23712b26d16.zip"],
+)
+
+# ScaNN
+http_archive(
+    name = "com_google_research_scann",  # 2024-12-01
+    integrity = "sha256-mWvgZi31LGbkqSQxSCgVRuG9p1rosNVTT2tVs6Rw0rs=",
+    patch_args = [
+        # Remove scann/scann prefix from patch filenames.
+        "-p2",
+    ],
+    patches = [
+        "@//fleetbench/patches:0001-Remove-more_deps-argument.patch",
+        "@//fleetbench/patches:0002-Replace-gtest_main-with-gtest.patch",
+        "@//fleetbench/patches:0003-Replace-non-standard-uint32-with-uint32_t.patch",
+    ],
+    strip_prefix = "google-research-084accd3286a43da7f43b4a1bf0bba7fddd90527/scann",
+    urls = ["https://github.com/google-research/google-research/archive/084accd3286a43da7f43b4a1bf0bba7fddd90527.zip"],
+)
+
+# Provide minimal Tensorflow library support for ScaNN
+local_repository(
+    name = "local_config_tf",
+    path = "fleetbench/simd/tensorflow_support",
+)
+
 # ZSTD
 http_archive(
     name = "ZSTD",  # 2020-05-22

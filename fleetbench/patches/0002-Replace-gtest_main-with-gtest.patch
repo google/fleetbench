@@ -1,0 +1,40 @@
+From 19c7b67870ea6915c767e0b3b1e96c19bf60827a Mon Sep 17 00:00:00 2001
+From: Richard O'Grady <rjogrady@google.com>
+Date: Tue, 3 Dec 2024 09:46:23 -0800
+Subject: Replace gtest_main with gtest
+
+gtest_main brings in the main function, which conflicts with
+fleetbench main.
+---
+ scann/scann/restricts/BUILD.bazel     | 2 +-
+ scann/scann/tree_x_hybrid/BUILD.bazel | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/scann/scann/restricts/BUILD.bazel b/scann/scann/restricts/BUILD.bazel
+index 701e14174..fdaee8480 100644
+--- a/scann/scann/restricts/BUILD.bazel
++++ b/scann/scann/restricts/BUILD.bazel
+@@ -20,6 +20,6 @@ cc_library(
+         "@com_google_absl//absl/base:core_headers",
+         "@com_google_absl//absl/log",
+         "@com_google_absl//absl/log:check",
+-        "@com_google_googletest//:gtest_main",
++        "@com_google_googletest//:gtest",
+     ],
+ )
+diff --git a/scann/scann/tree_x_hybrid/BUILD.bazel b/scann/scann/tree_x_hybrid/BUILD.bazel
+index c7e8bb519..350a5f6f9 100644
+--- a/scann/scann/tree_x_hybrid/BUILD.bazel
++++ b/scann/scann/tree_x_hybrid/BUILD.bazel
+@@ -103,7 +103,7 @@ cc_library(
+         "@com_google_absl//absl/strings",
+         "@com_google_absl//absl/time",
+         "@com_google_absl//absl/types:span",
+-        "@com_google_googletest//:gtest_main",
++        "@com_google_googletest//:gtest",
+     ],
+ )
+ 
+-- 
+2.47.0.338.g60cca15819-goog
+
