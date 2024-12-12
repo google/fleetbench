@@ -54,6 +54,19 @@ start_docker_container() {
     ${DOCKER_EXTRA_ARGS:-} \
     ${DOCKER_CONTAINER} \
     /bin/bash
+
+  # Install bazelisk from Github. It selects the correct version of bazel
+  # depending on what the .bazelversion file in the fleetbench root says.
+  arch=$(uname -m)
+  if [[ "${arch}" == "x86_64" ]]; then
+    arch="amd64"
+  elif [[ "${arch}" == "aarch64" ]]; then
+    arch="arm64"
+  fi
+  # 1.25.0 is the latest version as of 2024-12-12.
+  docker exec fleetbench wget -O /usr/local/bin/bazel \
+    https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-linux-${arch}
+  docker exec fleetbench chmod +x /usr/local/bin/bazel
 }
 
 stop_docker() {
