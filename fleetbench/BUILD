@@ -93,6 +93,7 @@ cc_test(
         "//fleetbench/libc:mem_benchmark_lib",
         "//fleetbench/proto:proto_benchmark_lib",
         "//fleetbench/rpc:rpc_benchmark_lib",
+        "//fleetbench/simd:simd_library",
         "//fleetbench/stl:cord_benchmark_lib",
         "//fleetbench/swissmap:swissmap_benchmark_lib",
         "//fleetbench/tcmalloc:empirical_driver_lib",
