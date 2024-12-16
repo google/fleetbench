@@ -72,9 +72,11 @@ STL-Cord    | Instruction-focused.
 
 [Bazel](https://bazel.build) is the official build system for Fleetbench.
 
-We support Bazel version 6 and 7.
+We currently require Bazel version 8.0.0. Consider
+[Bazelisk](https://github.com/bazelbuild/bazelisk) to automatically manage your
+Bazel version.
 
-NOTE: Our setup uses Bazel 7.0.1 and LLVM 17.0.1.
+NOTE: Our setup uses LLVM 17.0.1.
 
 As an example, to run the Swissmap benchmarks:
 

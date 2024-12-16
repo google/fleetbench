@@ -24,7 +24,7 @@ from absl import logging
 import brotli
 import zstandard as zstd
 
-from rules_python.python.runfiles import runfiles
+from python.runfiles import Runfiles
 import snappy
 
 DATASET_DIR = (
@@ -174,7 +174,7 @@ class CorpusChunkManager:
     # Iterate all corpus and collect compression parameters for each chunk
     chunk_id = 0
     for file in self.dataset:
-      file_path = runfiles.Create().Rlocation(
+      file_path = Runfiles.Create().Rlocation(
           os.path.join(self.dataset_dir, file)
       )
 

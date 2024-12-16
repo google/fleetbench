@@ -17,7 +17,7 @@ import os
 from absl.testing import absltest
 import numpy as np
 
-from rules_python.python.runfiles import runfiles
+from python.runfiles import Runfiles
 from fleetbench.compression.generate_corpora import corpus_generator
 
 DATASETS_TEST_SIMPLE = [
@@ -59,7 +59,7 @@ class CorpusGeneratorTest(absltest.TestCase):
 
     # Ensures all data chunks are being processed
     total_chunks = sum(len(lst) for lst in snappy_lookup_table)
-    file_path = runfiles.Create().Rlocation(
+    file_path = Runfiles.Create().Rlocation(
         os.path.join(DATASET_DIR, DATASETS_TEST_SIMPLE[0])
     )
     with open(file_path, "rb") as file:
@@ -89,7 +89,7 @@ class CorpusGeneratorTest(absltest.TestCase):
     # Ensures all data chunks are being processed
     dataset_chunks = 0
     for file in DATASETS_TEST_COMPLEX:
-      file_path = runfiles.Create().Rlocation(os.path.join(DATASET_DIR, file))
+      file_path = Runfiles.Create().Rlocation(os.path.join(DATASET_DIR, file))
       with open(file_path, "rb") as file:
         corpus = file.read()
         dataset_chunks += int(len(corpus) / corpus_chunk_manager.chunk_size)
@@ -125,7 +125,7 @@ class CorpusGeneratorTest(absltest.TestCase):
     )
     corpus_chunk_manager.generate_corpus_chunks_lookup()
     # Ensures all data chunks are being processed
-    file_path = runfiles.Create().Rlocation(
+    file_path = Runfiles.Create().Rlocation(
         os.path.join(DATASET_DIR, DATASETS_TEST_SIMPLE[0])
     )
     with open(file_path, "rb") as file:
@@ -148,7 +148,7 @@ class CorpusGeneratorTest(absltest.TestCase):
 
   def test_compute_compression_ratio(self):
     chunk_array = []
-    file_path = runfiles.Create().Rlocation(
+    file_path = Runfiles.Create().Rlocation(
         os.path.join(DATASET_DIR, DATASETS_TEST_SIMPLE[0])
     )
     chunk_size = 10000

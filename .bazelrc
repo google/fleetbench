@@ -16,11 +16,6 @@
 build --cxxopt='-std=c++17'
 build --host_cxxopt='-std=c++17'
 
-# Disable Bazel module support, which breaks compilation of protobuf with
-# Bazel 7.0.0: it pulls in a version of protobuf that is older than the one
-# specified in WORKSPACE, and the two versions clash.
-build --noenable_bzlmod
-
 # Enable libpfm (performance counters) by default. This corresponds to
 # the config setting in the benchmark library:
 # https://github.com/google/benchmark/blob/d99cdd7356de97b3056684d6b511189778d8a247/BUILD.bazel#L47
