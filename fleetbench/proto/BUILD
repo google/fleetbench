@@ -29,6 +29,7 @@ cc_library(
     visibility = ["//fleetbench:__pkg__"],
     deps = [":Message%d_cc_proto" % id for id in range(0, 10)] + [
         "//fleetbench:dynamic_registrar",
+        "//fleetbench:productivity_reporter",
         "//fleetbench/common",
         "@com_google_absl//absl/strings:cord",
         "@com_google_absl//absl/strings:string_view",

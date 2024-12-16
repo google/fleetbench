@@ -109,7 +109,6 @@ cc_library(
         ":maybe_llvmlibc",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/log",
-        "@com_google_absl//absl/memory",
         "@com_google_benchmark//:benchmark",
         "@com_google_tcmalloc//tcmalloc:malloc_extension",
     ],
@@ -142,6 +141,16 @@ py_test(
         requirement("psutil"),
         requirement("zstandard"),
         requirement("python-snappy"),
+    ],
+)
+
+cc_library(
+    name = "productivity_reporter",
+    srcs = [":productivity_reporter.cc"],
+    hdrs = [":productivity_reporter.h"],
+    visibility = ["//fleetbench:__subpackages__"],
+    deps = [
+        "@com_google_benchmark//:benchmark",
     ],
 )
 

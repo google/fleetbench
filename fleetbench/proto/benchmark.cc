@@ -11,18 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-// This file defines the skeleton of generated benchmark files. It contains
-// the includes, gunit benchmark code, and main entrypoint.
-
 #include "benchmark/benchmark.h"
 
 #include <cstdint>
 
 #include "fleetbench/dynamic_registrar.h"
+#include "fleetbench/productivity_reporter.h"
 #include "fleetbench/proto/lifecycle.h"
 #include "google/protobuf/arena.h"
 
 namespace fleetbench::proto {
+
+namespace {
+auto* reporter = ProductivityReporter::Get();
+}  // namespace
 
 void BM_Protogen_Arena(benchmark::State& state) {
   const int32_t kIterations = 10;
@@ -35,6 +37,7 @@ void BM_Protogen_Arena(benchmark::State& state) {
     lifecycle.Init(&arena);
     lifecycle.Run();
   }
+  reporter->Update(state);
 }
 
 void BM_Protogen_NoArena(benchmark::State& state) {
@@ -46,6 +49,7 @@ void BM_Protogen_NoArena(benchmark::State& state) {
     lifecycle.Init(nullptr);
     lifecycle.Run();
   }
+  reporter->Update(state);
 }
 
 void RegisterBenchmarks() {

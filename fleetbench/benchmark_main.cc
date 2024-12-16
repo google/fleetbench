@@ -21,7 +21,6 @@
 
 #include "absl/flags/parse.h"
 #include "absl/log/log.h"
-#include "absl/memory/memory.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/dynamic_registrar.h"
 #include "tcmalloc/malloc_extension.h"
@@ -29,8 +28,6 @@
 int main(int argc, char* argv[]) {
   benchmark::Initialize(&argc, argv);
   absl::ParseCommandLine(argc, argv);
-  auto reporter =
-    absl::WrapUnique(benchmark::CreateDefaultDisplayReporter());
   static auto* background ABSL_ATTRIBUTE_UNUSED =
     tcmalloc::MallocExtension::NeedsProcessBackgroundActions() ?
     new std::thread([]() {
@@ -44,6 +41,6 @@ int main(int argc, char* argv[]) {
   }
   fleetbench::DynamicRegistrar::Get()->Run();
 
-  benchmark::RunSpecifiedBenchmarks(/*display_reporter=*/reporter.get());
+  benchmark::RunSpecifiedBenchmarks();
   return 0;
 }
