@@ -81,21 +81,30 @@ sanity_check_docker_container() {
 }
 
 run_bazel_build_test() {
+  local BAZEL_TARGET="$1"
+  local BAZEL_INNER_EXTRA_ARGS="$2"
+
   # DOCKER_ENV, BAZEL_ARGS, build_config, BAZEL_EXTRA_ARGS are inherited from
   # the callee
-  time docker exec ${DOCKER_ENV} \
-    fleetbench \
-    /usr/local/bin/bazel test ... \
-      ${BAZEL_ARGS} \
-      ${build_config} \
-      --define="absl=1" \
-      --keep_going \
-      --show_timestamps \
-      --test_env="GTEST_INSTALL_FAILURE_SIGNAL_HANDLER=1" \
-      --test_output=errors \
-      --test_tag_filters=-benchmark \
-      --test_size_filters=-enormous \
-      ${BAZEL_EXTRA_ARGS:-}
+
+  # build/test separately to avoid thrashing VM resources
+  BAZEL_COMMANDS=("build" "test")
+  for cmd in "${BAZEL_COMMANDS[@]}"; do
+    time docker exec ${DOCKER_ENV} \
+      fleetbench \
+      /usr/local/bin/bazel ${cmd} ${BAZEL_TARGET} \
+        ${BAZEL_ARGS} \
+        ${build_config} \
+        --define="absl=1" \
+        --keep_going \
+        --show_timestamps \
+        --test_env="GTEST_INSTALL_FAILURE_SIGNAL_HANDLER=1" \
+        --test_output=errors \
+        --test_tag_filters=-benchmark \
+        --test_size_filters=-enormous \
+        ${BAZEL_INNER_EXTRA_ARGS:-}
+        ${BAZEL_EXTRA_ARGS:-}
+  done
 }
 
 run_generic_tests() {
@@ -105,6 +114,12 @@ run_generic_tests() {
   # Run bazel tests.
   for build_config in "${BUILD_CONFIG[@]}"; do
     echo "--------------------------------------------------------------------"
-    run_bazel_build_test
+    run_bazel_build_test \
+      "fleetbench/rpc/..." \
+      "--jobs=4 --experimental_use_semaphore_for_jobs"
+
+    run_bazel_build_test \
+      "..." \
+      ""
   done
 }
