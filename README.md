@@ -98,9 +98,9 @@ explained in the next few sections.
 #### X86 {.new-tab}
 
 ```
-GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel build --config=clang --config=opt \
+bazel build --config=clang --config=opt \
 --config=haswell fleetbench/WORK_LOAD:BUILD_TARGET
-bazel-bin/fleetbench/WORK_LOAD/BUILD_TARGET
+GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel-bin/fleetbench/WORK_LOAD/BUILD_TARGET
 ```
 
 Or combining build and run together:
@@ -113,9 +113,9 @@ GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel run --config=clang --config=opt \
 #### Arm {.new-tab}
 
 ```
-GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel build --config=clang --config=opt \
+bazel build --config=clang --config=opt \
 --config=arm fleetbench/WORK_LOAD:BUILD_TARGET
-bazel-bin/fleetbench/WORK_LOAD/BUILD_TARGET
+GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel-bin/fleetbench/WORK_LOAD/BUILD_TARGET
 ```
 
 Or combining build and run together:
