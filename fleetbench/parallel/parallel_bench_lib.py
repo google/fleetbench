@@ -31,6 +31,39 @@ from fleetbench.parallel import run
 from fleetbench.parallel import worker
 
 
+def ParseBenchmarkWeights(
+    benchmark_weights_list: list[str],
+) -> dict[str, float] | None:
+  """Parses a list of benchmark weights into a dictionary.
+
+  The string element in the list should be in the format:
+  <benchmark_name|benchmark_filter>:<weight>. Note that the benchmark name or
+  filter should be in ALL CAPS to ensure case-insensitive matching.
+
+  Args:
+    benchmark_list: A list of strings to parse.
+
+  Returns:
+    A dictionary of {capitalized string: float} or None if the list is empty.
+  """
+  if not benchmark_weights_list:
+    return None
+
+  benchmark_weights = {}
+  for weights in benchmark_weights_list:
+    try:
+      key, value_str = weights.split(":")
+      benchmark_weights[key.upper()] = float(value_str)
+    except ValueError:
+      logging.warning(
+          f"Invalid benchmark string: %s. The format should be"
+          f" <benchmark_name|benchmark_filter>:<weight>. Skipping...",
+          weights,
+      )
+
+  return benchmark_weights
+
+
 def _CreateBenchmarks(
     bm_target: str, names: list[str]
 ) -> dict[str, bm.Benchmark]:
@@ -164,7 +197,7 @@ class ParallelBench:
     cpus: List of CPUs to run benchmarks on.
     cpu_affinity: Whether to bind each worker to a CPU or allow the scheduler to
       move them around.
-    weighted_selection: Whether to use adaptive benchmark selection.
+    benchmark_weights: Whether to use adaptive benchmark selection.
     benchmarks: List of benchmarks to run.
     target_utilization: Target utilization from 0 to 1.
     duration: How long in seconds to run for.
@@ -180,7 +213,7 @@ class ParallelBench:
       self,
       cpus: list[int],
       cpu_affinity: bool,
-      weighted_selection: bool,
+      benchmark_weights: dict[str, float] | None,
       utilization: float,
       duration: float,
       temp_root: str,
@@ -194,7 +227,7 @@ class ParallelBench:
     self.controller_cpu = cpus[0]
     self.cpus = cpus[1:]
     self.cpu_affinity = cpu_affinity
-    self.weighted_selection = weighted_selection
+    self.benchmark_weights = benchmark_weights
     self.benchmarks: dict[str, bm.Benchmark] = {}
     self.target_utilization = utilization * 100
     self.duration = duration
@@ -263,14 +296,6 @@ class ParallelBench:
 
     inverse_weights = np.empty(len(self.runtimes.keys()))
 
-    # Weights benchmarks to catch fleet performance based on empirical data.
-    weighted_benchmarks = {
-        "COLD": 8,
-        "PROTO": 8,
-        "TCMALLOC": 2,
-        "CORD": 5,
-    }
-
     # Use the last 10 runtimes to estimate expected runtime.
     for i, (benchmark_name, times) in enumerate(self.runtimes.items()):
       last_10_wall_times = np.array([t.wall_time for t in times[-10:]])
@@ -278,8 +303,8 @@ class ParallelBench:
 
       # If we're using adaptive benchmark selection, adjust the weight based on
       # the benchmark's performance relative to the fleet.
-      if self.weighted_selection:
-        for keyword, weight in weighted_benchmarks.items():
+      if self.benchmark_weights:
+        for keyword, weight in self.benchmark_weights.items():
           if keyword in benchmark_name.upper():
             base_weight *= weight
             break

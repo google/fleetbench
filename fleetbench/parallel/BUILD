@@ -80,8 +80,8 @@ py_binary(
 )
 
 py_test(
-    name = "parallel_bench_test",
-    srcs = ["parallel_bench_test.py"],
+    name = "parallel_bench_lib_test",
+    srcs = ["parallel_bench_lib_test.py"],
     deps = [
         ":benchmark",
         ":cpu",
