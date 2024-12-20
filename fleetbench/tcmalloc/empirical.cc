@@ -44,7 +44,7 @@ namespace {
 //
 // This is an artificial access pattern, but it produces results that show that
 // the prefetch in TCMalloc's allocation path
-// (https://storage.googleapis.com/pub-tools-public-publication-data/pdf/cebd5a9f6e300184fd762f190ffd8978b724e0c8.pdf)
+// (https://www.usenix.org/conference/osdi21/presentation/hunter)
 // is worth having, which is consistent with experience from performance
 // sensitive macro benchmarks.
 //
