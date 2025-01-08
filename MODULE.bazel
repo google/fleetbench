@@ -80,6 +80,14 @@ http_archive(
     urls = ["https://github.com/facebook/zstd/archive/v1.4.5.zip"],
 )
 
+# Use a more recent tcmalloc version than is available in the bazel repository.
+archive_override(
+    module_name = "tcmalloc",  # 2024-09-18
+    integrity = "sha256-Z1HIwqJnGQKuIoQyGyqRGTl9HYbkCDCub/eaLAQ0hhY=",
+    strip_prefix = "tcmalloc-6c965fce0c3126b20d807e6ff49343eaa204b559",
+    urls = ["https://github.com/google/tcmalloc/archive/6c965fce0c3126b20d807e6ff49343eaa204b559.zip"],
+)
+
 # Use the more recent libpfm4 version from github, and apply our patches for a native Bazel build.
 archive_override(
     module_name = "libpfm",  # 2024-10-30
