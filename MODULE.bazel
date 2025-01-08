@@ -16,11 +16,10 @@ module(name = "com_google_fleetbench")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+bazel_dep(name = "protoc-gen-validate", version = "1.0.4.bcr.2")
 bazel_dep(name = "protobuf", version = "29.1", repo_name = "com_google_protobuf")
 bazel_dep(name = "platforms", version = "0.0.10")
 bazel_dep(name = "rules_python", version = "0.40.0")
-bazel_dep(name = "rules_cc", version = "0.0.16")
-bazel_dep(name = "rules_proto", version = "7.0.2")
 bazel_dep(name = "abseil-cpp", version = "20240722.0.bcr.2", repo_name = "com_google_absl")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "abseil-py", version = "2.1.0", repo_name = "com_google_absl_py")
@@ -30,14 +29,8 @@ bazel_dep(name = "tcmalloc", version = "0.0.0-20240411-5ed309d", repo_name = "co
 bazel_dep(name = "brotli", version = "1.1.0")
 bazel_dep(name = "snappy", version = "1.2.1")
 bazel_dep(name = "highway", version = "1.2.0", repo_name = "com_google_highway")
-bazel_dep(name = "grpc", version = "1.66.0.bcr.2", repo_name = "com_github_grpc_grpc")
+bazel_dep(name = "grpc", version = "1.68.0", repo_name = "com_github_grpc_grpc")
 bazel_dep(name = "libpfm", version = "4.11.0")
-
-# tcmalloc wants a specific version of rules_fuzzing.
-single_version_override(
-    module_name = "rules_fuzzing",
-    version = "0.5.1",
-)
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
@@ -82,10 +75,10 @@ http_archive(
 
 # Use a more recent tcmalloc version than is available in the bazel repository.
 archive_override(
-    module_name = "tcmalloc",  # 2024-09-18
-    integrity = "sha256-Z1HIwqJnGQKuIoQyGyqRGTl9HYbkCDCub/eaLAQ0hhY=",
-    strip_prefix = "tcmalloc-6c965fce0c3126b20d807e6ff49343eaa204b559",
-    urls = ["https://github.com/google/tcmalloc/archive/6c965fce0c3126b20d807e6ff49343eaa204b559.zip"],
+    module_name = "tcmalloc",  # 2025-01-07
+    integrity = "sha256-e3p59ZEQU8BDXQmrl+9MUxTSz5mPgWYUKX4/t02B7BI=",
+    strip_prefix = "tcmalloc-b6563dbdc7905f7b0b31c97256c83e7c9b2f08c2",
+    urls = ["https://github.com/google/tcmalloc/archive/b6563dbdc7905f7b0b31c97256c83e7c9b2f08c2.zip"],
 )
 
 # Use the more recent libpfm4 version from github, and apply our patches for a native Bazel build.
