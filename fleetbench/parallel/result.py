@@ -28,4 +28,5 @@ class Result:
   stderr: str
   result: str = ""
   duration: Optional[float] = None
+  bm_wall_time: Optional[float] = None
   bm_cpu_time: Optional[float] = None

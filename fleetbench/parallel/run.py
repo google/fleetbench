@@ -52,11 +52,14 @@ class Run:
 
     with open(self.out_file, "r") as f:
       benchmark_output = f.read()
-    benchmark_cpu_time = self._GetBenchmarkRuntime(benchmark_output)
+    benchmark_cpu_time, benchmark_wall_time = self._GetBenchmarkRuntime(
+        benchmark_output
+    )
     return result.Result(
         benchmark=self.benchmark.Name(),
         rc=proc.returncode,
         duration=end - start,
+        bm_wall_time=benchmark_wall_time,
         bm_cpu_time=benchmark_cpu_time,
         result=benchmark_output,
         stdout=proc.stdout,
@@ -69,6 +72,6 @@ class Run:
         f"--benchmark_out={self.out_file}",
     ]
 
-  def _GetBenchmarkRuntime(self, benchmark_output: str) -> float:
+  def _GetBenchmarkRuntime(self, benchmark_output: str) -> tuple[float, float]:
     data = json.loads(benchmark_output)
-    return data["benchmarks"][0]["cpu_time"]
+    return data["benchmarks"][0]["cpu_time"], data["benchmarks"][0]["real_time"]

@@ -199,12 +199,28 @@ class ParallelBenchTest(absltest.TestCase):
 
     # First entries are fake durations, the second entries are real durations.
     pb.runtimes["BM_Test1"] = [
-        parallel_bench_lib.BenchmarkTimes(wall_time=1, cpu_time=1),
-        parallel_bench_lib.BenchmarkTimes(wall_time=2, cpu_time=3),
+        parallel_bench_lib.BenchmarkMetrics(
+            total_duration=10,
+            per_iteration_wall_time=1,
+            per_iteration_cpu_time=1,
+        ),
+        parallel_bench_lib.BenchmarkMetrics(
+            total_duration=2,
+            per_iteration_wall_time=3.01,
+            per_iteration_cpu_time=3,
+        ),
     ]
     pb.runtimes["BM_Test2"] = [
-        parallel_bench_lib.BenchmarkTimes(wall_time=1, cpu_time=1),
-        parallel_bench_lib.BenchmarkTimes(wall_time=4, cpu_time=5),
+        parallel_bench_lib.BenchmarkMetrics(
+            total_duration=10,
+            per_iteration_wall_time=1,
+            per_iteration_cpu_time=1,
+        ),
+        parallel_bench_lib.BenchmarkMetrics(
+            total_duration=4,
+            per_iteration_wall_time=4,
+            per_iteration_cpu_time=5,
+        ),
     ]
     pb.utilization_samples.append((pd.Timestamp.now(), 0.5))
 
@@ -212,8 +228,8 @@ class ParallelBenchTest(absltest.TestCase):
     self.assertEqual(
         df.to_dict("records"),
         [
-            {"Benchmark": "BM_Test1", "Duration": 2, "CPUTimes": 3},
-            {"Benchmark": "BM_Test2", "Duration": 4, "CPUTimes": 5},
+            {"Benchmark": "BM_Test1", "WallTimes": 3.01, "CPUTimes": 3},
+            {"Benchmark": "BM_Test2", "WallTimes": 4, "CPUTimes": 5},
         ],
     )
 

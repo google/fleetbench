@@ -184,9 +184,13 @@ def _SetExtraBenchmarkFlags(
 
 
 @dataclasses.dataclass
-class BenchmarkTimes:
-  wall_time: float
-  cpu_time: float
+class BenchmarkMetrics:
+  # per benchmark run total duration
+  total_duration: float
+  # per benchmark iteration wall time
+  per_iteration_wall_time: float
+  # per benchmark iteration cpu time
+  per_iteration_cpu_time: float
 
 
 class ParallelBench:
@@ -232,7 +236,7 @@ class ParallelBench:
     self.target_utilization = utilization * 100
     self.duration = duration
     self.temp_root = temp_root
-    self.runtimes: dict[str, list[BenchmarkTimes]] = {}
+    self.runtimes: dict[str, list[BenchmarkMetrics]] = {}
     self.workers: dict[int, worker.Worker] = {}
     self.utilization_samples: list[tuple[pd.Timestamp, float]] = []
 
@@ -267,10 +271,16 @@ class ParallelBench:
       for benchmark in self.benchmarks.values():
         benchmark.AddCommandFlags(benchmark_flags)
 
-    # Initialize the runtimes with a fake duration. This causes all benchmarks
+    # Initialize the runtimes with a fake wall time of 1. This causes all benchmarks
     # to be equally likely at first.
     self.runtimes = {
-        benchmark: [BenchmarkTimes(wall_time=1.0, cpu_time=0.0)]
+        benchmark: [
+            BenchmarkMetrics(
+                total_duration=1.0,
+                per_iteration_wall_time=0.0,
+                per_iteration_cpu_time=0.0,
+            )
+        ]
         for benchmark in self.benchmarks.keys()
     }
 
@@ -298,7 +308,7 @@ class ParallelBench:
 
     # Use the last 10 runtimes to estimate expected runtime.
     for i, (benchmark_name, times) in enumerate(self.runtimes.items()):
-      last_10_wall_times = np.array([t.wall_time for t in times[-10:]])
+      last_10_wall_times = np.array([t.total_duration for t in times[-10:]])
       base_weight = 1 / last_10_wall_times.mean()
 
       # If we're using adaptive benchmark selection, adjust the weight based on
@@ -392,7 +402,11 @@ class ParallelBench:
             logging.error("Benchmark failed: %s", r.benchmark)
             continue
           self.runtimes[r.benchmark].append(
-              BenchmarkTimes(wall_time=r.duration, cpu_time=r.bm_cpu_time)
+              BenchmarkMetrics(
+                  total_duration=r.duration,
+                  per_iteration_wall_time=r.bm_wall_time,
+                  per_iteration_cpu_time=r.bm_cpu_time,
+              )
           )
 
   def GenerateBenchmarkReport(self, df: pd.DataFrame) -> None:
@@ -401,8 +415,8 @@ class ParallelBench:
     grouped_results = (
         df.groupby("Benchmark")
         .agg(
-            Count=("Duration", "count"),
-            Median_Duration=("Duration", "median"),
+            Count=("WallTimes", "count"),
+            Mean_Wall_Time=("WallTimes", "mean"),
             Mean_CPU_Time=("CPUTimes", "mean"),
         )
         .round(3)
@@ -416,7 +430,9 @@ class ParallelBench:
     try:
       # Convert DataFrame to a list of dictionaries (one for each row)
       # Rename the column "Benchmark" to "Name"
+      # TODO: This only works for open source benchmark version.
       df = df.rename(columns={"Benchmark": "name"})
+      df = df.rename(columns={"WallTimes": "real_time"})
       df = df.rename(columns={"CPUTimes": "cpu_time"})
 
       # Remove "fleetbench (" prefix and ")" suffix
@@ -482,8 +498,8 @@ class ParallelBench:
       for t in times_list[1:]:
         entry = {
             "Benchmark": benchmark,
-            "Duration": t.wall_time,
-            "CPUTimes": t.cpu_time,
+            "WallTimes": t.per_iteration_wall_time,
+            "CPUTimes": t.per_iteration_cpu_time,
         }
         data.append(entry)
     runtimes = pd.DataFrame(data)
