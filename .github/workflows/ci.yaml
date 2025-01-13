@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04-32core, arm-ubuntu-arm-22.04-32core]
         config: [fastbuild, opt]
         compiler:
           - name: gcc
