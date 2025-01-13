@@ -1,0 +1,39 @@
+name: Fleetbench CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        config: [fastbuild, opt]
+        compiler:
+          - name: gcc
+            flags: ""
+          - name: clang
+            flags: "--config=clang"
+
+    runs-on: ${{ matrix.os }}
+    name: "Build/Test ${{ matrix.os }} ${{ matrix.compiler.name }} ${{ matrix.config }}"
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build
+        run: |
+          bazel build -c ${{ matrix.config }} ${{ matrix.compiler.flags }} --keep_going //...
+      - name: Test
+        run: |
+          bazel test -c ${{ matrix.config }} ${{ matrix.compiler.flags }} --test_output=errors //...
+
