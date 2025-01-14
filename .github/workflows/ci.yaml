@@ -9,9 +9,9 @@ on:
 jobs:
   build:
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        os: [ubuntu-22.04-32core, arm-ubuntu-arm-22.04-32core]
+        os: [ubuntu-latest, arm-ubuntu-arm-22.04-16core]
         config: [fastbuild, opt]
         compiler:
           - name: gcc
@@ -22,6 +22,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     name: "Build/Test ${{ matrix.os }} ${{ matrix.compiler.name }} ${{ matrix.config }}"
     steps:
+      - name: Make clang-15 default
+        run: |
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-15 100
+          sudo update-alternatives --set clang /usr/bin/clang-15
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -32,7 +36,7 @@ jobs:
 
       - name: Build
         run: |
-          bazel build -c ${{ matrix.config }} ${{ matrix.compiler.flags }} --keep_going //...
+          bazel build -c ${{ matrix.config }} ${{ matrix.compiler.flags }} //...
       - name: Test
         run: |
           bazel test -c ${{ matrix.config }} ${{ matrix.compiler.flags }} --test_output=errors //...
