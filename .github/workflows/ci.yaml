@@ -22,7 +22,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     name: "Build/Test ${{ matrix.os }} ${{ matrix.compiler.name }} ${{ matrix.config }}"
     steps:
-      - name: Make clang-15 default
+      - if: matrix.os == 'arm-ubuntu-arm-22.04-16core' && matrix.compiler.name == 'clang'
+        name: Make clang-15 default
         run: |
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-15 100
           sudo update-alternatives --set clang /usr/bin/clang-15
