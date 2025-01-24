@@ -65,8 +65,9 @@ void MemcpyFunction(benchmark::State &state,
   MemoryBuffers buffers(buffer_size);
   char *dst = buffers.dst();
   char *src = buffers.src();
+  int64_t warmup = 10;
   // Run benchmark and call memcpy function
-  while (state.KeepRunningBatch(batch_size)) {
+  while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
     // The libc memory benchmarks have some sensitivity to the alignment of the
     // branch instructions in the benchmarking loop. In particular, on some
     // machines, there can be a slowdown if branch instructions cross a 32-Byte
@@ -90,8 +91,9 @@ void MemmoveFunction(benchmark::State &state,
   size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
   char *buffer = buffers.src();
+  int64_t warmup = 10;
   // Run benchmark and call memmove function
-  while (state.KeepRunningBatch(batch_size)) {
+  while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
 #pragma unroll 8
     for (int i = 0; i < parameters.size_bytes.size(); i++) {
       auto res =
@@ -108,8 +110,9 @@ void CmpFunction(benchmark::State &state, const BM_Mem_Parameters &parameters,
   size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
   char *buffer = buffers.src();
+  int64_t warmup = 10;
   // Run benchmark and call cmp function
-  while (state.KeepRunningBatch(batch_size)) {
+  while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
 #pragma unroll 8
     for (int i = 0; i < parameters.size_bytes.size(); i++) {
       MemoryBuffers::mark(buffer, parameters.dst_offset[i],
@@ -130,8 +133,9 @@ void MemsetFunction(benchmark::State &state,
   size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
   char *dst = buffers.dst();
+  int64_t warmup = 10;
   // Run benchmark and call memset function
-  while (state.KeepRunningBatch(batch_size)) {
+  while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
 #pragma unroll 8
     for (int i = 0; i < parameters.size_bytes.size(); i++) {
       auto res = memset(dst + parameters.dst_offset[i],
