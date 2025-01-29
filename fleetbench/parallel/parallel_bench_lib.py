@@ -563,8 +563,17 @@ class ParallelBench:
     self._RunSchedulingLoop()
 
     logging.info("Shutting down all workers...")
+    # Collect all remaining results
     for w in self.workers.values():
-      w.StopAndGetResults()
+      results = w.StopAndGetResults()
+      for r in results:
+        self.runtimes[r.benchmark].append(
+            BenchmarkMetrics(
+                total_duration=r.duration,
+                per_iteration_wall_time=r.bm_wall_time,
+                per_iteration_cpu_time=r.bm_cpu_time,
+            )
+        )
 
     for cpu_id, w in self.workers.items():
       logging.debug("Joining worker on CPU %d", cpu_id)
