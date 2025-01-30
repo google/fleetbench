@@ -29,6 +29,22 @@ from fleetbench.parallel import run
 
 class ParallelBenchTest(absltest.TestCase):
 
+  def setUp(self):
+    super().setUp()
+    self.pb = parallel_bench_lib.ParallelBench(
+        cpus=[0, 1],
+        cpu_affinity=False,
+        benchmark_weights=None,
+        utilization=0.5,
+        duration=0.1,
+        temp_root=absltest.get_default_test_tmpdir(),
+    )
+
+  def tearDown(self):
+    super().tearDown()
+    for filename in os.listdir(self.pb.temp_root):
+      os.remove(os.path.join(self.pb.temp_root, filename))
+
   @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
   @mock.patch.object(run.Run, "Execute", autospec=True)
   @mock.patch.object(cpu, "Utilization", autospec=True)
@@ -56,7 +72,7 @@ class ParallelBenchTest(absltest.TestCase):
       return fake_utilizations[min(mock_utilization.call_count - 1, 1)]
 
     mock_utilization.side_effect = fake_utilization
-    pb = parallel_bench_lib.ParallelBench(
+    self.pb = parallel_bench_lib.ParallelBench(
         cpus=[0, 1],
         cpu_affinity=False,
         benchmark_weights=None,
@@ -64,7 +80,7 @@ class ParallelBenchTest(absltest.TestCase):
         duration=0.1,
         temp_root=absltest.get_default_test_tmpdir(),
     )
-    pb.Run("fake_bench", [])
+    self.pb.Run("fake_bench", [])
     mock_execute.assert_called_once()
 
   @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
@@ -188,17 +204,8 @@ class ParallelBenchTest(absltest.TestCase):
     )
 
   def test_convert_to_dataframe(self):
-    pb = parallel_bench_lib.ParallelBench(
-        cpus=[0, 1],
-        cpu_affinity=False,
-        benchmark_weights=None,
-        utilization=0.5,
-        duration=0.1,
-        temp_root=absltest.get_default_test_tmpdir(),
-    )
-
     # First entries are fake durations, the second entries are real durations.
-    pb.runtimes["BM_Test1"] = [
+    self.pb.runtimes["BM_Test1"] = [
         parallel_bench_lib.BenchmarkMetrics(
             total_duration=10,
             per_iteration_wall_time=1,
@@ -210,7 +217,7 @@ class ParallelBenchTest(absltest.TestCase):
             per_iteration_cpu_time=3,
         ),
     ]
-    pb.runtimes["BM_Test2"] = [
+    self.pb.runtimes["BM_Test2"] = [
         parallel_bench_lib.BenchmarkMetrics(
             total_duration=10,
             per_iteration_wall_time=1,
@@ -222,9 +229,9 @@ class ParallelBenchTest(absltest.TestCase):
             per_iteration_cpu_time=5,
         ),
     ]
-    pb.utilization_samples.append((pd.Timestamp.now(), 0.5))
+    self.pb.utilization_samples.append((pd.Timestamp.now(), 0.5))
 
-    df = pb.ConvertToDataFrame()
+    df = self.pb.ConvertToDataFrame()
     self.assertEqual(
         df.to_dict("records"),
         [
@@ -233,21 +240,94 @@ class ParallelBenchTest(absltest.TestCase):
         ],
     )
 
+  def test_generate_perf_counter_dataframe(self):
+    mock_data1 = {
+        "benchmarks": [{
+            "name": "test_benchmark1",
+            "cpu_time": 10,
+            "instructions": 100,
+            "cycles": 1,
+        }]
+    }
+    mock_data2 = {
+        "benchmarks": [{
+            "name": "test_benchmark2",
+            "cpu_time": 20,
+            "instructions": 200,
+            "cycles": 2,
+        }]
+    }
+
+    mock_data3 = {
+        "benchmarks": [{
+            "name": "test_benchmark1",
+            "cpu_time": 30,
+            "instructions": 160,
+            "cycles": 5,
+        }]
+    }
+    with open(os.path.join(self.pb.temp_root, "run_1"), "w") as f:
+      json.dump(mock_data1, f)
+    with open(os.path.join(self.pb.temp_root, "run_2"), "w") as f:
+      json.dump(mock_data2, f)
+    with open(os.path.join(self.pb.temp_root, "run_3"), "w") as f:
+      json.dump(mock_data3, f)
+
+    counters = "instructions,cycles"
+    df = self.pb.GeneratePerfCounterDataFrame(counters)
+
+    self.assertIsInstance(df, pd.DataFrame)
+    self.assertLen(df, 2)  # There are two benchmarks
+    # The first benchmark has:
+    #   100 instructions and 1 cycle in run_1,
+    #   160 instructions and 5 cycles in run_3.
+    # The second benchmark has 200 instructions and 2 cycles in run_2.
+    expected_df = pd.DataFrame([
+        {"Benchmark": "test_benchmark1", "instructions": 130.0, "cycles": 3.0},
+        {"Benchmark": "test_benchmark2", "instructions": 200.0, "cycles": 2.0},
+    ])
+    pd.testing.assert_frame_equal(df, expected_df)
+
+  def test_generate_benchmark_report(self):
+    benchmark_df = pd.DataFrame([
+        {"Benchmark": "BM_Test1", "WallTimes": 3, "CPUTimes": 3},
+        {"Benchmark": "BM_Test2", "WallTimes": 4, "CPUTimes": 5},
+        {"Benchmark": "BM_Test1", "WallTimes": 6, "CPUTimes": 7},
+    ])
+    perf_counter_df = pd.DataFrame([
+        {"Benchmark": "BM_Test1", "instructions": 130.0, "cycles": 3.0},
+        {"Benchmark": "BM_Test2", "instructions": 200.0, "cycles": 2.0},
+    ])
+    combined_df = self.pb.GenerateBenchmarkReport(benchmark_df, perf_counter_df)
+    self.assertIsInstance(combined_df, pd.DataFrame)
+    self.assertLen(combined_df, 2)  # Two benchmarks: BM_Test1 and BM_Test2
+    expected_df = pd.DataFrame([
+        {
+            "Benchmark": "BM_Test1",
+            "Count": 2,
+            "Mean_Wall_Time": 4.5,
+            "Mean_CPU_Time": 5.0,
+            "instructions": 130.0,
+            "cycles": 3.0,
+        },
+        {
+            "Benchmark": "BM_Test2",
+            "Count": 1,
+            "Mean_Wall_Time": 4,
+            "Mean_CPU_Time": 5.0,
+            "instructions": 200.0,
+            "cycles": 2.0,
+        },
+    ])
+    pd.testing.assert_frame_equal(combined_df, expected_df)
+
   def test_save_benchmark_results(self):
-    pb = parallel_bench_lib.ParallelBench(
-        cpus=[0, 1],
-        cpu_affinity=False,
-        benchmark_weights=None,
-        utilization=0.5,
-        duration=0.1,
-        temp_root=absltest.get_default_test_tmpdir(),
-    )
     df = pd.DataFrame([
         {"Benchmark": "BM_Test1", "Duration": 1, "CPUTimes": 1},
         {"Benchmark": "BM_Test2", "Duration": 1, "CPUTimes": 2},
     ])
 
-    pb.SaveBenchmarkResults(df)
+    self.pb.SaveBenchmarkResults(df)
     file_name = os.path.join(absltest.get_default_test_tmpdir(), "results.json")
     self.assertTrue(os.path.exists(file_name))
     with open(file_name, "r") as json_file:

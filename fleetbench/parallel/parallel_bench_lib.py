@@ -409,8 +409,27 @@ class ParallelBench:
               )
           )
 
-  def GenerateBenchmarkReport(self, df: pd.DataFrame) -> None:
-    """Print some aggregated results of the benchmark runs."""
+  def GenerateBenchmarkReport(
+      self,
+      df: pd.DataFrame,
+      perf_counter_df: pd.DataFrame | None,
+  ) -> pd.DataFrame:
+    """Generates a DataFrame of aggregated benchmark results.
+
+    Args:
+      df: A DataFrame of benchmark results.
+      perf_counter_df: A DataFrame of performance counter results.
+
+    Returns:
+      A DataFrame of aggregated benchmark results.
+    """
+
+    # Remove "fleetbench (" prefix and ")" suffix
+    df["Benchmark"] = (
+        df["Benchmark"]
+        .astype(str)
+        .str.replace(r"fleetbench \((.*)\)", r"\1", regex=True)
+    )
 
     grouped_results = (
         df.groupby("Benchmark")
@@ -421,7 +440,16 @@ class ParallelBench:
         )
         .round(3)
     )
+
+    # Combine perf_counter_df and benchmark run results on the same
+    # "benchmark" entry.
+    if perf_counter_df is not None:
+      grouped_results = pd.merge(
+          grouped_results, perf_counter_df, on="Benchmark", how="left"
+      )
+
     print(grouped_results.to_string())
+    return grouped_results
 
   def SaveBenchmarkResults(self, df: pd.DataFrame) -> None:
     """Saves benchmark results to a JSON file for predictiveness analysis."""
@@ -435,12 +463,6 @@ class ParallelBench:
       df = df.rename(columns={"WallTimes": "real_time"})
       df = df.rename(columns={"CPUTimes": "cpu_time"})
 
-      # Remove "fleetbench (" prefix and ")" suffix
-      df["name"] = (
-          df["name"]
-          .astype(str)
-          .str.replace(r"fleetbench \((.*)\)", r"\1", regex=True)
-      )
       data = df.to_dict(orient="records")
 
       with open(file_name, "w") as json_file:
@@ -451,41 +473,56 @@ class ParallelBench:
     except (IOError, json.JSONDecodeError) as e:
       print(f"Error writing JSON data: {e}")
 
-  def GeneratePerfCounterReport(self, counters: list[str]) -> None:
-    """Generate a report of the perf counters for each benchmark."""
+  def GeneratePerfCounterDataFrame(
+      self, benchmark_perf_counters: str
+  ) -> pd.DataFrame | None:
+    """Generates a DataFrame of performance counter results for each benchmark.
+
+    Args:
+      benchmark_perf_counters: A comma-separated list of performance counters to
+        collect.
+
+    Returns:
+      A DataFrame of performance counter results for each benchmark, or None if
+      no performance counters were specified.
+    """
+    if not benchmark_perf_counters:
+      return None
+
+    counters = benchmark_perf_counters.split(",")
+
     performance_data = []
     for filename in os.listdir(self.temp_root):
+
       if filename == "results.json":
         continue
       file_path = os.path.join(self.temp_root, filename)
       with open(file_path, "r") as f:
-        benchmark_result = json.loads(f.read())["benchmarks"][0]
+        file_content = f.read()
+        benchmark_result = json.loads(file_content)["benchmarks"][0]
 
+      entry = {
+          "Benchmark": benchmark_result["name"],
+      }
       for counter in counters:
         if counter in benchmark_result:
-          entry = {
-              "Benchmark": benchmark_result["name"],
-              "Counter": counter,
-              "Value": benchmark_result[counter],
-          }
-          performance_data.append(entry)
+          entry[counter] = benchmark_result[counter]
+      performance_data.append(entry)
 
-    perf_counters = pd.DataFrame(performance_data)
+    perf_counters_results = pd.DataFrame(performance_data)
+    if perf_counters_results.empty:
+      return None
+
+    # Group the results by benchmark and counter, and calculate the mean of each
+    # counter for each benchmark.
+    aggregations = {}
+    for counter in counters:
+      aggregations[counter] = pd.NamedAgg(column=counter, aggfunc=np.mean)
+
     perf_counters_results = (
-        perf_counters.groupby(["Benchmark", "Counter"])
-        .agg(
-            Median=("Value", "median"),
-            Mean=("Value", "mean"),
-        )
-        .round(3)
-    )
-
-    print(perf_counters_results.to_string())
-
-    # Summarizes results to CSV for post-analysis
-    perf_counters_results.to_csv(
-        os.path.join(self.temp_root, "perf_counters.csv")
-    )
+        perf_counters_results.groupby("Benchmark").agg(**aggregations).round(3)
+    ).reset_index()
+    return perf_counters_results
 
   def ConvertToDataFrame(self) -> pd.DataFrame:
     """Converts benchmark results to a DataFrame."""
@@ -512,17 +549,15 @@ class ParallelBench:
   def PostProcessBenchmarkResults(self, benchmark_perf_counters: str) -> None:
     """Generate benchmark reports and save results to a JSON file.
 
-    If benchmark_perf_counters is specified, also generate a report of the perf
+    If benchmark_perf_counters is specified, the report will include perf
     counters for each benchmark.
     """
 
     df = self.ConvertToDataFrame()
-    self.SaveBenchmarkResults(df)
-    self.GenerateBenchmarkReport(df)
 
-    if benchmark_perf_counters:
-      counters = benchmark_perf_counters.split(",")
-      self.GeneratePerfCounterReport(counters)
+    perf_counter_df = self.GeneratePerfCounterDataFrame(benchmark_perf_counters)
+    df = self.GenerateBenchmarkReport(df, perf_counter_df)
+    self.SaveBenchmarkResults(df)
 
   def Run(
       self,
