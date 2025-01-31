@@ -462,8 +462,7 @@ class ParallelBench:
       df = df.rename(columns={"Benchmark": "name"})
       df = df.rename(columns={"WallTimes": "real_time"})
       df = df.rename(columns={"CPUTimes": "cpu_time"})
-
-      data = df.to_dict(orient="records")
+      data = df.reset_index().to_dict(orient="records")
 
       with open(file_name, "w") as json_file:
         json.dump(
@@ -521,7 +520,7 @@ class ParallelBench:
 
     perf_counters_results = (
         perf_counters_results.groupby("Benchmark").agg(**aggregations).round(3)
-    ).reset_index()
+    )
     return perf_counters_results
 
   def ConvertToDataFrame(self) -> pd.DataFrame:

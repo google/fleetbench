@@ -285,7 +285,7 @@ class ParallelBenchTest(absltest.TestCase):
     expected_df = pd.DataFrame([
         {"Benchmark": "test_benchmark1", "instructions": 130.0, "cycles": 3.0},
         {"Benchmark": "test_benchmark2", "instructions": 200.0, "cycles": 2.0},
-    ])
+    ]).set_index("Benchmark")
     pd.testing.assert_frame_equal(df, expected_df)
 
   def test_generate_benchmark_report(self):
@@ -335,8 +335,8 @@ class ParallelBenchTest(absltest.TestCase):
     self.assertEqual(
         data,
         [
-            {"name": "BM_Test1", "Duration": 1, "cpu_time": 1},
-            {"name": "BM_Test2", "Duration": 1, "cpu_time": 2},
+            {"index": 0, "name": "BM_Test1", "Duration": 1, "cpu_time": 1},
+            {"index": 1, "name": "BM_Test2", "Duration": 1, "cpu_time": 2},
         ],
     )
 
