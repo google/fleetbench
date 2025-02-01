@@ -109,8 +109,10 @@ cc_library(
         ":maybe_llvmlibc",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/log",
+        "@com_google_absl//absl/log:check",
         "@com_google_benchmark//:benchmark",
         "@com_google_tcmalloc//tcmalloc:malloc_extension",
+        "@libnuma//:numa",
     ],
 )
 

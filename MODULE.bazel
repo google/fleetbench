@@ -131,3 +131,15 @@ llvm_project = use_extension(
     "llvm_project",
 )
 use_repo(llvm_project, "llvm-project")
+
+http_archive(
+    name = "libnuma",
+    build_file = "@//fleetbench:libnuma.BUILD.bazel",
+    patch_cmds = [
+        "./autogen.sh",
+        "./configure",
+    ],
+    sha256 = "c7aebfc925f2c3827e3cb607092065f3a48986a16aea1bb10ca70937edac278b",
+    strip_prefix = "numactl-2.0.19",
+    url = "https://github.com/numactl/numactl/archive/refs/tags/v2.0.19.zip",
+)

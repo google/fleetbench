@@ -19,11 +19,20 @@
 #include <thread>
 #include <vector>
 
+#include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/dynamic_registrar.h"
+#include "numa.h"
 #include "tcmalloc/malloc_extension.h"
+
+ABSL_FLAG(bool, prevent_numa_migrations, true,
+          "Prevent migrations to other NUMA nodes to reduce variance. Sets the "
+          "CPU affinity to the intersection of the affinity at the start of the"
+          " benchmark and the CPUs in the current NUMA node at the start of the"
+          " benchmark, and limits memory allocations to this NUMA node.");
 
 int main(int argc, char* argv[]) {
   benchmark::Initialize(&argc, argv);
@@ -33,6 +42,40 @@ int main(int argc, char* argv[]) {
     new std::thread([]() {
       tcmalloc::MallocExtension::ProcessBackgroundActions();
     }) : nullptr;
+
+  if (absl::GetFlag(FLAGS_prevent_numa_migrations) && numa_available() != -1) {
+    // Set the CPU affinity to the intersection of the current affinity and the
+    // CPUs in the current NUMA node.
+    struct bitmask* current_affinity = numa_allocate_cpumask();
+    PCHECK(numa_sched_getaffinity(0, current_affinity) != -1)
+        << "Failed to get CPU affinity";
+
+    int current_numa_node = numa_node_of_cpu(sched_getcpu());
+    PCHECK(current_numa_node != -1) << "Failed to get NUMA node";
+    struct bitmask* cpus_in_current_numa_node = numa_allocate_cpumask();
+    numa_node_to_cpus(current_numa_node, cpus_in_current_numa_node);
+
+    struct bitmask* new_affinity = numa_allocate_cpumask();
+    for (int i = 0; i < new_affinity->size; i++) {
+      if (numa_bitmask_isbitset(current_affinity, i) &&
+          numa_bitmask_isbitset(cpus_in_current_numa_node, i)) {
+        numa_bitmask_setbit(new_affinity, i);
+      }
+    }
+    PCHECK(numa_sched_setaffinity(0, new_affinity) != -1)
+        << "Failed to set CPU affinity";
+
+    numa_free_cpumask(current_affinity);
+    numa_free_cpumask(cpus_in_current_numa_node);
+    numa_free_cpumask(new_affinity);
+
+    // Only allocate memory from the current NUMA node.
+    struct bitmask* node_mask = numa_allocate_nodemask();
+    numa_bitmask_setbit(node_mask, current_numa_node);
+    numa_set_membind(node_mask);
+    numa_free_nodemask(node_mask);
+  }
+
   if (benchmark::GetBenchmarkFilter().empty() ||
       benchmark::GetBenchmarkFilter() == "default") {
     // --benchmark_filter flag not set
