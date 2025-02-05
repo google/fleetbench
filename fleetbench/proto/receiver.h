@@ -24,56 +24,42 @@
 
 namespace fleetbench::proto {
 
-inline void ReceiveCord(const absl::Cord& val) {
+template <typename T>
+inline void Receive(const T& val) {
+  T temp_val = val;
+  benchmark::DoNotOptimize(temp_val);
+}
+
+inline void Receive(const absl::Cord& val) {
   absl::Cord temp_cord;
   temp_cord.Append(val);
   benchmark::DoNotOptimize(temp_cord);
 }
 
-inline void ReceiveString(absl::string_view val) {
-  absl::string_view temp_str_view = val;
-  benchmark::DoNotOptimize(temp_str_view);
-}
-
-inline void ReceiveString(const std::string& val) {
+inline void Receive(const std::string& val) {
   const std::string* temp_str = &val;
   benchmark::DoNotOptimize(temp_str);
 }
 
-inline void ReceiveBool(const bool val) {
-  bool temp_bool = val;
-  benchmark::DoNotOptimize(temp_bool);
-}
+inline void ReceiveCord(const absl::Cord& val) { Receive(val); }
 
-inline void ReceiveDouble(const double val) {
-  double temp_double = val;
-  benchmark::DoNotOptimize(temp_double);
-}
+inline void ReceiveString(absl::string_view val) { Receive(val); }
 
-inline void ReceiveFloat(const float val) {
-  float temp_float = val;
-  benchmark::DoNotOptimize(temp_float);
-}
+inline void ReceiveString(const std::string& val) { Receive(val); }
 
-inline void ReceiveInt32(const int32_t val) {
-  int32_t temp_int32 = val;
-  benchmark::DoNotOptimize(temp_int32);
-}
+inline void ReceiveBool(const bool val) { Receive(val); }
 
-inline void ReceiveInt64(const int64_t val) {
-  int64_t temp_int64 = val;
-  benchmark::DoNotOptimize(temp_int64);
-}
+inline void ReceiveDouble(const double val) { Receive(val); }
 
-inline void ReceiveUint32(const uint32_t val) {
-  uint32_t temp_uint32 = val;
-  benchmark::DoNotOptimize(temp_uint32);
-}
+inline void ReceiveFloat(const float val) { Receive(val); }
 
-inline void ReceiveUint64(const uint64_t val) {
-  uint64_t temp_uint64 = val;
-  benchmark::DoNotOptimize(temp_uint64);
-}
+inline void ReceiveInt32(const int32_t val) { Receive(val); }
+
+inline void ReceiveInt64(const int64_t val) { Receive(val); }
+
+inline void ReceiveUint32(const uint32_t val) { Receive(val); }
+
+inline void ReceiveUint64(const uint64_t val) { Receive(val); }
 
 template <typename M>
 void Copy(M* message, M* other_message) {
