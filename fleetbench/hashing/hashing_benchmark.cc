@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <filesystem>  // NOLINT
 #include <iterator>
@@ -50,8 +51,9 @@ void ExtendCrc32cFunction(benchmark::State &state,
                                       parameters.str_lengths.end(), 0);
   absl::crc32c_t v0{0};
   size_t start = 0;
+  int64_t warmup = 1000;
   // Run benchmark and call ExtendCrc32c
-  while (state.KeepRunningBatch(batch_size)) {
+  while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
     for (auto &l : parameters.str_lengths) {
       benchmark::DoNotOptimize(v0);
       if (!parameters.hot) {
@@ -82,8 +84,9 @@ void ComputeCrc32cFunction(benchmark::State &state,
   size_t batch_size = std::accumulate(parameters.str_lengths.begin(),
                                       parameters.str_lengths.end(), 0);
   size_t start = 0;
+  int64_t warmup = 1000;
   // Run benchmark and call ComputeCrc32c
-  while (state.KeepRunningBatch(batch_size)) {
+  while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
     for (auto &l : parameters.str_lengths) {
       if (!parameters.hot) {
         if (start + l >= parameters.sv.length()) {
@@ -107,8 +110,9 @@ void CombineContiguousFunction(benchmark::State &state,
   size_t batch_size = std::accumulate(parameters.str_lengths.begin(),
                                       parameters.str_lengths.end(), 0);
   size_t start = 0;
+  int64_t warmup = 10000;
   // Run benchmark and call combine_contiguous
-  while (state.KeepRunningBatch(batch_size)) {
+  while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
     for (auto &l : parameters.str_lengths) {
       if (!parameters.hot) {
         if (start + l >= parameters.sv.length()) {
