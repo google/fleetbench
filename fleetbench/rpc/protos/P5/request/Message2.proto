@@ -234,7 +234,7 @@ message Message2 {
       message M66 {
         optional int32 f_0 = 1;
         message M92 {
-          optional string f_0 = 1 [ctype = CORD];
+          optional string f_0 = 1;
         }
         optional M92 f_2 = 2;
       }

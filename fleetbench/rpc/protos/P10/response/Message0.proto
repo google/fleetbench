@@ -2778,7 +2778,7 @@ message Message0 {
           }
           optional M203 f_4 = 4;
           message M234 {
-            optional string f_0 = 2 [ctype = CORD];
+            optional string f_0 = 2;
           }
           repeated M234 f_5 = 5;
           message M239 {
