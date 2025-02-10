@@ -93,9 +93,11 @@ void LookupHit_Cold(benchmark::State& state, Lookup lookup) {
   auto& keys = sc.GetTransposedRandomizedKeys(sets);
   auto& n_sets_of_size = sc.GetNumSetsOfSize(sets);
 
+  int64_t warmup = 500;
   while (true) {
     for (size_t i = 0; i != GetLargestSetSize(sets); ++i) {
-      if (!state.KeepRunningBatch(n_sets_of_size[i + 1])) return;
+      if ((warmup-- <= 0) && !state.KeepRunningBatch(n_sets_of_size[i + 1]))
+        return;
       for (size_t j = 0; j < n_sets_of_size[i + 1]; ++j) {
         lookup(&sets[j], keys[i * sets.size() + j]);
       }
