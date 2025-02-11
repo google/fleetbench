@@ -455,15 +455,22 @@ class ParallelBench:
     """Saves benchmark results to a JSON file for predictiveness analysis."""
 
     file_name = os.path.join(self.temp_root, "results.json")
-    try:
-      # Convert DataFrame to a list of dictionaries (one for each row)
-      # Rename the column "Benchmark" to "Name"
-      # TODO: This only works for open source benchmark version.
-      df = df.rename(columns={"Benchmark": "name"})
-      df = df.rename(columns={"WallTimes": "real_time"})
-      df = df.rename(columns={"CPUTimes": "cpu_time"})
-      data = df.reset_index().to_dict(orient="records")
 
+    # Convert DataFrame to a list of dictionaries (one for each row)
+    # Rename the column "Benchmark" to "Name"
+    # TODO: This only works for open source benchmark version.
+
+    # We use "Benchmark" column as the index, and rename it to "name"
+    df.index.name = "name"
+    df = df.rename(
+        columns={
+            "Mean_Wall_Time": "real_time",
+            "Mean_CPU_Time": "cpu_time",
+        }
+    )
+    data = df.reset_index().to_dict(orient="records")
+
+    try:
       with open(file_name, "w") as json_file:
         json.dump(
             data, json_file, indent=4

@@ -323,9 +323,9 @@ class ParallelBenchTest(absltest.TestCase):
 
   def test_save_benchmark_results(self):
     df = pd.DataFrame([
-        {"Benchmark": "BM_Test1", "Duration": 1, "CPUTimes": 1},
-        {"Benchmark": "BM_Test2", "Duration": 1, "CPUTimes": 2},
-    ])
+        {"Benchmark": "BM_Test1", "Mean_Wall_Time": 1, "Mean_CPU_Time": 1},
+        {"Benchmark": "BM_Test2", "Mean_Wall_Time": 1, "Mean_CPU_Time": 2},
+    ]).set_index("Benchmark")
 
     self.pb.SaveBenchmarkResults(df)
     file_name = os.path.join(absltest.get_default_test_tmpdir(), "results.json")
@@ -335,8 +335,8 @@ class ParallelBenchTest(absltest.TestCase):
     self.assertEqual(
         data,
         [
-            {"index": 0, "name": "BM_Test1", "Duration": 1, "cpu_time": 1},
-            {"index": 1, "name": "BM_Test2", "Duration": 1, "cpu_time": 2},
+            {"name": "BM_Test1", "real_time": 1, "cpu_time": 1},
+            {"name": "BM_Test2", "real_time": 1, "cpu_time": 2},
         ],
     )
 
