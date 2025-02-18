@@ -26,7 +26,6 @@ import pandas as pd
 
 from fleetbench.parallel import benchmark as bm
 from fleetbench.parallel import cpu
-from fleetbench.parallel import result
 from fleetbench.parallel import run
 from fleetbench.parallel import worker
 
@@ -41,7 +40,7 @@ def ParseBenchmarkWeights(
   filter should be in ALL CAPS to ensure case-insensitive matching.
 
   Args:
-    benchmark_list: A list of strings to parse.
+    benchmark_weights_list: A list of strings to parse.
 
   Returns:
     A dictionary of {capitalized string: float} or None if the list is empty.
@@ -56,112 +55,12 @@ def ParseBenchmarkWeights(
       benchmark_weights[key.upper()] = float(value_str)
     except ValueError:
       logging.warning(
-          f"Invalid benchmark string: %s. The format should be"
-          f" <benchmark_name|benchmark_filter>:<weight>. Skipping...",
+          "Invalid benchmark string: %s. The format should be"
+          " <benchmark_name|benchmark_filter>:<weight>. Skipping...",
           weights,
       )
 
   return benchmark_weights
-
-
-def _CreateBenchmarks(
-    bm_target: str, names: list[str]
-) -> dict[str, bm.Benchmark]:
-  """Creates benchmark dictionary with the benchmark name as the key."""
-  benchmarks = {}
-  for name in names:
-    benchmark = bm.Benchmark(bm_target, name)
-    benchmarks[benchmark.Name()] = benchmark
-  return benchmarks
-
-
-def _CreateMatchingBenchmarks(
-    bm_target: str, bm_filter: str, bm_candidates: list[str]
-) -> dict[str, bm.Benchmark]:
-  """Creates benchmarks that match the given filter."""
-  matching_bm_names = [name for name in bm_candidates if bm_filter in name]
-  if not matching_bm_names:
-    raise ValueError(f"Can't find benchmarks matching {bm_filter}.")
-  return _CreateBenchmarks(bm_target, matching_bm_names)
-
-
-def _GetDefaultBenchmarks(
-    benchmark_target: str, benchmark_filters: list[str]
-) -> dict[str, bm.Benchmark]:
-  """Get a list of benchmarks from the default target.
-
-    Filtering options:
-  - Empty list: Returns all default benchmarks.
-  - Keyword list: Returns benchmarks from the default list matching the provided
-                  keyword (e.g., "Cold Hot").
-
-  Args:
-    benchmark_target: Path to the benchmark binary.
-    benchmark_filters: List of filters to apply to the benchmarks to run.
-
-  Returns:
-    A map of benchmark names to Benchmark objects.
-  """
-  benchmarks = {}
-  sub_benchmarks = bm.GetSubBenchmarks(benchmark_target)
-
-  # Gets default benchmark sets
-  if not benchmark_filters:
-    return _CreateBenchmarks(benchmark_target, sub_benchmarks)
-
-  # Gets benchmark sets from filters
-  for bm_filter in benchmark_filters:
-    benchmarks.update(
-        _CreateMatchingBenchmarks(benchmark_target, bm_filter, sub_benchmarks)
-    )
-  return benchmarks
-
-
-def _GetWorkloadBenchmarks(
-    benchmark_target: str, workload_filters: list[str]
-) -> dict[str, bm.Benchmark]:
-  """Get a list of benchmarks from the given workload that match the filters.
-
-  Filtering options:
-    - Workload name + keyword(s): Returns benchmarks associated with the
-        specified workload, further filtered by keywords (e.g.,
-        "libc,Memcpy,Memcmp").
-    - Workload name + "all": Returns all benchmarks associated with the
-        specified workload (e.g., "proto,all").
-  Args:
-    benchmark_target: Path to the benchmark binary.
-    workload_filters: List of filters to apply to the benchmarks to run.
-
-  Returns:
-    A map of benchmark names to Benchmark objects.
-  """
-  benchmarks = {}
-
-  # Get all unique workloads
-  workloads = bm.GetWorkloads(benchmark_target)
-
-  def _GetWorkloadAndFilter(bm_filter: str) -> tuple[str, list[str]]:
-    parts = bm_filter.split(",")
-    if parts[0].upper() not in workloads:
-      raise ValueError(f"Workload {parts[0]} not supported in Fleetbench.")
-    return parts[0], parts[1:]
-
-  for workload_filter in workload_filters:
-    workload, bm_filters = _GetWorkloadAndFilter(workload_filter)
-    workload_bms = bm.GetSubBenchmarks(benchmark_target, workload)
-    if bm_filters == ["all"]:
-      benchmarks.update(
-          _CreateMatchingBenchmarks(
-              benchmark_target, workload.upper(), workload_bms
-          )
-      )
-    else:
-      for bm_filter in bm_filters:
-        benchmarks.update(
-            _CreateMatchingBenchmarks(benchmark_target, bm_filter, workload_bms)
-        )
-
-  return benchmarks
 
 
 def _SetExtraBenchmarkFlags(
@@ -254,11 +153,11 @@ class ParallelBench:
     logging.info("Initializing benchmarks and worker threads...")
 
     if workload_filters:
-      self.benchmarks = _GetWorkloadBenchmarks(
+      self.benchmarks = bm.GetWorkloadBenchmarks(
           benchmark_target, workload_filters
       )
     else:
-      self.benchmarks = _GetDefaultBenchmarks(
+      self.benchmarks = bm.GetDefaultBenchmarks(
           benchmark_target, benchmark_filters
       )
 
@@ -271,8 +170,8 @@ class ParallelBench:
       for benchmark in self.benchmarks.values():
         benchmark.AddCommandFlags(benchmark_flags)
 
-    # Initialize the runtimes with a fake wall time of 1. This causes all benchmarks
-    # to be equally likely at first.
+    # Initialize the runtimes with a fake wall time of 1. This causes all
+    # benchmarks to be equally likely at first.
     self.runtimes = {
         benchmark: [
             BenchmarkMetrics(
