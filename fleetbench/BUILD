@@ -107,6 +107,7 @@ cc_library(
     deps = [
         ":dynamic_registrar",
         ":maybe_llvmlibc",
+        "//fleetbench/common",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/log",
         "@com_google_absl//absl/log:check",

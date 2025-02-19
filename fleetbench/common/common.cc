@@ -18,6 +18,7 @@
 #include <filesystem>  // NOLINT
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <random>
 #include <string>
@@ -225,6 +226,46 @@ int GetCacheSize(int cache_level, absl::string_view cache_type) {
   LOG(FATAL) << "Cache size could not be detected. You can use the "
                 "--L1_data_size, --L2_size, and --L3_size flags to specify "
                 "the cache sizes (in bytes) manually.";
+}
+
+std::unique_ptr<benchmark::BenchmarkReporter> CreateDefaultFileReporter() {
+  if (fleetbench::FindInCommandLine("--benchmark_out_format=console")) {
+    benchmark::ConsoleReporter::OutputOptions output_opts =
+        benchmark::ConsoleReporter::OutputOptions::OO_None;
+    if (fleetbench::FindInCommandLine("--benchmark_counters_tabular", true) ||
+        fleetbench::FindInCommandLine("--benchmark_counters_tabular=1") ||
+        fleetbench::FindInCommandLine("--benchmark_counters_tabular=true")) {
+      output_opts = benchmark::ConsoleReporter::OutputOptions::OO_Tabular;
+    }
+    return std::make_unique<benchmark::ConsoleReporter>(output_opts);
+  }
+  if (fleetbench::FindInCommandLine("--benchmark_out_format=csv")) {
+    return std::make_unique<benchmark::CSVReporter>();
+  }
+  return std::make_unique<benchmark::JSONReporter>();
+}
+
+bool FindInCommandLine(absl::string_view s, bool exact_match) {
+  std::ifstream f;
+  f.open("/proc/self/cmdline");
+  std::string command_line;
+  f >> command_line;
+  f.close();
+
+  std::vector<absl::string_view> argv = absl::StrSplit(command_line, '\0');
+  for (const auto& arg : argv) {
+    if (absl::StartsWith(arg, s)) {
+      if (!exact_match || arg == s) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool UseExplicitIterationCounts() {
+  return !FindInCommandLine("--benchmark_min_time") &&
+         !FindInCommandLine("--benchmark_list_tests");
 }
 
 }  // namespace fleetbench

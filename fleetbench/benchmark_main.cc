@@ -24,6 +24,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "benchmark/benchmark.h"
+#include "fleetbench/common/common.h"
 #include "fleetbench/dynamic_registrar.h"
 #include "numa.h"
 #include "tcmalloc/malloc_extension.h"
@@ -84,6 +85,15 @@ int main(int argc, char* argv[]) {
   }
   fleetbench::DynamicRegistrar::Get()->Run();
 
-  benchmark::RunSpecifiedBenchmarks();
+  fleetbench::FleetbenchReporter display_reporter(
+      benchmark::CreateDefaultDisplayReporter());
+  if (!fleetbench::FindInCommandLine("--benchmark_out=")) {
+    benchmark::RunSpecifiedBenchmarks(&display_reporter);
+  } else {
+    std::unique_ptr<benchmark::BenchmarkReporter> default_file_reporter =
+        fleetbench::CreateDefaultFileReporter();
+    fleetbench::FleetbenchReporter file_reporter(default_file_reporter.get());
+    benchmark::RunSpecifiedBenchmarks(&display_reporter, &file_reporter);
+  }
   return 0;
 }

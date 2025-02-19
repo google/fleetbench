@@ -15,6 +15,7 @@
 #define THIRD_PARTY_FLEETBENCH_COMMON_COMMON_H_
 
 #include <filesystem>  // NOLINT
+#include <memory>
 #include <optional>
 #include <random>
 #include <string>
@@ -23,6 +24,7 @@
 #include "absl/container/btree_map.h"
 #include "absl/flags/declare.h"
 #include "absl/strings/string_view.h"
+#include "benchmark/benchmark.h"
 
 // Exposed for testing only.
 ABSL_DECLARE_FLAG(bool, fixed_seed);
@@ -89,6 +91,60 @@ absl::btree_map<int, double> ConvertLine(const std::vector<std::string>& line);
 std::string GetFleetbenchRuntimePath(absl::string_view path);
 
 int GetCacheSize(int cache_level, absl::string_view cache_type = "");
+
+// A BenchmarkReporter adapter that removes the iteration count from the
+// benchmark name.
+// By default, the benchmark framework creates a benchmark name that contains
+// `/iterations:x` if the iteration count is specified by calling
+// `->Iterations(x)` on the benchmark object, but not if it is determined
+// automatically, or specified by the `--benchmark_min_time` flag.
+class FleetbenchReporter : public benchmark::BenchmarkReporter {
+ public:
+  explicit FleetbenchReporter(benchmark::BenchmarkReporter* reporter)
+      : reporter_(reporter) {}
+
+  void ReportRuns(
+      const std::vector<benchmark::BenchmarkReporter::Run>& runs) override {
+    std::vector<benchmark::BenchmarkReporter::Run> runs_copy(runs);
+    for (auto& run : runs_copy) {
+      run.run_name.iterations = "";
+    }
+    reporter_->ReportRuns(runs_copy);
+  }
+
+  void ReportRunsConfig(double min_time, bool has_explicit_iters,
+                        benchmark::IterationCount iters) override {
+    reporter_->ReportRunsConfig(min_time, has_explicit_iters, iters);
+  }
+
+  bool ReportContext(
+      const benchmark::BenchmarkReporter::Context& context) override {
+    reporter_->SetOutputStream(&this->GetOutputStream());
+    reporter_->SetErrorStream(&this->GetErrorStream());
+    return reporter_->ReportContext(context);
+  }
+
+  void Finalize() override { reporter_->Finalize(); }
+
+ private:
+  benchmark::BenchmarkReporter* const reporter_;
+};
+
+// Returns a file reporter that corresponds to the reporter that
+// benchmark::RunSpecifiedBenchmarks creates when the file_reporter parameter
+// is not set.
+std::unique_ptr<benchmark::BenchmarkReporter> CreateDefaultFileReporter();
+
+// Check if any command line argument starts with `s`.
+bool FindInCommandLine(absl::string_view s, bool exact_match = false);
+
+// Returns whether explicit iteration counts can be used when registering
+// benchmarks. This is the case if the `--benchmark_min_time` flag and the
+// `--benchmark_list_tests` flag are not set. `--benchmark_list_tests` is
+// excluded here because it does not use our custom `FleetbenchReporter` (see
+// `benchmark_main.cc`), and thus, the printed benchmark names would contain
+// `/iterations:x` when explicit iteration counts are used.
+bool UseExplicitIterationCounts();
 
 }  // namespace fleetbench
 #endif  // THIRD_PARTY_FLEETBENCH_COMMON_COMMON_H_
