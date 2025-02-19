@@ -56,11 +56,20 @@ py_library(
     deps = [
         ":benchmark",
         ":cpu",
-        ":result",
+        ":reporter",
         ":run",
         ":worker",
         "@com_google_absl_py//absl/logging",
         requirement("numpy"),
+        requirement("pandas"),
+    ],
+)
+
+py_library(
+    name = "reporter",
+    srcs = ["reporter.py"],
+    deps = [
+        "@com_google_absl_py//absl/logging",
         requirement("pandas"),
     ],
 )
@@ -86,6 +95,7 @@ py_test(
         ":benchmark",
         ":cpu",
         ":parallel_bench_lib",
+        ":reporter",
         ":result",
         ":run",
         "@com_google_absl_py//absl/testing:absltest",
@@ -132,5 +142,15 @@ py_test(
         ":run",
         "@com_google_absl_py//absl/testing:absltest",
         "@com_google_absl_py//absl/testing:flagsaver",
+    ],
+)
+
+py_test(
+    name = "reporter_test",
+    srcs = ["reporter_test.py"],
+    deps = [
+        ":reporter",
+        "@com_google_absl_py//absl/testing:absltest",
+        requirement("pandas"),
     ],
 )

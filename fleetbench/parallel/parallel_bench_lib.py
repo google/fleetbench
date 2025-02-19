@@ -26,6 +26,7 @@ import pandas as pd
 
 from fleetbench.parallel import benchmark as bm
 from fleetbench.parallel import cpu
+from fleetbench.parallel import reporter
 from fleetbench.parallel import run
 from fleetbench.parallel import worker
 
@@ -308,76 +309,6 @@ class ParallelBench:
               )
           )
 
-  def GenerateBenchmarkReport(
-      self,
-      df: pd.DataFrame,
-      perf_counter_df: pd.DataFrame | None,
-  ) -> pd.DataFrame:
-    """Generates a DataFrame of aggregated benchmark results.
-
-    Args:
-      df: A DataFrame of benchmark results.
-      perf_counter_df: A DataFrame of performance counter results.
-
-    Returns:
-      A DataFrame of aggregated benchmark results.
-    """
-
-    # Remove "fleetbench (" prefix and ")" suffix
-    df["Benchmark"] = (
-        df["Benchmark"]
-        .astype(str)
-        .str.replace(r"fleetbench \((.*)\)", r"\1", regex=True)
-    )
-
-    grouped_results = (
-        df.groupby("Benchmark")
-        .agg(
-            Count=("WallTimes", "count"),
-            Mean_Wall_Time=("WallTimes", "mean"),
-            Mean_CPU_Time=("CPUTimes", "mean"),
-        )
-        .round(3)
-    )
-
-    # Combine perf_counter_df and benchmark run results on the same
-    # "benchmark" entry.
-    if perf_counter_df is not None:
-      grouped_results = pd.merge(
-          grouped_results, perf_counter_df, on="Benchmark", how="left"
-      )
-
-    print(grouped_results.to_string())
-    return grouped_results
-
-  def SaveBenchmarkResults(self, df: pd.DataFrame) -> None:
-    """Saves benchmark results to a JSON file for predictiveness analysis."""
-
-    file_name = os.path.join(self.temp_root, "results.json")
-
-    # Convert DataFrame to a list of dictionaries (one for each row)
-    # Rename the column "Benchmark" to "Name"
-    # TODO: This only works for open source benchmark version.
-
-    # We use "Benchmark" column as the index, and rename it to "name"
-    df.index.name = "name"
-    df = df.rename(
-        columns={
-            "Mean_Wall_Time": "real_time",
-            "Mean_CPU_Time": "cpu_time",
-        }
-    )
-    data = df.reset_index().to_dict(orient="records")
-
-    try:
-      with open(file_name, "w") as json_file:
-        json.dump(
-            data, json_file, indent=4
-        )  # Serialize and write with indentation
-        logging.info("Summary results successfully written to %s", file_name)
-    except (IOError, json.JSONDecodeError) as e:
-      print(f"Error writing JSON data: {e}")
-
   def GeneratePerfCounterDataFrame(
       self, benchmark_perf_counters: str
   ) -> pd.DataFrame | None:
@@ -461,8 +392,8 @@ class ParallelBench:
     df = self.ConvertToDataFrame()
 
     perf_counter_df = self.GeneratePerfCounterDataFrame(benchmark_perf_counters)
-    df = self.GenerateBenchmarkReport(df, perf_counter_df)
-    self.SaveBenchmarkResults(df)
+    df = reporter.GenerateBenchmarkReport(df, perf_counter_df)
+    reporter.SaveBenchmarkResults(self.temp_root, df)
 
   def Run(
       self,

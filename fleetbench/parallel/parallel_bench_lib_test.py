@@ -23,6 +23,7 @@ import pandas as pd
 from fleetbench.parallel import benchmark as bm
 from fleetbench.parallel import cpu
 from fleetbench.parallel import parallel_bench_lib
+from fleetbench.parallel import reporter
 from fleetbench.parallel import result
 from fleetbench.parallel import run
 
@@ -48,10 +49,17 @@ class ParallelBenchTest(absltest.TestCase):
   @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
   @mock.patch.object(run.Run, "Execute", autospec=True)
   @mock.patch.object(cpu, "Utilization", autospec=True)
+  @mock.patch.object(reporter, "SaveBenchmarkResults", autospec=True)
   @flagsaver.flagsaver(
       benchmark_dir=absltest.get_default_test_tmpdir(),
   )
-  def testRun(self, mock_utilization, mock_execute, mock_get_subbenchmarks):
+  def testRun(
+      self,
+      mock_save_benchmark_results,
+      mock_utilization,
+      mock_execute,
+      mock_get_subbenchmarks,
+  ):
     mock_get_subbenchmarks.return_value = ["BM_Test1", "BM_Test2"]
     mock_execute.return_value = result.Result(
         benchmark="fake_bench (BM_Test1)",
@@ -72,6 +80,9 @@ class ParallelBenchTest(absltest.TestCase):
       return fake_utilizations[min(mock_utilization.call_count - 1, 1)]
 
     mock_utilization.side_effect = fake_utilization
+
+    mock_save_benchmark_results.return_value = None
+
     self.pb = parallel_bench_lib.ParallelBench(
         cpus=[0, 1],
         cpu_affinity=False,
@@ -193,57 +204,24 @@ class ParallelBenchTest(absltest.TestCase):
     ]).set_index("Benchmark")
     pd.testing.assert_frame_equal(df, expected_df)
 
-  def test_generate_benchmark_report(self):
-    benchmark_df = pd.DataFrame([
-        {"Benchmark": "BM_Test1", "WallTimes": 3, "CPUTimes": 3},
-        {"Benchmark": "BM_Test2", "WallTimes": 4, "CPUTimes": 5},
-        {"Benchmark": "BM_Test1", "WallTimes": 6, "CPUTimes": 7},
+  @mock.patch.object(reporter, "SaveBenchmarkResults", autospec=True)
+  @mock.patch.object(reporter, "GenerateBenchmarkReport", autospec=True)
+  @mock.patch.object(
+      parallel_bench_lib.ParallelBench, "ConvertToDataFrame", autospec=True
+  )
+  def test_post_processing_benchmark_results(
+      self,
+      mock_convert_to_dataframe,
+      mock_generate_benchmark_report,
+      mock_save_benchmark_results,
+  ):
+    mock_convert_to_dataframe.return_value = pd.DataFrame([
+        {"Benchmark": "test_benchmark1", "WallTimes": 10, "CPUTimes": 10},
     ])
-    perf_counter_df = pd.DataFrame([
-        {"Benchmark": "BM_Test1", "instructions": 130.0, "cycles": 3.0},
-        {"Benchmark": "BM_Test2", "instructions": 200.0, "cycles": 2.0},
-    ])
-    combined_df = self.pb.GenerateBenchmarkReport(benchmark_df, perf_counter_df)
-    self.assertIsInstance(combined_df, pd.DataFrame)
-    self.assertLen(combined_df, 2)  # Two benchmarks: BM_Test1 and BM_Test2
-    expected_df = pd.DataFrame([
-        {
-            "Benchmark": "BM_Test1",
-            "Count": 2,
-            "Mean_Wall_Time": 4.5,
-            "Mean_CPU_Time": 5.0,
-            "instructions": 130.0,
-            "cycles": 3.0,
-        },
-        {
-            "Benchmark": "BM_Test2",
-            "Count": 1,
-            "Mean_Wall_Time": 4,
-            "Mean_CPU_Time": 5.0,
-            "instructions": 200.0,
-            "cycles": 2.0,
-        },
-    ])
-    pd.testing.assert_frame_equal(combined_df, expected_df)
 
-  def test_save_benchmark_results(self):
-    df = pd.DataFrame([
-        {"Benchmark": "BM_Test1", "Mean_Wall_Time": 1, "Mean_CPU_Time": 1},
-        {"Benchmark": "BM_Test2", "Mean_Wall_Time": 1, "Mean_CPU_Time": 2},
-    ]).set_index("Benchmark")
-
-    self.pb.SaveBenchmarkResults(df)
-    file_name = os.path.join(absltest.get_default_test_tmpdir(), "results.json")
-    self.assertTrue(os.path.exists(file_name))
-    with open(file_name, "r") as json_file:
-      data = json.load(json_file)
-    self.assertEqual(
-        data,
-        [
-            {"name": "BM_Test1", "real_time": 1, "cpu_time": 1},
-            {"name": "BM_Test2", "real_time": 1, "cpu_time": 2},
-        ],
-    )
+    self.pb.PostProcessBenchmarkResults("instructions,cycles")
+    mock_generate_benchmark_report.assert_called_once()
+    mock_save_benchmark_results.assert_called_once()
 
 
 class ParseBenchmarkWeightsTest(absltest.TestCase):
