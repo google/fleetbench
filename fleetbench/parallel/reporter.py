@@ -92,9 +92,7 @@ def GenerateBenchmarkReport(
 
   # Remove "fleetbench (" prefix and ")" suffix
   df["Benchmark"] = (
-      df["Benchmark"]
-      .astype(str)
-      .str.replace(r"fleetbench \((.*)\)", r"\1", regex=True)
+      df["Benchmark"].astype(str).str.replace(r".* \((.*)\)", r"\1", regex=True)
   )
 
   grouped_results = (
@@ -104,6 +102,9 @@ def GenerateBenchmarkReport(
           Mean_Wall_Time=("WallTimes", "mean"),
           Mean_CPU_Time=("CPUTimes", "mean"),
           Mean_Iterations=("Iterations", "mean"),
+          Wall_Time_std=("WallTimes", "std"),
+          CPU_Time_std=("CPUTimes", "std"),
+          Iterations_std=("Iterations", "std"),
       )
       .round(3)
   )
@@ -111,14 +112,23 @@ def GenerateBenchmarkReport(
       "Mean_Iterations"
   ].astype(int)
 
+  # We only show the following columns in the console report.
+  # More metrics can be founded in the dumped JSON file.
+  selected_columns = [
+      "Count",
+      "Mean_Wall_Time",
+      "Mean_CPU_Time",
+  ]
+
   # Combine perf_counter_df and benchmark run results on the same
   # "benchmark" entry.
   if perf_counter_df is not None:
     grouped_results = pd.merge(
         grouped_results, perf_counter_df, on="Benchmark", how="left"
     )
+    selected_columns.extend(perf_counter_df.columns.tolist())
 
-  print(grouped_results.to_string())
+  print(grouped_results[selected_columns].to_string())
   return grouped_results
 
 
@@ -139,6 +149,9 @@ def SaveBenchmarkResults(output_dir, df: pd.DataFrame) -> None:
           "Mean_Wall_Time": "real_time",
           "Mean_CPU_Time": "cpu_time",
           "Mean_Iterations": "iterations",
+          "Wall_Time_std": "real_time_std",
+          "CPU_Time_std": "cpu_time_std",
+          "Iterations_std": "iterations_std",
       }
   )
   data = df.reset_index().to_dict(orient="records")

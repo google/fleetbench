@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+import math
 import os
 import shutil
 
@@ -150,6 +151,9 @@ class ReportedTest(absltest.TestCase):
             "Mean_Wall_Time": 4.5,
             "Mean_CPU_Time": 5.0,
             "Mean_Iterations": 30,
+            "Wall_Time_std": 2.121,
+            "CPU_Time_std": 2.828,
+            "Iterations_std": 28.284,
             "instructions": 130.0,
             "cycles": 3.0,
         },
@@ -159,6 +163,9 @@ class ReportedTest(absltest.TestCase):
             "Mean_Wall_Time": 4,
             "Mean_CPU_Time": 5.0,
             "Mean_Iterations": 20,
+            "Wall_Time_std": math.nan,
+            "CPU_Time_std": math.nan,
+            "Iterations_std": math.nan,
             "instructions": 200.0,
             "cycles": 2.0,
         },
