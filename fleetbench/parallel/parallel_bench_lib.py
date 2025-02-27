@@ -91,6 +91,8 @@ class BenchmarkMetrics:
   per_iteration_wall_time: float
   # per benchmark iteration cpu time
   per_iteration_cpu_time: float
+  # per benchmark iteration
+  per_bm_run_iteration: int
 
 
 class ParallelBench:
@@ -179,6 +181,7 @@ class ParallelBench:
                 total_duration=1.0,
                 per_iteration_wall_time=0.0,
                 per_iteration_cpu_time=0.0,
+                per_bm_run_iteration=0,
             )
         ]
         for benchmark in self.benchmarks.keys()
@@ -306,6 +309,7 @@ class ParallelBench:
                   total_duration=r.duration,
                   per_iteration_wall_time=r.bm_wall_time,
                   per_iteration_cpu_time=r.bm_cpu_time,
+                  per_bm_run_iteration=r.iteration,
               )
           )
 
@@ -373,6 +377,7 @@ class ParallelBench:
             "Benchmark": benchmark,
             "WallTimes": t.per_iteration_wall_time,
             "CPUTimes": t.per_iteration_cpu_time,
+            "Iterations": t.per_bm_run_iteration,
         }
         data.append(entry)
     runtimes = pd.DataFrame(data)
@@ -443,6 +448,7 @@ class ParallelBench:
                 total_duration=r.duration,
                 per_iteration_wall_time=r.bm_wall_time,
                 per_iteration_cpu_time=r.bm_cpu_time,
+                per_bm_run_iteration=r.iteration,
             )
         )
 

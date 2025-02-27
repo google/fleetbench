@@ -115,9 +115,24 @@ class ReportedTest(absltest.TestCase):
 
   def test_generate_benchmark_report(self):
     benchmark_df = pd.DataFrame([
-        {"Benchmark": "BM_Test1", "WallTimes": 3, "CPUTimes": 3},
-        {"Benchmark": "BM_Test2", "WallTimes": 4, "CPUTimes": 5},
-        {"Benchmark": "BM_Test1", "WallTimes": 6, "CPUTimes": 7},
+        {
+            "Benchmark": "BM_Test1",
+            "WallTimes": 3,
+            "CPUTimes": 3,
+            "Iterations": 10,
+        },
+        {
+            "Benchmark": "BM_Test2",
+            "WallTimes": 4,
+            "CPUTimes": 5,
+            "Iterations": 20,
+        },
+        {
+            "Benchmark": "BM_Test1",
+            "WallTimes": 6,
+            "CPUTimes": 7,
+            "Iterations": 50,
+        },
     ])
     perf_counter_df = pd.DataFrame([
         {"Benchmark": "BM_Test1", "instructions": 130.0, "cycles": 3.0},
@@ -134,6 +149,7 @@ class ReportedTest(absltest.TestCase):
             "Count": 2,
             "Mean_Wall_Time": 4.5,
             "Mean_CPU_Time": 5.0,
+            "Mean_Iterations": 30,
             "instructions": 130.0,
             "cycles": 3.0,
         },
@@ -142,6 +158,7 @@ class ReportedTest(absltest.TestCase):
             "Count": 1,
             "Mean_Wall_Time": 4,
             "Mean_CPU_Time": 5.0,
+            "Mean_Iterations": 20,
             "instructions": 200.0,
             "cycles": 2.0,
         },

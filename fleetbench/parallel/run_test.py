@@ -33,7 +33,11 @@ class RunTest(absltest.TestCase):
   def testRun(self, mock_run):
     output_file = self.create_tempfile()
 
-    data = {"benchmarks": [{"cpu_time": 12.345, "real_time": 12.3}]}
+    data = {
+        "benchmarks": [
+            {"cpu_time": 12.345, "real_time": 12.3, "iterations": 10}
+        ]
+    }
     json_object = json.dumps(data, indent=4)
     with open(output_file.full_path, "w") as f:
       f.write(json_object)
@@ -56,6 +60,7 @@ class RunTest(absltest.TestCase):
     self.assertGreater(result.duration, 0)
     self.assertEqual(result.bm_cpu_time, 12.345)
     self.assertEqual(result.bm_wall_time, 12.3)
+    self.assertEqual(result.iteration, 10)
     self.assertEqual(result.rc, 0)
 
   @flagsaver.flagsaver(

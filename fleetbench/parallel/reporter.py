@@ -103,9 +103,13 @@ def GenerateBenchmarkReport(
           Count=("WallTimes", "count"),
           Mean_Wall_Time=("WallTimes", "mean"),
           Mean_CPU_Time=("CPUTimes", "mean"),
+          Mean_Iterations=("Iterations", "mean"),
       )
       .round(3)
   )
+  grouped_results["Mean_Iterations"] = grouped_results[
+      "Mean_Iterations"
+  ].astype(int)
 
   # Combine perf_counter_df and benchmark run results on the same
   # "benchmark" entry.
@@ -134,6 +138,7 @@ def SaveBenchmarkResults(output_dir, df: pd.DataFrame) -> None:
       columns={
           "Mean_Wall_Time": "real_time",
           "Mean_CPU_Time": "cpu_time",
+          "Mean_Iterations": "iterations",
       }
   )
   data = df.reset_index().to_dict(orient="records")

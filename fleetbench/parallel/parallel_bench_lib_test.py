@@ -49,6 +49,7 @@ class ParallelBenchTest(absltest.TestCase):
   @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
   @mock.patch.object(run.Run, "Execute", autospec=True)
   @mock.patch.object(cpu, "Utilization", autospec=True)
+  @mock.patch.object(reporter, "GenerateBenchmarkReport", autospec=True)
   @mock.patch.object(reporter, "SaveBenchmarkResults", autospec=True)
   @flagsaver.flagsaver(
       benchmark_dir=absltest.get_default_test_tmpdir(),
@@ -56,6 +57,7 @@ class ParallelBenchTest(absltest.TestCase):
   def testRun(
       self,
       mock_save_benchmark_results,
+      mock_generate_benchmark_report,
       mock_utilization,
       mock_execute,
       mock_get_subbenchmarks,
@@ -81,6 +83,7 @@ class ParallelBenchTest(absltest.TestCase):
 
     mock_utilization.side_effect = fake_utilization
 
+    mock_generate_benchmark_report.return_value = pd.DataFrame()
     mock_save_benchmark_results.return_value = None
 
     self.pb = parallel_bench_lib.ParallelBench(
@@ -126,11 +129,13 @@ class ParallelBenchTest(absltest.TestCase):
             total_duration=10,
             per_iteration_wall_time=1,
             per_iteration_cpu_time=1,
+            per_bm_run_iteration=2,
         ),
         parallel_bench_lib.BenchmarkMetrics(
             total_duration=2,
             per_iteration_wall_time=3.01,
             per_iteration_cpu_time=3,
+            per_bm_run_iteration=4,
         ),
     ]
     self.pb.runtimes["BM_Test2"] = [
@@ -138,11 +143,13 @@ class ParallelBenchTest(absltest.TestCase):
             total_duration=10,
             per_iteration_wall_time=1,
             per_iteration_cpu_time=1,
+            per_bm_run_iteration=10,
         ),
         parallel_bench_lib.BenchmarkMetrics(
             total_duration=4,
             per_iteration_wall_time=4,
             per_iteration_cpu_time=5,
+            per_bm_run_iteration=8,
         ),
     ]
     self.pb.utilization_samples.append((pd.Timestamp.now(), 0.5))
@@ -151,8 +158,18 @@ class ParallelBenchTest(absltest.TestCase):
     self.assertEqual(
         df.to_dict("records"),
         [
-            {"Benchmark": "BM_Test1", "WallTimes": 3.01, "CPUTimes": 3},
-            {"Benchmark": "BM_Test2", "WallTimes": 4, "CPUTimes": 5},
+            {
+                "Benchmark": "BM_Test1",
+                "WallTimes": 3.01,
+                "CPUTimes": 3,
+                "Iterations": 4,
+            },
+            {
+                "Benchmark": "BM_Test2",
+                "WallTimes": 4,
+                "CPUTimes": 5,
+                "Iterations": 8,
+            },
         ],
     )
 

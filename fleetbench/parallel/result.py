@@ -30,3 +30,4 @@ class Result:
   duration: Optional[float] = None
   bm_wall_time: Optional[float] = None
   bm_cpu_time: Optional[float] = None
+  iteration: Optional[int] = None
