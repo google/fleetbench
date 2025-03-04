@@ -19,12 +19,12 @@
 #include <memory>
 #include <utility>
 
-#include "absl/hash/hash.h"
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "fleetbench/common/common.h"
 #include "fleetbench/rpc/fleetbenchservice.grpc.pb.h"
 #include "fleetbench/rpc/generator_process.h"
 #include "fleetbench/rpc/protos/combo.h"
@@ -49,7 +49,7 @@ class PerfCallback final
       ::grpc::CallbackServerContext* context,
       const fleetbench::rpc::RequestMessage* request,
       fleetbench::rpc::ResponseMessage* response) override {
-    *response = server_->Buffer(this);
+    *response = server_->Buffer();
 
     // Wait before the response if configured.
     server_->Delay();
@@ -102,10 +102,8 @@ void GRPCServer::Start(absl::string_view filepath,
   StartCallback(builder);
 }
 
-const fleetbench::rpc::ResponseMessage& GRPCServer::Buffer(
-    const void* ctx) const {
-  return message_buffers_[absl::Hash<const void*>()(ctx) %
-                          message_buffers_.size()];
+const fleetbench::rpc::ResponseMessage& GRPCServer::Buffer() const {
+  return message_buffers_[GetRNG()() % message_buffers_.size()];
 }
 
 void GRPCServer::Delay() {

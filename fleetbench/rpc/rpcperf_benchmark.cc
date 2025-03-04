@@ -21,6 +21,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/mutex.h"
 #include "benchmark/benchmark.h"
+#include "fleetbench/common/common.h"
 #include "fleetbench/dynamic_registrar.h"
 #include "fleetbench/rpc/grpc_client.h"
 #include "fleetbench/rpc/grpc_server.h"
@@ -30,6 +31,9 @@
 namespace fleetbench::rpc {
 
 void BM_Rpc(benchmark::State &state, absl::string_view program) {
+  // Make each benchmark repetition reproducible, if using a fixed seed.
+  Random::instance().Reset();
+
   CHECK(fleetbench::rpc::kPrograms->count(program))
       << "Invalid program name \"" << program << "\" provided to benchmark";
 

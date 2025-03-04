@@ -57,7 +57,7 @@ class GRPCServer {
   void Start(absl::string_view filepath, grpc::ServerBuilder* builder);
 
   // Return a random ResponseMessage response proto
-  const fleetbench::rpc::ResponseMessage& Buffer(const void* ctx) const;
+  const fleetbench::rpc::ResponseMessage& Buffer() const;
 
   // Delay based on `delay_dist`
   void Delay();
