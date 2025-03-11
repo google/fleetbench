@@ -28,7 +28,9 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/base/no_destructor.h"
 #include "absl/container/btree_map.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
 #include "absl/random/distributions.h"
 #include "absl/strings/str_cat.h"
@@ -51,6 +53,19 @@ static constexpr float kComparisonEqualProbability = 0.4;
 
 // 64 bytes is a common size for cache lines.
 static constexpr size_t kCacheLineSize = 64;
+
+// Maps the default benchmarks to their minimum iteration counts.
+absl::NoDestructor<absl::flat_hash_map<std::string, benchmark::IterationCount>>
+    kDefaultBenchmarks({{"BM_LIBC_Bcmp_Fleet_L1", 800'000'000},
+                        {"BM_LIBC_Memcmp_Fleet_L1", 1'000'000'000},
+                        {"BM_LIBC_Memcpy_Fleet_L1", 5'000'000'000},
+                        {"BM_LIBC_Memmove_Fleet_L1", 2'000'000'000},
+                        {"BM_LIBC_Memset_Fleet_L1", 10'000'000'000},
+                        {"BM_LIBC_Bcmp_Fleet_Cold", 200'000'000},
+                        {"BM_LIBC_Memcmp_Fleet_Cold", 500'000'000},
+                        {"BM_LIBC_Memcpy_Fleet_Cold", 1'000'000'000},
+                        {"BM_LIBC_Memmove_Fleet_Cold", 500'000'000},
+                        {"BM_LIBC_Memset_Fleet_Cold", 3'000'000'000}});
 
 // Returns the sum of the size_bytes elements.
 size_t ComputeTotalNumBytes(const BM_Mem_Parameters &parameters) {
@@ -522,10 +537,16 @@ void RegisterBenchmarks() {
       for (const auto &[cache_name, cache_size] : cache_resident_info) {
         std::string benchmark_name =
             absl::StrCat("BM_LIBC_", distribution_name, "_", cache_name);
-        benchmark::RegisterBenchmark(
-            benchmark_name, memory_benchmark, memory_size_distribution,
-            overlap_probability, alignment_distribution, buffer_counter,
-            memory_function, cache_size, suffix_name);
+        benchmark::internal::Benchmark *benchmark =
+            benchmark::RegisterBenchmark(
+                benchmark_name, memory_benchmark, memory_size_distribution,
+                overlap_probability, alignment_distribution, buffer_counter,
+                memory_function, cache_size, suffix_name);
+        // Use the default minimum iteration count if possible.
+        auto it = kDefaultBenchmarks->find(benchmark_name);
+        if (it != kDefaultBenchmarks->end() && UseExplicitIterationCounts()) {
+          benchmark->Iterations(it->second);
+        }
       }
     }
   }
@@ -535,16 +556,9 @@ class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Bcmp_Fleet_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memcmp_Fleet_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memcpy_Fleet_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memmove_Fleet_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memset_Fleet_L1");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Bcmp_Fleet_Cold");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memcmp_Fleet_Cold");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memcpy_Fleet_Cold");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memmove_Fleet_Cold");
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_LIBC_Memset_Fleet_Cold");
+    for (const auto &[benchmark_name, _] : *kDefaultBenchmarks) {
+      DynamicRegistrar::Get()->AddDefaultFilter(benchmark_name);
+    }
   }
 };
 
