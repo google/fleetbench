@@ -18,11 +18,13 @@
 #include <cstdlib>
 #include <memory>
 #include <numeric>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
 
+#include "absl/base/no_destructor.h"
 #include "absl/container/btree_set.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
@@ -40,8 +42,34 @@
 
 namespace fleetbench {
 namespace compression {
-
 namespace {
+
+struct DefaultBenchmarkEntry {
+  std::optional<int64_t> compression_level;
+  std::optional<int64_t> window_log;
+  benchmark::IterationCount iteration_count;
+};
+
+// Maps the default benchmark names to their compression levels, window sizes,
+// and minimum iteration counts.
+absl::NoDestructor<absl::flat_hash_map<std::string, DefaultBenchmarkEntry>>
+    kDefaultBenchmarks(
+        {{"BM_COMPRESSION_Brotli_COMPRESS_Fleet",
+          DefaultBenchmarkEntry{2, 18, 50'000'000}},
+         {"BM_COMPRESSION_Brotli_DECOMPRESS_Fleet",
+          DefaultBenchmarkEntry{2, 18, 100'000'000}},
+         {"BM_COMPRESSION_Flate_COMPRESS_Fleet",
+          DefaultBenchmarkEntry{6, 15, 20'000'000}},
+         {"BM_COMPRESSION_Flate_DECOMPRESS_Fleet",
+          DefaultBenchmarkEntry{6, 15, 300'000'000}},
+         {"BM_COMPRESSION_Snappy_COMPRESS_Fleet",
+          DefaultBenchmarkEntry{std::nullopt, std::nullopt, 400'000'000}},
+         {"BM_COMPRESSION_Snappy_DECOMPRESS_Fleet",
+          DefaultBenchmarkEntry{std::nullopt, std::nullopt, 1'000'000'000}},
+         {"BM_COMPRESSION_ZSTD_COMPRESS_Fleet",
+          DefaultBenchmarkEntry{-1, 15, 200'000'000}},
+         {"BM_COMPRESSION_ZSTD_DECOMPRESS_Fleet",
+          DefaultBenchmarkEntry{0, 0, 500'000'000}}});
 
 class CompressionCorpus {
  public:
@@ -304,11 +332,44 @@ void RegisterBenchmarks() {
             benchmark_name, benchmark_fn, compressor_type, directory_name,
             external_name_suffix);
 
+        // Use the default minimum iteration count if possible.
+        DefaultBenchmarkEntry* default_benchmark_entry = nullptr;
+        auto it = kDefaultBenchmarks->find(benchmark_name);
+        if (UseExplicitIterationCounts() && it != kDefaultBenchmarks->end()) {
+          default_benchmark_entry = &it->second;
+          auto* default_benchmark = benchmark;
+          if (compression_levels_map.contains(algorithm) &&
+              operation == "COMPRESS" &&
+              compression_levels_map[algorithm][binary].size() *
+                      compress_window_sizes.size() >
+                  1) {
+            // We register a separate benchmark for this special case, as the
+            // the general case in the loop below creates a benchmark family
+            // (by calling `->Args()`), which doesn't support setting different
+            // iteration counts for different benchmarks in the family.
+            default_benchmark = benchmark::RegisterBenchmark(
+                benchmark_name, benchmark_fn, compressor_type, directory_name,
+                external_name_suffix);
+            default_benchmark->ArgNames({"compression_level", "window_log"});
+            default_benchmark->Args(
+                {default_benchmark_entry->compression_level.value(),
+                 default_benchmark_entry->window_log.value()});
+          }
+          default_benchmark->Iterations(
+              default_benchmark_entry->iteration_count);
+        }
+
         if (compression_levels_map.contains(algorithm)) {
           benchmark->ArgNames({"compression_level", "window_log"});
           if (operation == "COMPRESS") {
             for (auto level : compression_levels_map[algorithm][binary]) {
               for (auto window_log : compress_window_sizes) {
+                if (default_benchmark_entry != nullptr &&
+                    default_benchmark_entry->compression_level == level &&
+                    default_benchmark_entry->window_log == window_log) {
+                  // This is the special case that is handled above.
+                  continue;
+                }
                 benchmark->Args({level, window_log});
               }
             }
@@ -325,14 +386,18 @@ class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
-    DynamicRegistrar::Get()->AddDefaultFilter(
-        ".*Brotli_COMPRESS_Fleet.*level:2/window_log:18");
-    DynamicRegistrar::Get()->AddDefaultFilter(
-        ".*Flate_COMPRESS_Fleet/.*level:6/window_log:15");
-    DynamicRegistrar::Get()->AddDefaultFilter(".*Snappy_COMPRESS_Fleet.*");
-    DynamicRegistrar::Get()->AddDefaultFilter(
-        ".*ZSTD_COMPRESS_Fleet.*level:-1/window_log:15");
-    DynamicRegistrar::Get()->AddDefaultFilter(".*DECOMPRESS_Fleet.*");
+    for (const auto& [benchmark_name, benchmark_entry] : *kDefaultBenchmarks) {
+      std::string full_benchmark_name = benchmark_name;
+      if (benchmark_entry.compression_level.has_value()) {
+        absl::StrAppend(&full_benchmark_name, "/compression_level:",
+                        benchmark_entry.compression_level.value());
+      }
+      if (benchmark_entry.window_log.has_value()) {
+        absl::StrAppend(&full_benchmark_name,
+                        "/window_log:", benchmark_entry.window_log.value());
+      }
+      DynamicRegistrar::Get()->AddDefaultFilter(full_benchmark_name);
+    }
   }
 };
 

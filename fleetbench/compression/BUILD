@@ -99,6 +99,7 @@ cc_library(
         ":compression_parameter",
         "//fleetbench:dynamic_registrar",
         "//fleetbench/common",
+        "@com_google_absl//absl/base:no_destructor",
         "@com_google_absl//absl/container:btree",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/log",
