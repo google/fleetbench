@@ -17,6 +17,7 @@
 
 #include "absl/strings/cord.h"
 #include "benchmark/benchmark.h"
+#include "fleetbench/common/common.h"
 #include "fleetbench/dynamic_registrar.h"
 #include "fleetbench/stl/generated_cord_benchmarks.h"
 
@@ -35,9 +36,13 @@ static void BM_Cord(benchmark::State &state,
 
 void RegisterBenchmarks() {
   for (const auto &benchmark : GetBenchmarks()) {
-    benchmark::RegisterBenchmark(benchmark.name, BM_Cord,
-                                 benchmark.benchmark_code,
-                                 benchmark.benchmark_setup, benchmark.label);
+    benchmark::internal::Benchmark *registered_benchmark =
+        benchmark::RegisterBenchmark(
+            benchmark.name, BM_Cord, benchmark.benchmark_code,
+            benchmark.benchmark_setup, benchmark.label);
+    if (UseExplicitIterationCounts() && benchmark.name == "BM_CORD_Fleet") {
+      registered_benchmark->Iterations(100000);
+    }
   }
 }
 

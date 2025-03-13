@@ -15,6 +15,7 @@
 
 #include <cstdint>
 
+#include "fleetbench/common/common.h"
 #include "fleetbench/dynamic_registrar.h"
 #include "fleetbench/productivity_reporter.h"
 #include "fleetbench/proto/lifecycle.h"
@@ -53,7 +54,11 @@ void BM_Protogen_NoArena(benchmark::State& state) {
 }
 
 void RegisterBenchmarks() {
-  benchmark::RegisterBenchmark("BM_PROTO_Arena", BM_Protogen_Arena);
+  benchmark::internal::Benchmark* benchmark =
+      benchmark::RegisterBenchmark("BM_PROTO_Arena", BM_Protogen_Arena);
+  if (UseExplicitIterationCounts()) {
+    benchmark->Iterations(100);
+  }
   benchmark::RegisterBenchmark("BM_PROTO_NoArena", BM_Protogen_NoArena);
 }
 

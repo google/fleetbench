@@ -25,7 +25,9 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/no_destructor.h"
 #include "absl/container/btree_map.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/crc/crc32c.h"
 #include "absl/hash/hash.h"
 #include "absl/strings/str_cat.h"
@@ -38,6 +40,14 @@ namespace fleetbench {
 namespace hashing {
 
 using CacheInfo = benchmark::CPUInfo::CacheInfo;
+
+// Maps the default benchmarks to their minimum iteration counts.
+// We use the fleet-wide cold distributions as the defaults.
+absl::NoDestructor<absl::flat_hash_map<std::string, benchmark::IterationCount>>
+    kDefaultBenchmarks(
+        {{"BM_HASHING_Extendcrc32cinternal_Fleet_cold", 2'000'000'000},
+         {"BM_HASHING_Computecrc32c_Fleet_cold", 1'000'000'000},
+         {"BM_HASHING_Combine_contiguous_Fleet_cold", 500'000'000}});
 
 struct BM_Hashing_Parameters {
   std::vector<int> str_lengths;
@@ -240,9 +250,17 @@ void RegisterBenchmarks() {
       for (const auto &[hot_str, hot] : cache_resident_info) {
         std::string benchmark_name =
             absl::StrCat("BM_HASHING_", application, "_", hot_str);
-        benchmark::RegisterBenchmark(benchmark_name, BM_Hashing,
-                                     hashing_size_distribution, hash_function,
-                                     hot, suffix_name);
+        benchmark::internal::Benchmark *benchmark =
+            benchmark::RegisterBenchmark(benchmark_name, BM_Hashing,
+                                         hashing_size_distribution,
+                                         hash_function, hot, suffix_name);
+        // Use the default minimum iteration count if possible.
+        if (UseExplicitIterationCounts()) {
+          auto it = kDefaultBenchmarks->find(benchmark_name);
+          if (it != kDefaultBenchmarks->end()) {
+            benchmark->Iterations(it->second);
+          }
+        }
       }
     }
   }
@@ -252,14 +270,9 @@ class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
-
-    // We use the fleet-wide cold distributions as the defaults.
-    DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_HASHING_Extendcrc32cinternal_Fleet_cold");
-    DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_HASHING_Computecrc32c_Fleet_cold");
-    DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_HASHING_Combine_contiguous_Fleet_cold");
+    for (const auto &[benchmark_name, _] : *kDefaultBenchmarks) {
+      DynamicRegistrar::Get()->AddDefaultFilter(benchmark_name);
+    }
   }
 };
 

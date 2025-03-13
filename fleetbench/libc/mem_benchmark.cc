@@ -543,9 +543,11 @@ void RegisterBenchmarks() {
                 overlap_probability, alignment_distribution, buffer_counter,
                 memory_function, cache_size, suffix_name);
         // Use the default minimum iteration count if possible.
-        auto it = kDefaultBenchmarks->find(benchmark_name);
-        if (it != kDefaultBenchmarks->end() && UseExplicitIterationCounts()) {
-          benchmark->Iterations(it->second);
+        if (UseExplicitIterationCounts()) {
+          auto it = kDefaultBenchmarks->find(benchmark_name);
+          if (it != kDefaultBenchmarks->end()) {
+            benchmark->Iterations(it->second);
+          }
         }
       }
     }
