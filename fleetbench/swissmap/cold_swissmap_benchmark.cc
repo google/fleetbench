@@ -19,7 +19,9 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/container/node_hash_set.h"
+#include "absl/strings/string_view.h"
 #include "benchmark/benchmark.h"
+#include "fleetbench/common/common.h"
 #include "fleetbench/dynamic_registrar.h"
 #include "fleetbench/swissmap/swissmap_benchmark.h"
 
@@ -349,12 +351,36 @@ void RegisterColdBenchmarks() {
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks,
                                   BM_SWISSMAP_InsertManyUnordered_Cold, 64);
   for (auto* benchmark : benchmarks) {
-    benchmark->ArgNames({"set_size", "density"})
-        ->Ranges({
-            {1 << 4, 1 << 20},
-            {static_cast<int64_t>(Density::kMin),
-             static_cast<int64_t>(Density::kMax)},
-        });
+    benchmark->ArgNames({"set_size", "density"});
+    // If UseExplicitIterationCounts() is false, then the code below is
+    // equivalent to:
+    //     benchmark->Ranges({
+    //         {1 << 4, 1 << 20},
+    //         {static_cast<int64_t>(Density::kMin),
+    //          static_cast<int64_t>(Density::kMax)},
+    //     });
+    // We cannot use the same approach if UseExplicitIterationCounts() is true
+    // because it is not possible to set different iteration counts for
+    // benchmarks that are part of the same family. We therefore manually do
+    // what `Ranges()` does, and register a separate benchmark for the special
+    // case for which we want to set an explicit iteration count.
+    for (int64_t set_size : {16, 64, 512, 4096, 32768, 262144, 1048576}) {
+      for (int64_t density = static_cast<int64_t>(Density::kMin);
+           density <= static_cast<int64_t>(Density::kMax); density++) {
+        if (UseExplicitIterationCounts() &&
+            absl::string_view(benchmark->GetName()) ==
+                "BM_SWISSMAP_InsertHit_Cold<::absl::flat_hash_set, 64>" &&
+            set_size == 64 && density == static_cast<int64_t>(Density::kMin)) {
+          REGISTER_BENCHMARK_TEMPLATE(BM_SWISSMAP_InsertHit_Cold,
+                                      ::absl::flat_hash_set, 64)
+              ->ArgNames({"set_size", "density"})
+              ->Args({set_size, density})
+              ->Iterations(5000000);
+        } else {
+          benchmark->Args({set_size, density});
+        }
+      }
+    }
   }
 
   std::vector<benchmark::internal::Benchmark*> erase_insert_benchmarks;
