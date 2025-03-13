@@ -35,7 +35,6 @@ class ParallelBenchTest(absltest.TestCase):
     self.pb = parallel_bench_lib.ParallelBench(
         cpus=[0, 1],
         cpu_affinity=False,
-        benchmark_weights=None,
         utilization=0.5,
         duration=0.1,
         temp_root=absltest.get_default_test_tmpdir(),
@@ -89,12 +88,17 @@ class ParallelBenchTest(absltest.TestCase):
     self.pb = parallel_bench_lib.ParallelBench(
         cpus=[0, 1],
         cpu_affinity=False,
-        benchmark_weights=None,
         utilization=0.5,
         duration=0.1,
         temp_root=absltest.get_default_test_tmpdir(),
     )
-    self.pb.Run("fake_bench", [])
+    self.pb.SetWeights(
+        benchmark_target="fake_bench",
+        benchmark_filter=None,
+        workload_filter=None,
+        custom_benchmark_weights=None,
+    )
+    self.pb.Run()
     mock_execute.assert_called_once()
 
   def test_set_extra_benchmark_flags(self):
@@ -239,44 +243,6 @@ class ParallelBenchTest(absltest.TestCase):
     self.pb.PostProcessBenchmarkResults("instructions,cycles")
     mock_generate_benchmark_report.assert_called_once()
     mock_save_benchmark_results.assert_called_once()
-
-
-class ParseBenchmarkWeightsTest(absltest.TestCase):
-
-  def test_empty_list(self):
-    self.assertIsNone(parallel_bench_lib.ParseBenchmarkWeights([]))
-
-  def test_valid_list(self):
-    benchmark_list = [
-        "cold:0.5",
-        "PROTO:0.3",
-        "Cord:0.2",
-    ]
-    expected_output = {
-        "COLD": 0.5,
-        "PROTO": 0.3,
-        "CORD": 0.2,
-    }
-    self.assertEqual(
-        parallel_bench_lib.ParseBenchmarkWeights(benchmark_list),
-        expected_output,
-        "Should return correct dictionary for valid list",
-    )
-
-  def test_invalid_string(self):
-    benchmark_list = [
-        "cold:0.5",
-        "PROTO:invalid",
-        "TCMALLOC",
-        "Cord:0.2",
-    ]
-    # Even with an invalid string, the function should still process the valid
-    # ones.
-    expected_output = {"COLD": 0.5, "CORD": 0.2}
-    self.assertEqual(
-        parallel_bench_lib.ParseBenchmarkWeights(benchmark_list),
-        expected_output,
-    )
 
 
 if __name__ == "__main__":

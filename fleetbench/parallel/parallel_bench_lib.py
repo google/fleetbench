@@ -28,40 +28,8 @@ from fleetbench.parallel import benchmark as bm
 from fleetbench.parallel import cpu
 from fleetbench.parallel import reporter
 from fleetbench.parallel import run
+from fleetbench.parallel import weights
 from fleetbench.parallel import worker
-
-
-def ParseBenchmarkWeights(
-    benchmark_weights_list: list[str],
-) -> dict[str, float] | None:
-  """Parses a list of benchmark weights into a dictionary.
-
-  The string element in the list should be in the format:
-  <benchmark_name|benchmark_filter>:<weight>. Note that the benchmark name or
-  filter should be in ALL CAPS to ensure case-insensitive matching.
-
-  Args:
-    benchmark_weights_list: A list of strings to parse.
-
-  Returns:
-    A dictionary of {capitalized string: float} or None if the list is empty.
-  """
-  if not benchmark_weights_list:
-    return None
-
-  benchmark_weights = {}
-  for weights in benchmark_weights_list:
-    try:
-      key, value_str = weights.split(":")
-      benchmark_weights[key.upper()] = float(value_str)
-    except ValueError:
-      logging.warning(
-          "Invalid benchmark string: %s. The format should be"
-          " <benchmark_name|benchmark_filter>:<weight>. Skipping...",
-          weights,
-      )
-
-  return benchmark_weights
 
 
 def _SetExtraBenchmarkFlags(
@@ -119,7 +87,6 @@ class ParallelBench:
       self,
       cpus: list[int],
       cpu_affinity: bool,
-      benchmark_weights: dict[str, float] | None,
       utilization: float,
       duration: float,
       temp_root: str,
@@ -133,7 +100,7 @@ class ParallelBench:
     self.controller_cpu = cpus[0]
     self.cpus = cpus[1:]
     self.cpu_affinity = cpu_affinity
-    self.benchmark_weights = benchmark_weights
+    self.benchmark_weights: dict[str, float] = {}
     self.benchmarks: dict[str, bm.Benchmark] = {}
     self.target_utilization = utilization * 100
     self.duration = duration
@@ -142,11 +109,37 @@ class ParallelBench:
     self.workers: dict[int, worker.Worker] = {}
     self.utilization_samples: list[tuple[pd.Timestamp, float]] = []
 
-  def _PreRun(
+  def SetWeights(
       self,
       benchmark_target: str,
-      benchmark_filters: list[str] | None,
-      workload_filters: list[str] | None,
+      benchmark_filter: list[str] | None,
+      workload_filter: list[str] | None,
+      custom_benchmark_weights: list[str] | None,
+  ) -> None:
+    """Sets the benchmark weights."""
+    logging.info("Running with benchmark_filter: %s", benchmark_filter)
+    logging.info("Running with workload_filter: %s", workload_filter)
+
+    if benchmark_filter and workload_filter:
+      logging.warning(
+          "Both benchmark_filter and workload_filter specified. "
+          "benchmark_filter will be ignored."
+      )
+    if workload_filter:
+      self.benchmarks = bm.GetWorkloadBenchmarks(
+          benchmark_target, workload_filter
+      )
+    else:
+      self.benchmarks = bm.GetDefaultBenchmarks(
+          benchmark_target, benchmark_filter
+      )
+    # Gets the number of workloads and num of benchmark for each workload
+    self.benchmark_weights = weights.GetBenchmarkWeights(
+        self.benchmarks, custom_benchmark_weights
+    )
+
+  def _PreRun(
+      self,
       benchmark_perf_counters: str,
       benchmark_repetitions: int,
       benchmark_min_time: str,
@@ -154,15 +147,6 @@ class ParallelBench:
     """Initial configuration steps."""
 
     logging.info("Initializing benchmarks and worker threads...")
-
-    if workload_filters:
-      self.benchmarks = bm.GetWorkloadBenchmarks(
-          benchmark_target, workload_filters
-      )
-    else:
-      self.benchmarks = bm.GetDefaultBenchmarks(
-          benchmark_target, benchmark_filters
-      )
 
     benchmark_flags = _SetExtraBenchmarkFlags(
         benchmark_perf_counters, benchmark_repetitions, benchmark_min_time
@@ -402,27 +386,13 @@ class ParallelBench:
 
   def Run(
       self,
-      benchmark_target: str,
-      benchmark_filter: list[str] | None = None,
-      workload_filter: list[str] | None = None,
       benchmark_perf_counters: str = "",
       benchmark_repetitions: int = 0,
       benchmark_min_time: str = "",
   ):
     """Run benchmarks in parallel."""
-    logging.info("Running with benchmark_filter: %s", benchmark_filter)
-    logging.info("Running with workload_filter: %s", workload_filter)
-
-    if benchmark_filter and workload_filter:
-      logging.warning(
-          "Both benchmark_filter and workload_filter specified. "
-          "benchmark_filter will be ignored."
-      )
 
     self._PreRun(
-        benchmark_target,
-        benchmark_filter,
-        workload_filter,
         benchmark_perf_counters,
         benchmark_repetitions,
         benchmark_min_time,

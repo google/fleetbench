@@ -122,6 +122,9 @@ class Benchmark:
   def Path(self):
     return f"{self._path}"
 
+  def BenchmarkName(self):
+    return self._benchmark_filter
+
   def __str__(self):
     return self.Name()
 

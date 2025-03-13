@@ -105,7 +105,7 @@ _UTILIZATION = flags.DEFINE_float(
 )
 
 
-_BENCHMARK_WEIGHTS = flags.DEFINE_multi_string(
+_CUSTOM_BENCHMARK_WEIGHTS = flags.DEFINE_multi_string(
     "benchmark_weights",
     [],
     "Weights for selected benchmarks. Default weight of 1.0 is used if not"
@@ -154,25 +154,22 @@ def main(argv: Sequence[str]) -> None:
   )
   cpus, target_utilization = scheduling_mode.SelectCPURangeAndSetUtilization()
 
-  # Parse benchmark weights.
-  benchmark_weights = parallel_bench_lib.ParseBenchmarkWeights(
-      _BENCHMARK_WEIGHTS.value
-  )
-  logging.info("Running with selected benchmark weights: %s", benchmark_weights)
-
   bench = parallel_bench_lib.ParallelBench(
       cpus=cpus,
       cpu_affinity=_CPU_AFFINITY.value,
-      benchmark_weights=benchmark_weights,
       utilization=target_utilization,
       duration=_DURATION.value,
       temp_root=_TEMP_ROOT.value,
   )
 
+  bench.SetWeights(
+      _BENCHMARK_TARGET.value,
+      _BENCHMARK_FILTER.value,
+      _WORKLOAD_FILTER.value,
+      _CUSTOM_BENCHMARK_WEIGHTS.value,
+  )
+
   bench.Run(
-      benchmark_target=_BENCHMARK_TARGET.value,
-      benchmark_filter=_BENCHMARK_FILTER.value,
-      workload_filter=_WORKLOAD_FILTER.value,
       benchmark_perf_counters=_BENCHMARK_PERF_COUNTERS.value,
       benchmark_repetitions=_BENCHMARK_REPETITIONS.value,
       benchmark_min_time=_BENCHMARK_MIN_TIME.value,

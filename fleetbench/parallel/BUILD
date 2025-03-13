@@ -58,6 +58,7 @@ py_library(
         ":cpu",
         ":reporter",
         ":run",
+        ":weights",
         ":worker",
         "@com_google_absl_py//absl/logging",
         requirement("numpy"),
@@ -71,6 +72,25 @@ py_library(
     deps = [
         "@com_google_absl_py//absl/logging",
         requirement("pandas"),
+    ],
+)
+
+py_library(
+    name = "weights",
+    srcs = ["weights.py"],
+    deps = [
+        ":benchmark",
+        "@com_google_absl_py//absl/logging",
+    ],
+)
+
+py_test(
+    name = "weights_test",
+    srcs = ["weights_test.py"],
+    deps = [
+        ":benchmark",
+        ":weights",
+        "@com_google_absl_py//absl/testing:absltest",
     ],
 )
 
