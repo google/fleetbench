@@ -333,13 +333,40 @@ void RegisterBenchmarks() {
     auto distribution_name = files[i].filename().string();
     distribution_name.erase(distribution_name.find(".csv"));
 
-    auto* benchmark = benchmark::RegisterBenchmark(
-        absl::StrCat("BM_", distribution_name).c_str(),
-        BM_TCMalloc_Empirical_Driver);
-    benchmark->Setup(BM_TCMalloc_Empirical_Driver_Setup)
-        ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
-        ->ThreadRange(1, std::thread::hardware_concurrency())
-        ->UseRealTime();
+    int min_threads = 1;
+    int max_threads = std::thread::hardware_concurrency();
+
+    // If UseExplicitIterationCounts() is false, or if the distribution is not
+    // TCMALLOC_5 (i.e., the distribution of the default benchmark), the
+    // following code creates a benchmark family with `->ThreadRange(1,
+    // max_threads)`.
+    // As it is not possible to set different iteration counts for benchmarks
+    // that are part of the same family, we register a separate benchmark object
+    // for the default benchmark (i.e., TCMALLOC_5 with threads=1) if
+    // UseExplicitIterationCounts() is true. For the remaining TCMALLOC_5
+    // benchmarks, we then register a family with `->ThreadRange(2,
+    // max_threads)` (if max_threads >= 2).
+    if (UseExplicitIterationCounts() && distribution_name == "TCMALLOC_5") {
+      // Set an explicit iteration count for the default benchmark.
+      benchmark::RegisterBenchmark(
+          absl::StrCat("BM_", distribution_name).c_str(),
+          BM_TCMalloc_Empirical_Driver)
+          ->Setup(BM_TCMalloc_Empirical_Driver_Setup)
+          ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
+          ->ThreadRange(1, 1)
+          ->UseRealTime()
+          ->Iterations(100000);
+      min_threads = 2;
+    }
+
+    if (distribution_name != "TCMALLOC_5" || max_threads >= min_threads)
+      benchmark::RegisterBenchmark(
+          absl::StrCat("BM_", distribution_name).c_str(),
+          BM_TCMalloc_Empirical_Driver)
+          ->Setup(BM_TCMalloc_Empirical_Driver_Setup)
+          ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
+          ->ThreadRange(min_threads, max_threads)
+          ->UseRealTime();
   }
 }
 #endif
