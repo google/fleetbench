@@ -22,6 +22,14 @@ from fleetbench.parallel import benchmark
 
 class BenchmarkTest(absltest.TestCase):
 
+  @mock.patch.object(benchmark, "_FindBenchmarkPath", autospec=True)
+  def testBenchmarkAPI(self, mock_find_benchmark_path):
+    mock_find_benchmark_path.return_value = "/tmp/fake_path"
+    bm = benchmark.Benchmark("fake_benchmark", "BM_LIBC_Test1")
+    self.assertEqual(bm.Name(), "fake_benchmark (BM_LIBC_Test1)")
+    self.assertEqual(bm.BenchmarkName(), "BM_LIBC_Test1")
+    self.assertEqual(bm.Workload(), "LIBC")
+
   def testFindBenchmarkAbsolutePath(self):
     temp_dir = self.create_tempdir()
     temp_dir.create_file("fake_benchmark")

@@ -125,6 +125,9 @@ class Benchmark:
   def BenchmarkName(self):
     return self._benchmark_filter
 
+  def Workload(self):
+    return self._benchmark_filter.split("_")[1]
+
   def __str__(self):
     return self.Name()
 
