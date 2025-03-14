@@ -249,7 +249,7 @@ bool FindInCommandLine(absl::string_view s, bool exact_match) {
   std::ifstream f;
   f.open("/proc/self/cmdline");
   std::string command_line;
-  f >> command_line;
+  std::getline(f, command_line);
   f.close();
 
   std::vector<absl::string_view> argv = absl::StrSplit(command_line, '\0');
