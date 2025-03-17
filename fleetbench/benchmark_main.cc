@@ -19,9 +19,12 @@
 #include <thread>
 #include <vector>
 
+#include "absl/base/log_severity.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/check.h"
+#include "absl/log/globals.h"
+#include "absl/log/initialize.h"
 #include "absl/log/log.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/common/common.h"
@@ -38,11 +41,15 @@ ABSL_FLAG(bool, prevent_numa_migrations, true,
 int main(int argc, char* argv[]) {
   benchmark::Initialize(&argc, argv);
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   static auto* background ABSL_ATTRIBUTE_UNUSED =
     tcmalloc::MallocExtension::NeedsProcessBackgroundActions() ?
     new std::thread([]() {
       tcmalloc::MallocExtension::ProcessBackgroundActions();
     }) : nullptr;
+
+  // Print warnings to stderr.
+  absl::SetStderrThreshold(absl::LogSeverityAtLeast::kWarning);
 
   if (absl::GetFlag(FLAGS_prevent_numa_migrations) && numa_available() != -1) {
     // Set the CPU affinity to the intersection of the current affinity and the
