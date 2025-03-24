@@ -147,12 +147,21 @@ def main(argv: Sequence[str]) -> None:
   shutil.rmtree(_TEMP_ROOT.value, ignore_errors=True)
   os.makedirs(_TEMP_ROOT.value, exist_ok=True)
 
-  scheduling_mode = cpu.CpuSchedulingMode(
-      num_cpus=_NUM_CPUS.value,
-      utilization=_UTILIZATION.value,
-      hyperthreading_mode=_HYPERTHREADING_MODE.value,
-  )
-  cpus, target_utilization = scheduling_mode.SelectCPURangeAndSetUtilization()
+  cpu_arch = cpu.GetCPUArch()
+  if cpu_arch == "aarch64":
+    logging.info("Running on ARM. SMT is unsupport.")
+    cpus = list(cpu.Available())[: _NUM_CPUS.value]
+    target_utilization = _UTILIZATION.value
+  elif cpu_arch == "x86_64":
+    logging.info("Running on x86. Adjusting CPU scheduling...")
+    scheduling_mode = cpu.CpuSchedulingMode(
+        num_cpus=_NUM_CPUS.value,
+        utilization=_UTILIZATION.value,
+        hyperthreading_mode=_HYPERTHREADING_MODE.value,
+    )
+    cpus, target_utilization = scheduling_mode.SelectCPURangeAndSetUtilization()
+  else:
+    raise ValueError(f"Unsupported CPU architecture: {cpu_arch}")
 
   bench = parallel_bench_lib.ParallelBench(
       cpus=cpus,

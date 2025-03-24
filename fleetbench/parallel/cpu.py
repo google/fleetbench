@@ -17,12 +17,14 @@
 import enum
 import math
 import os
+import subprocess
 from typing import Tuple
 
 from absl import logging
 import psutil
 
 
+# TODO: Consider using `lscpu -p` to get CPU information.
 class CpuInfo:
   """Class for reading and parsing CPU information from the cpuinfo file.
 
@@ -316,3 +318,15 @@ def Utilization(cpus: list[int]) -> Tuple[float, dict[int, float], int]:
       usable_utilization,
       busy_cpus,
   )
+
+
+def GetCPUArch() -> str:
+  """Returns the CPU architecture."""
+  try:
+    cpu_arch = subprocess.run(
+        ["uname", "-m"], capture_output=True, text=True, check=True
+    )
+    return cpu_arch.stdout.strip()
+  except subprocess.CalledProcessError:
+    logging.warning("Could not determine machine architecture. Using x86.")
+    return "x86_64"

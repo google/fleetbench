@@ -22,7 +22,7 @@ import psutil
 from fleetbench.parallel import cpu
 
 
-class CpuTest(absltest.TestCase):
+class CpuTest(parameterized.TestCase):
 
   def test_Available(self):
     self.assertGreaterEqual(len(cpu.Available()), 1)
@@ -37,6 +37,23 @@ class CpuTest(absltest.TestCase):
 
     with self.assertRaises(ValueError):
       cpu.Utilization([])
+
+  @parameterized.named_parameters(
+      ("x86", "x86_64"),
+      ("arm", "aarch64"),
+  )
+  @mock.patch("subprocess.run")
+  def test_get_cpu_arch_success(self, cpu_arch, mock_run):
+    """Test when subprocess.run succeeds."""
+    mock_process = mock.Mock()
+    mock_process.stdout = cpu_arch + "\n"
+    mock_process.returncode = 0
+    mock_run.return_value = mock_process
+
+    self.assertEqual(cpu.GetCPUArch(), cpu_arch)
+    mock_run.assert_called_once_with(
+        ["uname", "-m"], capture_output=True, text=True, check=True
+    )
 
 
 class SchedlingModeTest(parameterized.TestCase):
