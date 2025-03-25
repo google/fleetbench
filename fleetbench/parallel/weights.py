@@ -14,9 +14,16 @@
 
 
 """This file contains functions for handling benchmark weights."""
-
+import enum
 from absl import logging
 from fleetbench.parallel import benchmark as bm
+
+
+class SchedulingStrategy(enum.Enum):
+  """Enumeration class for different scheduling modes."""
+
+  BM_WEIGHTED = 0  # Equal total execution time for each individual benchmark.
+  WORKLOAD_WEIGHTED = 1  # Equal total execution time for each workload
 
 
 def _ParseBenchmarkWeights(
@@ -54,6 +61,7 @@ def _ParseBenchmarkWeights(
 
 def GetBenchmarkWeights(
     benchmarks: dict[str, bm.Benchmark],
+    scheduling_strategy: SchedulingStrategy,
     custom_weight_strings: list[str] | None = None,
 ) -> dict[str, float]:
   """Get the weights for each benchmark.
@@ -63,21 +71,53 @@ def GetBenchmarkWeights(
 
   Args:
     benchmarks: A dictionary of {benchmark name: Benchmark object}.
+    scheduling_strategy: The scheduling strategy to use when selecting next
+      benchmarks.
     custom_weight_strings: A list of strings to parse for custom weights.
 
   Returns:
     A dictionary of {benchmark name: weight}.
   """
-  benchmark_weights = {
-      benchmark.BenchmarkName(): 1.0 for benchmark in benchmarks.values()
-  }
-
-  # Update the benchmark weights with the custom weights.
+  custom_weights = None
   if custom_weight_strings:
     logging.info(
         "Running with selected benchmark weights: %s", custom_weight_strings
     )
     custom_weights = _ParseBenchmarkWeights(custom_weight_strings)
+
+  logging.info("Running with scheduling strategy: %s", scheduling_strategy.name)
+  if scheduling_strategy == SchedulingStrategy.BM_WEIGHTED:
+    benchmark_weights = {
+        benchmark.BenchmarkName(): 1.0 for benchmark in benchmarks.values()
+    }
+    # TODO: add custom weights support for the other scheduling
+    # strategies.
+    # Update the benchmark weights with the custom weights.
     if custom_weights:
       benchmark_weights.update(custom_weights)
+
+  elif scheduling_strategy == SchedulingStrategy.WORKLOAD_WEIGHTED:
+    # Get number of benchmarks for each workload
+    workload_benchmark = {
+        workload: [
+            benchmark
+            for benchmark in benchmarks.values()
+            if benchmark.Workload() == workload
+        ]
+        for workload in set(
+            benchmark.Workload() for benchmark in benchmarks.values()
+        )
+    }
+
+    # Calculate the weight for each benchmark
+    benchmark_weights = {}
+    for benchmarks in workload_benchmark.values():
+      for benchmark in benchmarks:
+        benchmark_weights[benchmark.BenchmarkName()] = 1 / len(benchmarks)
+
+  # TODO: support DC-taxed weights and the oss weights.csv file.
+  else:
+    raise ValueError(
+        "Unsupported scheduling strategy: %s" % scheduling_strategy.name
+    )
   return benchmark_weights

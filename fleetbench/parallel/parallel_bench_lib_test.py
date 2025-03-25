@@ -18,6 +18,7 @@ from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import flagsaver
+from absl.testing import parameterized
 import pandas as pd
 
 from fleetbench.parallel import benchmark as bm
@@ -26,9 +27,10 @@ from fleetbench.parallel import parallel_bench_lib
 from fleetbench.parallel import reporter
 from fleetbench.parallel import result
 from fleetbench.parallel import run
+from fleetbench.parallel import weights
 
 
-class ParallelBenchTest(absltest.TestCase):
+class ParallelBenchTest(parameterized.TestCase):
 
   def setUp(self):
     super().setUp()
@@ -96,6 +98,7 @@ class ParallelBenchTest(absltest.TestCase):
         benchmark_target="fake_bench",
         benchmark_filter=None,
         workload_filter=None,
+        scheduling_strategy=weights.SchedulingStrategy.BM_WEIGHTED,
         custom_benchmark_weights=None,
     )
     self.pb.Run()
@@ -243,6 +246,107 @@ class ParallelBenchTest(absltest.TestCase):
     self.pb.PostProcessBenchmarkResults("instructions,cycles")
     mock_generate_benchmark_report.assert_called_once()
     mock_save_benchmark_results.assert_called_once()
+
+  @parameterized.named_parameters(
+      dict(
+          testcase_name="adjust_probabilities_1",
+          target_ratios=[0.2, 0.8],
+          current_runtime=[1, 4],
+          expected=[0.5, 0.5],
+      ),
+      dict(
+          testcase_name="adjust_probabilities_2",
+          target_ratios=[0.5, 0.5],
+          current_runtime=[1, 1],
+          expected=[0.5, 0.5],
+      ),
+      dict(
+          testcase_name="adjust_probabilities_3",
+          target_ratios=[0.2, 0.8],
+          current_runtime=[2, 2],
+          expected=[0.2, 0.8],
+      ),
+      dict(
+          testcase_name="adjust_probabilities_4",
+          target_ratios=[0.2, 0.8],
+          current_runtime=[1, 1],
+          expected=[0.2, 0.8],
+      ),
+  )
+  def test_adjust_probabilities(self, target_ratios, current_runtime, expected):
+    probabilities = self.pb._AdjustProbabilities(target_ratios, current_runtime)
+    self.assertSequenceAlmostEqual(probabilities, expected)
+
+  def test_adjust_runtime(self):
+    # First entries are fake durations, the second entries are real durations.
+    self.pb.runtimes["BM_Test1"] = [
+        parallel_bench_lib.BenchmarkMetrics(
+            total_duration=10,
+            per_iteration_wall_time=1,
+            per_iteration_cpu_time=1,
+            per_bm_run_iteration=2,
+        ),
+        parallel_bench_lib.BenchmarkMetrics(
+            total_duration=2,
+            per_iteration_wall_time=3.01,
+            per_iteration_cpu_time=3,
+            per_bm_run_iteration=4,
+        ),
+        parallel_bench_lib.BenchmarkMetrics(
+            total_duration=4,
+            per_iteration_wall_time=3.01,
+            per_iteration_cpu_time=3,
+            per_bm_run_iteration=4,
+        ),
+    ]
+    self.pb.runtimes["BM_Test2"] = [
+        parallel_bench_lib.BenchmarkMetrics(
+            total_duration=10,
+            per_iteration_wall_time=1,
+            per_iteration_cpu_time=1,
+            per_bm_run_iteration=10,
+        ),
+        parallel_bench_lib.BenchmarkMetrics(
+            total_duration=4,
+            per_iteration_wall_time=4,
+            per_iteration_cpu_time=5,
+            per_bm_run_iteration=8,
+        ),
+        parallel_bench_lib.BenchmarkMetrics(
+            total_duration=6,
+            per_iteration_wall_time=4,
+            per_iteration_cpu_time=5,
+            per_bm_run_iteration=8,
+        ),
+    ]
+
+    current_runtimes = self.pb._AdjustRuntime()
+    self.assertSequenceAlmostEqual(current_runtimes, [3.0, 5.0])
+
+    self.pb.runtimes["BM_Test1"] = [
+        parallel_bench_lib.BenchmarkMetrics(
+            total_duration=10,
+            per_iteration_wall_time=1,
+            per_iteration_cpu_time=1,
+            per_bm_run_iteration=2,
+        ),
+    ]
+    self.pb.runtimes["BM_Test2"] = [
+        parallel_bench_lib.BenchmarkMetrics(
+            total_duration=10,
+            per_iteration_wall_time=1,
+            per_iteration_cpu_time=1,
+            per_bm_run_iteration=10,
+        ),
+        parallel_bench_lib.BenchmarkMetrics(
+            total_duration=4,
+            per_iteration_wall_time=4,
+            per_iteration_cpu_time=5,
+            per_bm_run_iteration=8,
+        ),
+    ]
+    current_runtimes = self.pb._AdjustRuntime()
+    self.assertSequenceAlmostEqual(current_runtimes, [40.0, 4.0])
 
 
 if __name__ == "__main__":

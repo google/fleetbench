@@ -81,6 +81,12 @@ class ParallelBench:
     results: List of results from all runs.
     utilization_samples: List of (timestamp, utilization) tuples. Used to
       generate utilization over time plots.
+    target_ratios: List of target ratios for each benchmark. This is used to
+      calculate the probability of each benchmark being selected, and determined
+      by the benchmark weights.
+    first_run: Boolean indicating if this is the first run. We use this to
+      determine if we can randomly select benchmarks or if we need to run all
+      benchmarks at least once.
   """
 
   def __init__(
@@ -108,12 +114,15 @@ class ParallelBench:
     self.runtimes: dict[str, list[BenchmarkMetrics]] = {}
     self.workers: dict[int, worker.Worker] = {}
     self.utilization_samples: list[tuple[pd.Timestamp, float]] = []
+    self.target_ratios: list[float] = []
+    self.first_run = True
 
   def SetWeights(
       self,
       benchmark_target: str,
       benchmark_filter: list[str] | None,
       workload_filter: list[str] | None,
+      scheduling_strategy: weights.SchedulingStrategy,
       custom_benchmark_weights: list[str] | None,
   ) -> None:
     """Sets the benchmark weights."""
@@ -135,7 +144,7 @@ class ParallelBench:
       )
     # Gets the number of workloads and num of benchmark for each workload
     self.benchmark_weights = weights.GetBenchmarkWeights(
-        self.benchmarks, custom_benchmark_weights
+        self.benchmarks, scheduling_strategy, custom_benchmark_weights
     )
 
   def _PreRun(
@@ -157,19 +166,23 @@ class ParallelBench:
       for benchmark in self.benchmarks.values():
         benchmark.AddCommandFlags(benchmark_flags)
 
-    # Initialize the runtimes with a fake wall time of 1. This causes all
-    # benchmarks to be equally likely at first.
-    self.runtimes = {
-        benchmark: [
-            BenchmarkMetrics(
-                total_duration=1.0,
-                per_iteration_wall_time=0.0,
-                per_iteration_cpu_time=0.0,
-                per_bm_run_iteration=0,
-            )
-        ]
-        for benchmark in self.benchmarks.keys()
-    }
+    # Initialize the runtimes with a fake wall time. Based on empirically
+    # observed runtimes, TCMalloc take 4x longer to run than others.
+    for benchmark in self.benchmarks.keys():
+      total_duration = 4 if "TCMALLOC" in benchmark else 1
+      self.runtimes[benchmark] = [
+          BenchmarkMetrics(
+              total_duration=total_duration,
+              per_iteration_wall_time=0.0,
+              per_iteration_cpu_time=0.0,
+              per_bm_run_iteration=0,
+          )
+      ]
+
+    self.target_ratios = [
+        self.benchmark_weights[instance.BenchmarkName()]
+        for instance in self.benchmarks.values()
+    ]
 
     # Create a worker thread for each CPU.
     self.workers = {
@@ -188,31 +201,101 @@ class ParallelBench:
       logging.debug("CPU activity: %s", self.cpus)
       os.sched_setaffinity(os.getpid(), [self.controller_cpu])
 
+  def _AdjustProbabilities(
+      self, target_ratios: list[float], current_runtime: list[float]
+  ) -> np.ndarray:
+    """Calculates benchmark probabilities.
+
+    We want to run benchmarks based on their expected runtime so that the
+    actual runtimes align with desired target ratios.
+
+    Probability_i = Current RT_0 * Target Ratio_i / (Target Ratio_0 * Current
+    RT_i)
+
+    Args:
+        target_ratios: List of target ratios.
+        current_runtime: List of current runtime.
+
+    Returns:
+        List of normalized probabilities.
+    """
+
+    num_benchmarks = len(target_ratios)
+    if num_benchmarks != len(current_runtime):
+      raise ValueError(
+          "Target and current ratio lists must have the same length."
+      )
+
+    # Set the first BM to be the reference with probability 1.0.
+    probabilities = [1.0]
+
+    # Calculate probabilities for other benchmarks
+    for j in range(1, num_benchmarks):
+      probability = (current_runtime[0] * target_ratios[j]) / (
+          current_runtime[j] * target_ratios[0]
+      )
+      probabilities.append(probability)
+
+    # Normalize the values
+    return np.array(probabilities) / np.sum(probabilities)
+
+  def _AdjustRuntime(self) -> np.ndarray:
+    """Adjusts the runtime of each benchmark to account for variance."""
+    valid_data = False
+    valid_index = -1
+    current_runtimes = np.empty(len(self.runtimes.keys()))
+    need_adjustment = []
+
+    for i, (times) in enumerate(self.runtimes.values()):
+      # Skip the first run, which is a fake run.
+      last_10_wall_times = np.array([t.total_duration for t in times[1:][-10:]])
+
+      if last_10_wall_times.size:
+        current_runtimes[i] = last_10_wall_times.mean()
+        valid_data = True
+        valid_index = i
+      else:
+        current_runtimes[i] = times[0].total_duration
+        # We need to adjust the runtime as it's already a valid value.
+        need_adjustment.append(i)
+
+    if valid_data:
+      for index in need_adjustment:
+        current_runtimes[index] = (
+            current_runtimes[index] * current_runtimes[valid_index]
+        )
+    return current_runtimes
+
   def _ComputeBenchmarkWeights(self) -> np.ndarray:
     """Probability is inversely based on expected runtime."""
 
-    inverse_weights = np.empty(len(self.runtimes.keys()))
+    current_runtimes = self._AdjustRuntime()
 
-    # Use the last 10 runtimes to estimate expected runtime.
-    for i, (benchmark_name, times) in enumerate(self.runtimes.items()):
-      last_10_wall_times = np.array([t.total_duration for t in times[-10:]])
-      base_weight = 1 / last_10_wall_times.mean()
+    if not np.all(current_runtimes == 1.0):
+      current_rt_ratios = current_runtimes / current_runtimes.sum()
 
-      # If we're using adaptive benchmark selection, adjust the weight based on
-      # the benchmark's performance relative to the fleet.
-      if self.benchmark_weights:
-        for keyword, weight in self.benchmark_weights.items():
-          if keyword in benchmark_name.upper():
-            base_weight *= weight
-            break
-      inverse_weights[i] = base_weight
-    return inverse_weights / inverse_weights.sum()
+      probabilities = self._AdjustProbabilities(
+          self.target_ratios, current_rt_ratios
+      )
+    else:
+      probabilities = np.array(self.target_ratios) / np.sum(self.target_ratios)
+
+    return probabilities
 
   def _SelectNextBenchmarks(self, count: int) -> list[bm.Benchmark]:
     """Randomly choose some benchmarks to run."""
 
     if count <= 0:
       return []
+
+    # We try to run all benchmarks at least once.
+    benchmarks = []
+    if self.first_run:
+      if count > len(self.benchmarks):
+        benchmarks = list(self.benchmarks.values())
+        count = count - len(benchmarks)
+      self.first_run = False
+
     # Probabilities based on the expected runtime.
     probabilities = self._ComputeBenchmarkWeights()
     # self.runtimes is a dict of benchmark name -> list of runtimes.
@@ -220,7 +303,7 @@ class ParallelBench:
     selected_names = np.random.choice(
         benchmark_names, p=probabilities, size=count, replace=True
     )
-    return [self.benchmarks[name] for name in selected_names]
+    return benchmarks + [self.benchmarks[name] for name in selected_names]
 
   def _RunSchedulingLoop(self) -> None:
     """Check CPU utilization and pick the next job to schedule."""

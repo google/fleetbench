@@ -29,6 +29,7 @@ from absl import logging
 
 from fleetbench.parallel import cpu
 from fleetbench.parallel import parallel_bench_lib
+from fleetbench.parallel import weights
 
 
 _CPU_AFFINITY = flags.DEFINE_bool(
@@ -105,6 +106,17 @@ _UTILIZATION = flags.DEFINE_float(
 )
 
 
+_SCHEDULING_STRATEGY = flags.DEFINE_enum_class(
+    "scheduling_strategy",
+    weights.SchedulingStrategy.WORKLOAD_WEIGHTED,
+    weights.SchedulingStrategy,
+    "The scheduling strategy to use. The default is WORKLOAD_WEIGHTED, which"
+    " means the benchmarks will be selected based on the expected"
+    " workload runtime. If set to BM_WEIGHTED, the benchmarks will be selected"
+    " based on the expected benchmark runtime.",
+)
+
+
 _CUSTOM_BENCHMARK_WEIGHTS = flags.DEFINE_multi_string(
     "benchmark_weights",
     [],
@@ -175,6 +187,7 @@ def main(argv: Sequence[str]) -> None:
       _BENCHMARK_TARGET.value,
       _BENCHMARK_FILTER.value,
       _WORKLOAD_FILTER.value,
+      _SCHEDULING_STRATEGY.value,
       _CUSTOM_BENCHMARK_WEIGHTS.value,
   )
 

@@ -102,6 +102,7 @@ py_binary(
     deps = [
         ":cpu",
         ":parallel_bench_lib",
+        ":weights",
         "@com_google_absl_py//absl:app",
         "@com_google_absl_py//absl/flags",
         "@com_google_absl_py//absl/logging",
@@ -118,8 +119,10 @@ py_test(
         ":reporter",
         ":result",
         ":run",
+        ":weights",
         "@com_google_absl_py//absl/testing:absltest",
         "@com_google_absl_py//absl/testing:flagsaver",
+        "@com_google_absl_py//absl/testing:parameterized",
         requirement("pandas"),
     ],
 )

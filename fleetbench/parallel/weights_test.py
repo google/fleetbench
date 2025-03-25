@@ -53,7 +53,7 @@ class ParseBenchmarkWeightsTest(absltest.TestCase):
         expected_output,
     )
 
-  def test_no_custom_weights(self):
+  def test_bm_weighted_no_custom_weights(self):
     benchmark_map = {
         "benchmark1": bm.Benchmark("fake_target", "benchmark1"),
         "benchmark2": bm.Benchmark("fake_target", "benchmark2"),
@@ -63,10 +63,13 @@ class ParseBenchmarkWeightsTest(absltest.TestCase):
         "benchmark2": 1.0,
     }
     self.assertEqual(
-        weights.GetBenchmarkWeights(benchmark_map), expected_weights
+        weights.GetBenchmarkWeights(
+            benchmark_map, weights.SchedulingStrategy.BM_WEIGHTED
+        ),
+        expected_weights,
     )
 
-  def test_custom_weights(self):
+  def test_bm_weighted_custom_weights(self):
     benchmark_map = {
         "benchmark1": bm.Benchmark("fake_target", "benchmark1"),
         "benchmark2": bm.Benchmark("fake_target", "benchmark2"),
@@ -77,6 +80,28 @@ class ParseBenchmarkWeightsTest(absltest.TestCase):
         "benchmark2": 0.3,
     }
     self.assertEqual(
-        weights.GetBenchmarkWeights(benchmark_map, custom_weights),
+        weights.GetBenchmarkWeights(
+            benchmark_map,
+            weights.SchedulingStrategy.BM_WEIGHTED,
+            custom_weights,
+        ),
+        expected_weights,
+    )
+
+  def test_workload_weighted(self):
+    benchmark_map = {
+        "benchmark1": bm.Benchmark("fake_target", "BM_Workload1_Test1"),
+        "benchmark2": bm.Benchmark("fake_target", "BM_Workload1_Test2"),
+        "benchmark3": bm.Benchmark("fake_target", "BM_Workload2_Test1"),
+    }
+    expected_weights = {
+        "benchmark1": 0.5,
+        "benchmark2": 0.5,
+        "benchmark3": 1.0,
+    }
+    self.assertEqual(
+        weights.GetBenchmarkWeights(
+            benchmark_map, weights.SchedulingStrategy.WORKLOAD_WEIGHTED
+        ),
         expected_weights,
     )
