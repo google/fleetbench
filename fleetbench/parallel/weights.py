@@ -14,8 +14,12 @@
 
 
 """This file contains functions for handling benchmark weights."""
+import csv
 import enum
+
 from absl import logging
+
+from python.runfiles import Runfiles
 from fleetbench.parallel import benchmark as bm
 
 
@@ -24,6 +28,7 @@ class SchedulingStrategy(enum.Enum):
 
   BM_WEIGHTED = 0  # Equal total execution time for each individual benchmark.
   WORKLOAD_WEIGHTED = 1  # Equal total execution time for each workload
+  DCTAX_WEIGHTED = 2  # Execution time distributed as per DC Tax weights
 
 
 def _ParseBenchmarkWeights(
@@ -57,6 +62,22 @@ def _ParseBenchmarkWeights(
       )
 
   return benchmark_weights
+
+
+def GetDCTaxWeights() -> dict[str, float]:
+  """Read the weights for each benchmark from the data/weights.csv file.
+
+  Returns:
+      A dictionary containing the weights for each benchmark.
+  """
+  file_path = "com_google_fleetbench/fleetbench/parallel/weights.csv"
+
+  with open(Runfiles.Create().Rlocation(file_path), newline="") as csv_file:
+    rows = [row for row in csv_file if not row.startswith("#")]
+  return {
+      benchmark_name: float(weight)
+      for benchmark_name, weight in csv.reader(rows)
+  }
 
 
 def GetBenchmarkWeights(
@@ -115,7 +136,10 @@ def GetBenchmarkWeights(
       for benchmark in benchmarks:
         benchmark_weights[benchmark.BenchmarkName()] = 1 / len(benchmarks)
 
-  # TODO: support DC-taxed weights and the oss weights.csv file.
+  elif scheduling_strategy == SchedulingStrategy.DCTAX_WEIGHTED:
+    # Get the DCTax based weights for each benchmark
+    # For OSS, feel free to adjust the weights.csv file.
+    benchmark_weights = GetDCTaxWeights()
   else:
     raise ValueError(
         "Unsupported scheduling strategy: %s" % scheduling_strategy.name

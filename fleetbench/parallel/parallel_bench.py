@@ -111,9 +111,10 @@ _SCHEDULING_STRATEGY = flags.DEFINE_enum_class(
     weights.SchedulingStrategy.WORKLOAD_WEIGHTED,
     weights.SchedulingStrategy,
     "The scheduling strategy to use. The default is WORKLOAD_WEIGHTED, which"
-    " means the benchmarks will be selected based on the expected"
-    " workload runtime. If set to BM_WEIGHTED, the benchmarks will be selected"
-    " based on the expected benchmark runtime.",
+    " means the benchmarks will be selected based on the expected workload"
+    " runtime. If set to BM_WEIGHTED, the benchmarks will be selected based on"
+    " the expected benchmark runtime. The DCTAX_WEIGHTED will run benchmarks"
+    " based on the DCTax ratio.",
 )
 
 

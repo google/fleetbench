@@ -1,0 +1,27 @@
+#Benchmark name, weight
+BM_PROTO_Arena,1
+"BM_SWISSMAP_InsertHit_Hot<::absl::flat_hash_set, 64>/set_size:64/density:0",1
+"BM_SWISSMAP_InsertHit_Cold<::absl::flat_hash_set, 64>/set_size:64/density:0",1
+BM_LIBC_Memcpy_Fleet_L1,1
+BM_LIBC_Memcpy_Fleet_Cold,1
+BM_LIBC_Memset_Fleet_L1,0.1
+BM_LIBC_Memset_Fleet_Cold,1
+BM_LIBC_Memmove_Fleet_L1,1
+BM_LIBC_Memmove_Fleet_Cold,1
+BM_LIBC_Memcmp_Fleet_L1,1
+BM_LIBC_Memcmp_Fleet_Cold,1
+BM_LIBC_Bcmp_Fleet_L1,1
+BM_LIBC_Bcmp_Fleet_Cold,1
+BM_TCMALLOC_5/real_time/threads:1,1
+BM_HASHING_Computecrc32c_Fleet_cold,1
+BM_HASHING_Extendcrc32cinternal_Fleet_cold,1
+BM_HASHING_Combine_contiguous_Fleet_cold,1
+BM_COMPRESSION_Brotli_COMPRESS_Fleet/compression_level:2/window_log:18,1
+BM_COMPRESSION_Brotli_DECOMPRESS_Fleet/compression_level:2/window_log:18,1
+BM_COMPRESSION_Flate_COMPRESS_Fleet/compression_level:6/window_log:15,1
+BM_COMPRESSION_Flate_DECOMPRESS_Fleet/compression_level:6/window_log:15,1
+BM_COMPRESSION_Snappy_COMPRESS_Fleet,1
+BM_COMPRESSION_Snappy_DECOMPRESS_Fleet,1
+BM_COMPRESSION_ZSTD_COMPRESS_Fleet/compression_level:-1/window_log:15,1
+BM_COMPRESSION_ZSTD_DECOMPRESS_Fleet/compression_level:0/window_log:0,1
+BM_CORD_Fleet,1

@@ -78,9 +78,11 @@ py_library(
 py_library(
     name = "weights",
     srcs = ["weights.py"],
+    data = ["weights.csv"],
     deps = [
         ":benchmark",
         "@com_google_absl_py//absl/logging",
+        "@rules_python//python/runfiles",
     ],
 )
 

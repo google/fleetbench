@@ -69,6 +69,33 @@ class ParseBenchmarkWeightsTest(absltest.TestCase):
         expected_weights,
     )
 
+  def test_dctax_weighted(self):
+    benchmark_map = {
+        "benchmark1": bm.Benchmark("fake_target", "BM_TCMalloc_Test1"),
+        "benchmark2": bm.Benchmark("fake_target", "BM_Cord_Test2"),
+        "benchmark3": bm.Benchmark("fake_target", "BM_Protobuf_Test1"),
+    }
+    expected_weights = {
+        "BM_TCMalloc_Test1": 0.4,
+        "BM_Cord_Test2": 0.1,
+        "BM_Protobuf_Test1": 0.2,
+    }
+    with absltest.mock.patch.object(
+        weights,
+        "GetDCTaxWeights",
+        return_value={
+            "BM_TCMalloc_Test1": 0.4,
+            "BM_Cord_Test2": 0.1,
+            "BM_Protobuf_Test1": 0.2,
+        },
+    ):
+      self.assertEqual(
+          weights.GetBenchmarkWeights(
+              benchmark_map, weights.SchedulingStrategy.DCTAX_WEIGHTED
+          ),
+          expected_weights,
+      )
+
   def test_bm_weighted_custom_weights(self):
     benchmark_map = {
         "benchmark1": bm.Benchmark("fake_target", "benchmark1"),
