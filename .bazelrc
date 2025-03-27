@@ -26,6 +26,9 @@ build --@com_github_grpc_grpc//:disable_grpc_rls
 build --define=grpc_no_xds=true
 test --test_timeout=1500
 
+# Enable bounds-checking assertions in LLVM libcpp containers by default.
+build --copt='-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST'
+
 # Define the --config=asan-libfuzzer configuration.
 build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:libfuzzer
 build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer
