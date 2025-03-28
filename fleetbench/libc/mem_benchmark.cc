@@ -20,6 +20,7 @@
 #include <deque>
 #include <filesystem>  // NOLINT
 #include <iterator>
+#include <limits>
 #include <numeric>
 #include <random>
 #include <string>
@@ -523,6 +524,13 @@ void RegisterBenchmarks() {
       std::make_pair("LLC", GetCacheSize(3) / 2),
       std::make_pair("Cold", 2 * GetCacheSize(3)),
   };
+
+  // The maximum size of a memory operation.
+  size_t mem_distribution_max = 262144;
+  CHECK_LE(GetCacheSize(3), std::numeric_limits<int32_t>::max() / 2 -
+                                mem_distribution_max - kCacheLineSize - 1)
+      << "L3 size larger than expected";
+
   auto memory_benchmark = fleetbench::libc::BM_Memory;
   for (const auto &[distribution_file_prefix, buffer_counter, memory_function] :
        memory_operations) {
