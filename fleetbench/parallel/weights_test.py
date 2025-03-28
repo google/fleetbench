@@ -69,33 +69,6 @@ class ParseBenchmarkWeightsTest(absltest.TestCase):
         expected_weights,
     )
 
-  def test_dctax_weighted(self):
-    benchmark_map = {
-        "benchmark1": bm.Benchmark("fake_target", "BM_TCMalloc_Test1"),
-        "benchmark2": bm.Benchmark("fake_target", "BM_Cord_Test2"),
-        "benchmark3": bm.Benchmark("fake_target", "BM_Protobuf_Test1"),
-    }
-    expected_weights = {
-        "BM_TCMalloc_Test1": 0.4,
-        "BM_Cord_Test2": 0.1,
-        "BM_Protobuf_Test1": 0.2,
-    }
-    with absltest.mock.patch.object(
-        weights,
-        "GetDCTaxWeights",
-        return_value={
-            "BM_TCMalloc_Test1": 0.4,
-            "BM_Cord_Test2": 0.1,
-            "BM_Protobuf_Test1": 0.2,
-        },
-    ):
-      self.assertEqual(
-          weights.GetBenchmarkWeights(
-              benchmark_map, weights.SchedulingStrategy.DCTAX_WEIGHTED
-          ),
-          expected_weights,
-      )
-
   def test_bm_weighted_custom_weights(self):
     benchmark_map = {
         "benchmark1": bm.Benchmark("fake_target", "benchmark1"),
@@ -115,7 +88,7 @@ class ParseBenchmarkWeightsTest(absltest.TestCase):
         expected_weights,
     )
 
-  def test_workload_weighted(self):
+  def test_workload_weighted_no_custom_weights(self):
     benchmark_map = {
         "benchmark1": bm.Benchmark("fake_target", "BM_Workload1_Test1"),
         "benchmark2": bm.Benchmark("fake_target", "BM_Workload1_Test2"),
@@ -132,3 +105,61 @@ class ParseBenchmarkWeightsTest(absltest.TestCase):
         ),
         expected_weights,
     )
+
+  def test_workload_weighted_custom_weights(self):
+    benchmark_map = {
+        "benchmark1": bm.Benchmark("fake_target", "BM_Workload1_Test1"),
+        "benchmark2": bm.Benchmark("fake_target", "BM_Workload1_Test2"),
+        "benchmark3": bm.Benchmark("fake_target", "BM_Workload2_Test1"),
+    }
+    custom_weights = ["Test1:3"]
+    expected_weights = {
+        "benchmark1": 0.75,
+        "benchmark2": 0.25,
+        "benchmark3": 1.0,
+    }
+    self.assertEqual(
+        weights.GetBenchmarkWeights(
+            benchmark_map,
+            weights.SchedulingStrategy.WORKLOAD_WEIGHTED,
+            custom_weights,
+        ),
+        expected_weights,
+    )
+
+  def test_dctax_weighted(self):
+    benchmark_map = {
+        "benchmark1": bm.Benchmark("fake_target", "BM_TCMalloc_Test1"),
+        "benchmark2": bm.Benchmark("fake_target", "BM_Cord_Test2"),
+        "benchmark3": bm.Benchmark("fake_target", "BM_Protobuf_Test1"),
+    }
+    expected_weights = {
+        "BM_TCMalloc_Test1": 0.4,
+        "BM_Cord_Test2": 0.1,
+        "BM_Protobuf_Test1": 0.2,
+    }
+    custom_weights = ["Test1:3"]
+    with absltest.mock.patch.object(
+        weights,
+        "GetDCTaxWeights",
+        return_value={
+            "BM_TCMalloc_Test1": 0.4,
+            "BM_Cord_Test2": 0.1,
+            "BM_Protobuf_Test1": 0.2,
+        },
+    ):
+      self.assertEqual(
+          weights.GetBenchmarkWeights(
+              benchmark_map, weights.SchedulingStrategy.DCTAX_WEIGHTED
+          ),
+          expected_weights,
+      )
+      # Custom weights are ignored for DCTAX_WEIGHTED scheduling strategy.
+      self.assertEqual(
+          weights.GetBenchmarkWeights(
+              benchmark_map,
+              weights.SchedulingStrategy.DCTAX_WEIGHTED,
+              custom_weights,
+          ),
+          expected_weights,
+      )

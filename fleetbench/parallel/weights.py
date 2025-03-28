@@ -80,6 +80,35 @@ def GetDCTaxWeights() -> dict[str, float]:
   }
 
 
+def _UpdateWorkloadWeights(
+    benchmark_weights: dict[str, float],
+    workload_benchmark: dict[str, list[bm.Benchmark]],
+    custom_weights: dict[str, float],
+) -> dict[str, float]:
+  """Updates benchmark weights based on workload and custom weights."""
+  for benchmarks in workload_benchmark.values():
+    # If there is only one benchmark in the workload, there is no need to
+    # apply the custom weights.
+    if len(benchmarks) == 1:
+      continue
+
+    for benchmark in benchmarks:
+      for keyword, weight in custom_weights.items():
+        if keyword in benchmark.BenchmarkName().upper():
+          # Update the weight for the benchmark in the custom weights list.
+          benchmark_weights[benchmark.BenchmarkName()] *= weight
+
+    # Normalize the weights again for each workload.
+    # We need first sum all weights for current workload, then divide
+    # individual weights by sum.
+    sum_weights = sum(
+        benchmark_weights[benchmark.BenchmarkName()] for benchmark in benchmarks
+    )
+    for benchmark in benchmarks:
+      benchmark_weights[benchmark.BenchmarkName()] /= sum_weights
+  return benchmark_weights
+
+
 def GetBenchmarkWeights(
     benchmarks: dict[str, bm.Benchmark],
     scheduling_strategy: SchedulingStrategy,
@@ -111,8 +140,6 @@ def GetBenchmarkWeights(
     benchmark_weights = {
         benchmark.BenchmarkName(): 1.0 for benchmark in benchmarks.values()
     }
-    # TODO: add custom weights support for the other scheduling
-    # strategies.
     # Update the benchmark weights with the custom weights.
     if custom_weights:
       benchmark_weights.update(custom_weights)
@@ -136,10 +163,22 @@ def GetBenchmarkWeights(
       for benchmark in benchmarks:
         benchmark_weights[benchmark.BenchmarkName()] = 1 / len(benchmarks)
 
+    # Update the benchmark weights with the custom weights if provided.
+    if custom_weights:
+      benchmark_weights = _UpdateWorkloadWeights(
+          benchmark_weights, workload_benchmark, custom_weights
+      )
+
   elif scheduling_strategy == SchedulingStrategy.DCTAX_WEIGHTED:
     # Get the DCTax based weights for each benchmark
     # For OSS, feel free to adjust the weights.csv file.
     benchmark_weights = GetDCTaxWeights()
+
+    if custom_weights:
+      logging.warning(
+          "Custom weights are not supported for DCTAX_WEIGHTED scheduling"
+          " strategy. We will ignore the custom weights."
+      )
   else:
     raise ValueError(
         "Unsupported scheduling strategy: %s" % scheduling_strategy.name
