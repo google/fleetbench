@@ -117,12 +117,7 @@ class FleetbenchReporter : public benchmark::BenchmarkReporter {
     reporter_->ReportRunsConfig(min_time, has_explicit_iters, iters);
   }
 
-  bool ReportContext(
-      const benchmark::BenchmarkReporter::Context& context) override {
-    reporter_->SetOutputStream(&this->GetOutputStream());
-    reporter_->SetErrorStream(&this->GetErrorStream());
-    return reporter_->ReportContext(context);
-  }
+  bool ReportContext(const benchmark::BenchmarkReporter::Context&) override;
 
   void Finalize() override { reporter_->Finalize(); }
 
