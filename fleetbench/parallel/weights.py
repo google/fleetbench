@@ -65,7 +65,7 @@ def _ParseBenchmarkWeights(
 
 
 def GetDCTaxWeights() -> dict[str, float]:
-  """Read the weights for each benchmark from the data/weights.csv file.
+  """Read the weights for each benchmark from the corresponding weights.csv file.
 
   Returns:
       A dictionary containing the weights for each benchmark.
