@@ -45,9 +45,10 @@ static void FindMiss_Cold(benchmark::State& state) {
                                    static_cast<Density>(state.range(1)));
   auto& keys = sc.GetNonExistingKeys(sets);
 
+  int warmup = 5;
   while (true) {
     for (uint32_t key : keys) {
-      if (!state.KeepRunningBatch(sets.size())) return;
+      if (--warmup < 0 && !state.KeepRunningBatch(sets.size())) return;
       for (Set& set : sets) {
         DoNotOptimize(set);
         DoNotOptimize(key);
