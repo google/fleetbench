@@ -64,6 +64,16 @@ static void FindMiss_Cold(benchmark::State& state) {
           DoNotOptimize(res);
         }
       }
+      if (!kLookup) {
+        // PauseTiming()/ResumeTiming() are relatively expensive, but it is OK
+        // to use them here because `sets` is large, and thus the cost of the
+        // two functions is small compared to the cost of the loop above.
+        if (warmup < 0) state.PauseTiming();
+        for (Set& set : sets) {
+          set.erase(key);
+        }
+        if (warmup < 0) state.ResumeTiming();
+      }
     }
   }
 }
