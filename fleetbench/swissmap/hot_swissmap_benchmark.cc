@@ -480,7 +480,7 @@ ABSL_ATTRIBUTE_NOINLINE void FillInts(IntTable* t, int n) {
 void BM_SWISSMAP_IntDestructor(benchmark::State& state) {
   int size = state.range(0);
   int capacity = state.range(1);
-  size_t batch_size = 2048 / (capacity + 1) + 1;
+  size_t batch_size = (capacity <= 1) ? 8196 : 512;
   while (state.KeepRunningBatch(batch_size)) {
     state.PauseTiming();
     std::vector<IntTable> tables(batch_size);
