@@ -14,6 +14,7 @@
 
 import json
 import os
+import shutil
 from unittest import mock
 
 from absl.testing import absltest
@@ -39,13 +40,18 @@ class ParallelBenchTest(parameterized.TestCase):
         cpu_affinity=False,
         utilization=0.5,
         duration=0.1,
-        temp_root=absltest.get_default_test_tmpdir(),
+        repetitions=1,
+        temp_parent_root=absltest.get_default_test_tmpdir(),
+        keep_raw_data=True,
     )
 
   def tearDown(self):
     super().tearDown()
-    for filename in os.listdir(self.pb.temp_root):
-      os.remove(os.path.join(self.pb.temp_root, filename))
+    for name in os.listdir(self.pb.temp_parent_root):
+      if name.startswith("run_"):
+        shutil.rmtree(os.path.join(self.pb.temp_parent_root, name))
+      else:
+        os.remove(os.path.join(self.pb.temp_parent_root, name))
 
   @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
   @mock.patch.object(run.Run, "Execute", autospec=True)
@@ -92,7 +98,9 @@ class ParallelBenchTest(parameterized.TestCase):
         cpu_affinity=False,
         utilization=0.5,
         duration=0.1,
-        temp_root=absltest.get_default_test_tmpdir(),
+        repetitions=1,
+        temp_parent_root=absltest.get_default_test_tmpdir(),
+        keep_raw_data=True,
     )
     self.pb.SetWeights(
         benchmark_target="fake_bench",
@@ -103,6 +111,33 @@ class ParallelBenchTest(parameterized.TestCase):
     )
     self.pb.Run()
     mock_execute.assert_called_once()
+
+  @mock.patch.object(parallel_bench_lib.ParallelBench, "_PreRun", autospec=True)
+  @mock.patch.object(
+      parallel_bench_lib.ParallelBench, "_RunSchedulingLoop", autospec=True
+  )
+  @mock.patch.object(
+      parallel_bench_lib.ParallelBench,
+      "PostProcessBenchmarkResults",
+      autospec=True,
+  )
+  @mock.patch.object(shutil, "rmtree", autospec=True)
+  @mock.patch.object(os, "makedirs", autospec=True)
+  def test_run_multiple_repetitions(
+      self,
+      mock_makedirs,
+      mock_rmtree,
+      mock_post_process_benchmark_results,
+      mock_run_scheduling_loop,
+      mock_pre_run,
+  ):
+    self.pb.repetitions = 2
+    self.pb.Run()
+    self.assertEqual(mock_pre_run.call_count, 2)
+    self.assertEqual(mock_run_scheduling_loop.call_count, 2)
+    self.assertEqual(mock_post_process_benchmark_results.call_count, 2)
+    self.assertEqual(mock_rmtree.call_count, 2)
+    self.assertEqual(mock_makedirs.call_count, 2)
 
   def test_set_extra_benchmark_flags(self):
     self.assertEqual(
@@ -206,6 +241,10 @@ class ParallelBenchTest(parameterized.TestCase):
             "cycles": 5,
         }]
     }
+
+    self.pb.temp_root = os.path.join(self.pb.temp_parent_root, "run_0")
+    os.makedirs(self.pb.temp_root, exist_ok=True)
+
     with open(os.path.join(self.pb.temp_root, "run_1"), "w") as f:
       json.dump(mock_data1, f)
     with open(os.path.join(self.pb.temp_root, "run_2"), "w") as f:
@@ -231,11 +270,17 @@ class ParallelBenchTest(parameterized.TestCase):
   @mock.patch.object(reporter, "SaveBenchmarkResults", autospec=True)
   @mock.patch.object(reporter, "GenerateBenchmarkReport", autospec=True)
   @mock.patch.object(
+      parallel_bench_lib.ParallelBench,
+      "GeneratePerfCounterDataFrame",
+      autospec=True,
+  )
+  @mock.patch.object(
       parallel_bench_lib.ParallelBench, "ConvertToDataFrame", autospec=True
   )
   def test_post_processing_benchmark_results(
       self,
       mock_convert_to_dataframe,
+      mock_generate_perf_counter_dataframe,
       mock_generate_benchmark_report,
       mock_save_benchmark_results,
   ):
@@ -244,6 +289,7 @@ class ParallelBenchTest(parameterized.TestCase):
     ])
 
     self.pb.PostProcessBenchmarkResults("instructions,cycles")
+    mock_generate_perf_counter_dataframe.assert_called_once()
     mock_generate_benchmark_report.assert_called_once()
     mock_save_benchmark_results.assert_called_once()
 
@@ -347,6 +393,31 @@ class ParallelBenchTest(parameterized.TestCase):
     ]
     current_runtimes = self.pb._AdjustRuntime()
     self.assertSequenceAlmostEqual(current_runtimes, [40.0, 4.0])
+
+  @mock.patch.object(os, "remove", autospec=True)
+  @mock.patch.object(os, "listdir", autospec=True)
+  def test_remove_raw_data(self, mock_listdir, mock_remove):
+    self.pb.temp_root = "/tmp/test_dir"
+    mock_listdir.return_value = ["run_1", "run_2", "results.json"]
+
+    self.pb._RemoveRawData()
+
+    mock_listdir.assert_called_once_with("/tmp/test_dir")
+    mock_remove.assert_has_calls([
+        mock.call("/tmp/test_dir/run_1"),
+        mock.call("/tmp/test_dir/run_2"),
+    ])
+
+  @mock.patch.object(os, "remove", autospec=True)
+  @mock.patch.object(os, "listdir", autospec=True)
+  def test_remove_raw_data_no_run_files(self, mock_listdir, mock_remove):
+    self.pb.temp_root = "/tmp/test_dir"
+    mock_listdir.return_value = ["results.json"]
+
+    self.pb._RemoveRawData()
+
+    mock_listdir.assert_called_once_with("/tmp/test_dir")
+    mock_remove.assert_not_called()
 
 
 if __name__ == "__main__":

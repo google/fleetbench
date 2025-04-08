@@ -18,6 +18,7 @@ import dataclasses
 import json
 import math
 import os
+import shutil
 import time
 
 from absl import logging
@@ -75,7 +76,11 @@ class ParallelBench:
     benchmarks: List of benchmarks to run.
     target_utilization: Target utilization from 0 to 1.
     duration: How long in seconds to run for.
-    temp_root: Directory to store temporary files in.
+    repetitions: Number of times to run the entire framework.
+    temp_parent_root: Parent directory to store temporary files in.
+    temp_root: Child directory to store results in. It is in the format of
+      "temp_parent_root/run_{repetition_id}".
+    keep_raw_data: Whether to keep the raw results from each run.
     runtimes: Dictionary of benchmark name -> history of benchmark runtimes.
     workers: Dictionary of CPU ID -> Worker thread.
     results: List of results from all runs.
@@ -84,6 +89,7 @@ class ParallelBench:
     target_ratios: List of target ratios for each benchmark. This is used to
       calculate the probability of each benchmark being selected, and determined
       by the benchmark weights.
+    keep_raw_data: Whether to keep the raw results from each run.
     first_run: Boolean indicating if this is the first run. We use this to
       determine if we can randomly select benchmarks or if we need to run all
       benchmarks at least once.
@@ -95,7 +101,9 @@ class ParallelBench:
       cpu_affinity: bool,
       utilization: float,
       duration: float,
-      temp_root: str,
+      repetitions: int,
+      temp_parent_root: str,
+      keep_raw_data: bool,
   ):
     """Initialize the parallel benchmark runner."""
 
@@ -110,7 +118,10 @@ class ParallelBench:
     self.benchmarks: dict[str, bm.Benchmark] = {}
     self.target_utilization = utilization * 100
     self.duration = duration
-    self.temp_root = temp_root
+    self.repetitions = repetitions
+    self.temp_parent_root = temp_parent_root
+    self.temp_root = ""
+    self.keep_raw_data = keep_raw_data
     self.runtimes: dict[str, list[BenchmarkMetrics]] = {}
     self.workers: dict[int, worker.Worker] = {}
     self.utilization_samples: list[tuple[pd.Timestamp, float]] = []
@@ -152,6 +163,7 @@ class ParallelBench:
       benchmark_perf_counters: str,
       benchmark_repetitions: int,
       benchmark_min_time: str,
+      repetition: int,
   ) -> None:
     """Initial configuration steps."""
 
@@ -163,8 +175,10 @@ class ParallelBench:
 
     if benchmark_flags:
       logging.info("Setting benchmark flags: %s", benchmark_flags)
-      for benchmark in self.benchmarks.values():
-        benchmark.AddCommandFlags(benchmark_flags)
+      #  Only set the flags once.
+      if repetition == 0:
+        for benchmark in self.benchmarks.values():
+          benchmark.AddCommandFlags(benchmark_flags)
 
     # Initialize the runtimes with a fake wall time. Based on empirically
     # observed runtimes, TCMalloc take 4x longer to run than others.
@@ -454,11 +468,27 @@ class ParallelBench:
     logging.info("Median Utilization: %f", utilization["utilization"].median())
     return runtimes
 
+  def _RemoveRawData(self) -> None:
+    """Remove raw data from the temporary directory."""
+    logging.info("Removing raw data from %s", self.temp_root)
+    for filename in os.listdir(self.temp_root):
+      if filename.startswith("run_"):
+        file_path = os.path.join(self.temp_root, filename)
+        try:
+          os.remove(file_path)
+        except OSError as e:
+          logging.exception("Failed to remove %s: %s", file_path, e)
+
   def PostProcessBenchmarkResults(self, benchmark_perf_counters: str) -> None:
     """Generate benchmark reports and save results to a JSON file.
 
     If benchmark_perf_counters is specified, the report will include perf
-    counters for each benchmark.
+    counters for each benchmark. We will also check to see if we want to remove
+    the raw data.
+
+    Args:
+      benchmark_perf_counters: A comma-separated list of performance counters to
+        collect.
     """
 
     df = self.ConvertToDataFrame()
@@ -466,6 +496,9 @@ class ParallelBench:
     perf_counter_df = self.GeneratePerfCounterDataFrame(benchmark_perf_counters)
     df = reporter.GenerateBenchmarkReport(df, perf_counter_df)
     reporter.SaveBenchmarkResults(self.temp_root, df)
+
+    if not self.keep_raw_data:
+      self._RemoveRawData()
 
   def Run(
       self,
@@ -475,39 +508,49 @@ class ParallelBench:
   ):
     """Run benchmarks in parallel."""
 
-    self._PreRun(
-        benchmark_perf_counters,
-        benchmark_repetitions,
-        benchmark_min_time,
-    )
+    for i in range(self.repetitions):
+      self.temp_root = os.path.join(self.temp_parent_root, f"run_{i}")
+      shutil.rmtree(self.temp_root, ignore_errors=True)
+      os.makedirs(self.temp_root, exist_ok=True)
 
-    logging.info(
-        "Running %d benchmarks to try to hit %.f%% utilization",
-        len(self.benchmarks),
-        self.target_utilization,
-    )
-    logging.debug("Benchmark list: %s", ", ".join(self.benchmarks.keys()))
+      print(f"Running trial {i}.......")
 
-    logging.info("Start measuring for %d seconds", self.duration)
-    self._RunSchedulingLoop()
+      self._PreRun(
+          benchmark_perf_counters,
+          benchmark_repetitions,
+          benchmark_min_time,
+          i,
+      )
 
-    logging.info("Shutting down all workers...")
-    # Collect all remaining results
-    for w in self.workers.values():
-      results = w.StopAndGetResults()
-      for r in results:
-        self.runtimes[r.benchmark].append(
-            BenchmarkMetrics(
-                total_duration=r.duration,
-                per_iteration_wall_time=r.bm_wall_time,
-                per_iteration_cpu_time=r.bm_cpu_time,
-                per_bm_run_iteration=r.iteration,
-            )
-        )
+      logging.info(
+          "Running %d benchmarks to try to hit %.f%% utilization",
+          len(self.benchmarks),
+          self.target_utilization,
+      )
+      logging.debug("Benchmark list: %s", ", ".join(self.benchmarks.keys()))
 
-    for cpu_id, w in self.workers.items():
-      logging.debug("Joining worker on CPU %d", cpu_id)
-      w.join()
+      logging.info("Start measuring for %d seconds", self.duration)
+      self._RunSchedulingLoop()
 
-    # Post-process benchmark results
-    self.PostProcessBenchmarkResults(benchmark_perf_counters)
+      logging.info("Shutting down all workers...")
+      # Collect all remaining results
+      for w in self.workers.values():
+        results = w.StopAndGetResults()
+        for r in results:
+          self.runtimes[r.benchmark].append(
+              BenchmarkMetrics(
+                  total_duration=r.duration,
+                  per_iteration_wall_time=r.bm_wall_time,
+                  per_iteration_cpu_time=r.bm_cpu_time,
+                  per_bm_run_iteration=r.iteration,
+              )
+          )
+
+      for cpu_id, w in self.workers.items():
+        logging.debug("Joining worker on CPU %d", cpu_id)
+        w.join()
+
+      # Post-process benchmark results
+      self.PostProcessBenchmarkResults(benchmark_perf_counters)
+
+    # TODO: generate the final reports

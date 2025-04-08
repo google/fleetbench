@@ -152,6 +152,21 @@ _HYPERTHREADING_MODE = flags.DEFINE_enum_class(
     " across sockets and hyperthreads.",
 )
 
+_REPETITIONS = flags.DEFINE_integer(
+    "repetitions",
+    1,
+    "Number of times to run the the entire framework. If asked to run for"
+    " multiple times, each run will share settings and the reported results"
+    " will be averaged.",
+    lower_bound=1,
+)
+
+_KEEP_RAW_DATA = flags.DEFINE_bool(
+    "keep_raw_data",
+    False,
+    "If true, the raw data will be kept in the temp directory.",
+)
+
 
 def main(argv: Sequence[str]) -> None:
   if len(argv) > 1:
@@ -181,7 +196,9 @@ def main(argv: Sequence[str]) -> None:
       cpu_affinity=_CPU_AFFINITY.value,
       utilization=target_utilization,
       duration=_DURATION.value,
-      temp_root=_TEMP_ROOT.value,
+      repetitions=_REPETITIONS.value,
+      temp_parent_root=_TEMP_ROOT.value,
+      keep_raw_data=_KEEP_RAW_DATA.value,
   )
 
   bench.SetWeights(
