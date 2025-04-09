@@ -506,7 +506,7 @@ ABSL_ATTRIBUTE_NOINLINE void FillStrings(StrTable* t, int n) {
 void BM_SWISSMAP_StrDestructor(benchmark::State& state) {
   int size = state.range(0);
   int capacity = state.range(1);
-  size_t batch_size = 2048 / (capacity + 1) + 1;
+  size_t batch_size = (capacity == 0) ? 16384 : (capacity <= 7) ? 512 : 128;
   while (state.KeepRunningBatch(batch_size)) {
     state.PauseTiming();
     std::vector<StrTable> tables(batch_size);
