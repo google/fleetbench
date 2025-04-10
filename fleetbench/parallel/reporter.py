@@ -14,14 +14,22 @@
 
 """This file supports reporting benchmark results and saves to a JSON file."""
 
+from collections.abc import Sequence
 import json
 import os
 from typing import Any
+from typing import TypeAlias
 
 from absl import logging
+import numpy as np
 import pandas as pd
 
 
+ContextInfo: TypeAlias = dict[str, Any]
+BenchmarkRuntimeInfo: TypeAlias = dict[str, Any]
+
+
+# TODO: b/408469060 - combine these two functions?
 def AggregateContext(input_dir: str) -> dict[str, Any]:
   """Iterates through all run files and aggregates "context" data.
 
@@ -72,6 +80,83 @@ def AggregateContext(input_dir: str) -> dict[str, Any]:
   if aggregated_data and load_avg_lists:
     avg_load_avg = [sum(x) / len(load_avg_lists) for x in zip(*load_avg_lists)]
     aggregated_data["load_avg"] = avg_load_avg
+
+  return aggregated_data
+
+
+def AggregateFinalContext(contexts: Sequence[ContextInfo]) -> ContextInfo:
+  """Aggregates the final context data from all repetitions.
+
+  We select the first context data as the final context data, and calculate the
+  average load_avg across all repetitions.
+
+  Args:
+    contexts: A list of context data from all repetitions.
+
+  Returns:
+    - aggregated_context (dict): The aggregated context data.
+  """
+
+  load_avg_lists = []
+  for context in contexts:
+    if "load_avg" in context:
+      load_avg_lists.append(context.pop("load_avg"))
+
+  result = contexts[0]
+  result["load_avg"] = [
+      sum(x) / len(load_avg_lists) for x in zip(*load_avg_lists)
+  ]
+  return result
+
+
+def AggregateFinalData(
+    data_list: list[BenchmarkRuntimeInfo],
+) -> list[BenchmarkRuntimeInfo]:
+  """Aggregates the final data from all repetitions.
+
+  Args:
+    data_list: A list of data dictionaries from all repetitions.
+
+  Returns:
+    - aggregated_data (list): The aggregated data, with benchmark results for
+      each benchmark.
+  """
+  data = {}
+
+  metrics = []
+  # Group the data by benchmark name
+  for data_dict in data_list:
+    for benchmark_name, benchmark_data in data_dict.items():
+      if benchmark_name not in data:
+        data[benchmark_name] = []
+      data[benchmark_name].append(benchmark_data)
+      if not metrics:
+        metrics = list(benchmark_data.keys())
+
+  if not metrics:
+    raise ValueError(
+        "No metric keys found in the data. Can't generate final report."
+    )
+
+  # Aggregate data for each metric
+  aggregated_data = []
+  for benchmark_name, benchmark_data_list in data.items():
+    cur_data = {}
+    for metric in metrics:
+      if metric == "name":
+        cur_data[metric] = benchmark_name
+      elif metric.endswith("_std"):
+        # Calculate the combined standard deviation such as wall_time_std,
+        # cpu_time_std, etc.
+        variances = [data[metric] ** 2 for data in benchmark_data_list]
+        total_variance = np.mean(variances)
+        cur_data[metric] = np.sqrt(total_variance)
+      else:
+        # Average the other metric values such as wall time, cpu time, etc.
+        cur_data[metric] = np.mean(
+            [data[metric] for data in benchmark_data_list]
+        )
+    aggregated_data.append(cur_data)
 
   return aggregated_data
 
@@ -132,8 +217,48 @@ def GenerateBenchmarkReport(
   return grouped_results
 
 
-def SaveBenchmarkResults(output_dir, df: pd.DataFrame) -> None:
-  """Saves benchmark results to a JSON file for predictiveness analysis."""
+def _SaveFile(
+    file_name: str, data: list[BenchmarkRuntimeInfo], context: ContextInfo
+) -> None:
+  """Saves benchmark results to a JSON file.
+
+  Args:
+    file_name: The name of the file to save the data to.
+    data: A list of dictionaries containing the benchmark results.
+    context: A dictionary containing the context information.
+
+  Returns:
+    None.
+
+  Raises:
+    IOError: An error occurred while writing the JSON data.
+    json.JSONDecodeError: An error occurred while decoding the JSON data.
+  """
+  try:
+    with open(file_name, "w") as json_file:
+      json.dump(
+          {"context": context, "benchmarks": data}, json_file, indent=4
+      )  # Serialize and write with indentation
+      logging.info("Summary results successfully written to %s", file_name)
+  except (IOError, json.JSONDecodeError) as e:
+    print(f"Error writing JSON data: {e}")
+
+
+def SaveBenchmarkResults(
+    output_dir, df: pd.DataFrame
+) -> tuple[ContextInfo, BenchmarkRuntimeInfo]:
+  """Saves benchmark results to a JSON file.
+
+  Args:
+    output_dir: The directory where the output files are stored.
+    df: A DataFrame of benchmark results.
+
+  Returns:
+    A tuple containing:
+      - context (dict): The aggregated context data.
+      - data (dict): The benchmark results, with benchmark name as keys and
+        benchmark data as values.
+  """
 
   file_name = os.path.join(output_dir, "results.json")
 
@@ -157,12 +282,56 @@ def SaveBenchmarkResults(output_dir, df: pd.DataFrame) -> None:
   data = df.reset_index().to_dict(orient="records")
 
   context = AggregateContext(output_dir)
+  _SaveFile(file_name, data, context)
 
-  try:
-    with open(file_name, "w") as json_file:
-      json.dump(
-          {"context": context, "benchmarks": data}, json_file, indent=4
-      )  # Serialize and write with indentation
-      logging.info("Summary results successfully written to %s", file_name)
-  except (IOError, json.JSONDecodeError) as e:
-    print(f"Error writing JSON data: {e}")
+  # The second return is a remapped version of the data, where the outer
+  # dictionary is keyed by benchmark name, and the inner dictionary contains
+  # the benchmark results. This is useful for aggregating results
+  # across multiple repetitions.
+  return context, {d["name"]: d for d in data}
+
+
+def GenerateFinalReport(
+    output_dir: str,
+    context_list: list[ContextInfo],
+    data_list: list[BenchmarkRuntimeInfo],
+    repetitions: int,
+) -> None:
+  """Generates a final report for the parallel benchmark run.
+
+  This function takes the output directory, a list of context dictionaries,
+  a list of data dictionaries, and the number of repetitions as input. It
+  aggregates the context and data from all repetitions, and saves the final
+  report to a JSON file.
+
+  Args:
+    output_dir: The directory where the output files are stored.
+    context_list: A list of dictionaries containing the context information for
+      each repetition.
+    data_list: A list of dictionaries containing the benchmark results for each
+      repetition.
+    repetitions: The number of repetitions of the benchmark.
+
+  Returns:
+    None.
+  """
+
+  output_file = os.path.join(output_dir, "results.json")
+  if repetitions == 1:
+    # we simply copy the single run report to the final report.
+    input_file = os.path.join(output_dir, "run_0", "results.json")
+    if os.path.exists(input_file):
+      with open(input_file, "r") as infile, open(output_file, "w") as outfile:
+        outfile.write(infile.read())
+    else:
+      logging.warning(
+          "Warning: results.json not found in %s",
+          os.path.join(output_dir, "run_0"),
+      )
+    return
+
+  context = AggregateFinalContext(context_list)
+  data = AggregateFinalData(data_list)
+  _SaveFile(output_file, data, context)
+
+  # TODO: b/408469060 - print the selected columns in the console report.

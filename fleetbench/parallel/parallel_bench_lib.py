@@ -20,6 +20,7 @@ import math
 import os
 import shutil
 import time
+from typing import Any
 
 from absl import logging
 import numpy as np
@@ -479,7 +480,9 @@ class ParallelBench:
         except OSError as e:
           logging.exception("Failed to remove %s: %s", file_path, e)
 
-  def PostProcessBenchmarkResults(self, benchmark_perf_counters: str) -> None:
+  def PostProcessBenchmarkResults(
+      self, benchmark_perf_counters: str
+  ) -> tuple[reporter.ContextInfo, reporter.BenchmarkRuntimeInfo]:
     """Generate benchmark reports and save results to a JSON file.
 
     If benchmark_perf_counters is specified, the report will include perf
@@ -489,16 +492,20 @@ class ParallelBench:
     Args:
       benchmark_perf_counters: A comma-separated list of performance counters to
         collect.
+
+    Returns:
+      A tuple containing the context and benchmark data dictionaries.
     """
 
     df = self.ConvertToDataFrame()
 
     perf_counter_df = self.GeneratePerfCounterDataFrame(benchmark_perf_counters)
     df = reporter.GenerateBenchmarkReport(df, perf_counter_df)
-    reporter.SaveBenchmarkResults(self.temp_root, df)
+    context, data = reporter.SaveBenchmarkResults(self.temp_root, df)
 
     if not self.keep_raw_data:
       self._RemoveRawData()
+    return context, data
 
   def Run(
       self,
@@ -507,6 +514,9 @@ class ParallelBench:
       benchmark_min_time: str = "",
   ):
     """Run benchmarks in parallel."""
+
+    context_list = []
+    data_list = []
 
     for i in range(self.repetitions):
       self.temp_root = os.path.join(self.temp_parent_root, f"run_{i}")
@@ -551,6 +561,10 @@ class ParallelBench:
         w.join()
 
       # Post-process benchmark results
-      self.PostProcessBenchmarkResults(benchmark_perf_counters)
+      context, data = self.PostProcessBenchmarkResults(benchmark_perf_counters)
+      context_list.append(context)
+      data_list.append(data)
 
-    # TODO: generate the final reports
+    reporter.GenerateFinalReport(
+        self.temp_parent_root, context_list, data_list, self.repetitions
+    )

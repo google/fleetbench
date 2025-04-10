@@ -57,7 +57,9 @@ class ParallelBenchTest(parameterized.TestCase):
   @mock.patch.object(run.Run, "Execute", autospec=True)
   @mock.patch.object(cpu, "Utilization", autospec=True)
   @mock.patch.object(reporter, "GenerateBenchmarkReport", autospec=True)
-  @mock.patch.object(reporter, "SaveBenchmarkResults", autospec=True)
+  @mock.patch.object(
+      reporter, "SaveBenchmarkResults", autospec=True, return_value=(None, None)
+  )
   @flagsaver.flagsaver(
       benchmark_dir=absltest.get_default_test_tmpdir(),
   )
@@ -91,7 +93,6 @@ class ParallelBenchTest(parameterized.TestCase):
     mock_utilization.side_effect = fake_utilization
 
     mock_generate_benchmark_report.return_value = pd.DataFrame()
-    mock_save_benchmark_results.return_value = None
 
     self.pb = parallel_bench_lib.ParallelBench(
         cpus=[0, 1],
@@ -121,16 +122,24 @@ class ParallelBenchTest(parameterized.TestCase):
       "PostProcessBenchmarkResults",
       autospec=True,
   )
+  @mock.patch.object(
+      reporter, "GenerateFinalReport", autospec=True, return_value=None
+  )
   @mock.patch.object(shutil, "rmtree", autospec=True)
   @mock.patch.object(os, "makedirs", autospec=True)
   def test_run_multiple_repetitions(
       self,
       mock_makedirs,
       mock_rmtree,
+      mock_generate_final_report,
       mock_post_process_benchmark_results,
       mock_run_scheduling_loop,
       mock_pre_run,
   ):
+    mock_post_process_benchmark_results.return_value = (
+        {"date": "2025-02-14", "load_avg": [1.0, 2.0, 3.0]},
+        {"col1": [1, 2]},
+    )
     self.pb.repetitions = 2
     self.pb.Run()
     self.assertEqual(mock_pre_run.call_count, 2)
@@ -138,6 +147,19 @@ class ParallelBenchTest(parameterized.TestCase):
     self.assertEqual(mock_post_process_benchmark_results.call_count, 2)
     self.assertEqual(mock_rmtree.call_count, 2)
     self.assertEqual(mock_makedirs.call_count, 2)
+    self.assertEqual(mock_generate_final_report.call_count, 1)
+
+    args = mock_generate_final_report.call_args[0]
+    self.assertEqual(args[0], self.pb.temp_parent_root)
+    self.assertEqual(
+        args[1],
+        [
+            {"date": "2025-02-14", "load_avg": [1.0, 2.0, 3.0]},
+            {"date": "2025-02-14", "load_avg": [1.0, 2.0, 3.0]},
+        ],
+    )
+    self.assertEqual(args[2], [{"col1": [1, 2]}, {"col1": [1, 2]}])
+    self.assertEqual(args[3], 2)
 
   def test_set_extra_benchmark_flags(self):
     self.assertEqual(
@@ -288,6 +310,7 @@ class ParallelBenchTest(parameterized.TestCase):
         {"Benchmark": "test_benchmark1", "WallTimes": 10, "CPUTimes": 10},
     ])
 
+    mock_save_benchmark_results.return_value = (None, None)
     self.pb.PostProcessBenchmarkResults("instructions,cycles")
     mock_generate_perf_counter_dataframe.assert_called_once()
     mock_generate_benchmark_report.assert_called_once()

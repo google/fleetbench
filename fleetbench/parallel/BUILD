@@ -71,6 +71,7 @@ py_library(
     srcs = ["reporter.py"],
     deps = [
         "@com_google_absl_py//absl/logging",
+        requirement("numpy"),
         requirement("pandas"),
     ],
 )
