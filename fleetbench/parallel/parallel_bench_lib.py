@@ -35,16 +35,15 @@ from fleetbench.parallel import worker
 
 
 def _SetExtraBenchmarkFlags(
-    benchmark_perf_counters: str,
+    benchmark_perf_counters: list[str],
     benchmark_repetitions: int,
     benchmark_min_time: str,
 ) -> list[str]:
   """Set extra benchmark flags."""
   benchmark_flags = []
   if benchmark_perf_counters:
-    benchmark_flags.append(
-        f"--benchmark_perf_counters={benchmark_perf_counters}"
-    )
+    perf_counters_str = ",".join(benchmark_perf_counters)
+    benchmark_flags.append(f"--benchmark_perf_counters={perf_counters_str}")
   if benchmark_min_time:
     benchmark_flags.append(f"--benchmark_min_time={benchmark_min_time}")
   if benchmark_repetitions:
@@ -82,6 +81,8 @@ class ParallelBench:
     temp_root: Child directory to store results in. It is in the format of
       "temp_parent_root/run_{repetition_id}".
     keep_raw_data: Whether to keep the raw results from each run.
+    perf_counters: A list of performance counters to collect during benchmark
+      run.
     runtimes: Dictionary of benchmark name -> history of benchmark runtimes.
     workers: Dictionary of CPU ID -> Worker thread.
     results: List of results from all runs.
@@ -90,7 +91,6 @@ class ParallelBench:
     target_ratios: List of target ratios for each benchmark. This is used to
       calculate the probability of each benchmark being selected, and determined
       by the benchmark weights.
-    keep_raw_data: Whether to keep the raw results from each run.
     first_run: Boolean indicating if this is the first run. We use this to
       determine if we can randomly select benchmarks or if we need to run all
       benchmarks at least once.
@@ -105,6 +105,7 @@ class ParallelBench:
       repetitions: int,
       temp_parent_root: str,
       keep_raw_data: bool,
+      benchmark_perf_counters: str,
   ):
     """Initialize the parallel benchmark runner."""
 
@@ -123,6 +124,9 @@ class ParallelBench:
     self.temp_parent_root = temp_parent_root
     self.temp_root = ""
     self.keep_raw_data = keep_raw_data
+    self.perf_counters: list[str] = (
+        benchmark_perf_counters.split(",") if benchmark_perf_counters else []
+    )
     self.runtimes: dict[str, list[BenchmarkMetrics]] = {}
     self.workers: dict[int, worker.Worker] = {}
     self.utilization_samples: list[tuple[pd.Timestamp, float]] = []
@@ -161,7 +165,6 @@ class ParallelBench:
 
   def _PreRun(
       self,
-      benchmark_perf_counters: str,
       benchmark_repetitions: int,
       benchmark_min_time: str,
       repetition: int,
@@ -171,7 +174,7 @@ class ParallelBench:
     logging.info("Initializing benchmarks and worker threads...")
 
     benchmark_flags = _SetExtraBenchmarkFlags(
-        benchmark_perf_counters, benchmark_repetitions, benchmark_min_time
+        self.perf_counters, benchmark_repetitions, benchmark_min_time
     )
 
     if benchmark_flags:
@@ -395,23 +398,15 @@ class ParallelBench:
               )
           )
 
-  def GeneratePerfCounterDataFrame(
-      self, benchmark_perf_counters: str
-  ) -> pd.DataFrame | None:
+  def GeneratePerfCounterDataFrame(self) -> pd.DataFrame | None:
     """Generates a DataFrame of performance counter results for each benchmark.
-
-    Args:
-      benchmark_perf_counters: A comma-separated list of performance counters to
-        collect.
 
     Returns:
       A DataFrame of performance counter results for each benchmark, or None if
       no performance counters were specified.
     """
-    if not benchmark_perf_counters:
+    if not self.perf_counters:
       return None
-
-    counters = benchmark_perf_counters.split(",")
 
     performance_data = []
     for filename in os.listdir(self.temp_root):
@@ -426,7 +421,7 @@ class ParallelBench:
       entry = {
           "Benchmark": benchmark_result["name"],
       }
-      for counter in counters:
+      for counter in self.perf_counters:
         if counter in benchmark_result:
           entry[counter] = benchmark_result[counter]
       performance_data.append(entry)
@@ -438,7 +433,7 @@ class ParallelBench:
     # Group the results by benchmark and counter, and calculate the mean of each
     # counter for each benchmark.
     aggregations = {}
-    for counter in counters:
+    for counter in self.perf_counters:
       aggregations[counter] = pd.NamedAgg(column=counter, aggfunc=np.mean)
 
     perf_counters_results = (
@@ -481,25 +476,20 @@ class ParallelBench:
           logging.exception("Failed to remove %s: %s", file_path, e)
 
   def PostProcessBenchmarkResults(
-      self, benchmark_perf_counters: str
+      self,
   ) -> tuple[reporter.ContextInfo, reporter.BenchmarkRuntimeInfo]:
     """Generate benchmark reports and save results to a JSON file.
 
     If benchmark_perf_counters is specified, the report will include perf
     counters for each benchmark. We will also check to see if we want to remove
     the raw data.
-
-    Args:
-      benchmark_perf_counters: A comma-separated list of performance counters to
-        collect.
-
     Returns:
       A tuple containing the context and benchmark data dictionaries.
     """
 
     df = self.ConvertToDataFrame()
 
-    perf_counter_df = self.GeneratePerfCounterDataFrame(benchmark_perf_counters)
+    perf_counter_df = self.GeneratePerfCounterDataFrame()
     df = reporter.GenerateBenchmarkReport(df, perf_counter_df)
     context, data = reporter.SaveBenchmarkResults(self.temp_root, df)
 
@@ -509,7 +499,6 @@ class ParallelBench:
 
   def Run(
       self,
-      benchmark_perf_counters: str = "",
       benchmark_repetitions: int = 0,
       benchmark_min_time: str = "",
   ):
@@ -526,7 +515,6 @@ class ParallelBench:
       print(f"Running trial {i}.......")
 
       self._PreRun(
-          benchmark_perf_counters,
           benchmark_repetitions,
           benchmark_min_time,
           i,
@@ -561,7 +549,7 @@ class ParallelBench:
         w.join()
 
       # Post-process benchmark results
-      context, data = self.PostProcessBenchmarkResults(benchmark_perf_counters)
+      context, data = self.PostProcessBenchmarkResults()
       context_list.append(context)
       data_list.append(data)
 

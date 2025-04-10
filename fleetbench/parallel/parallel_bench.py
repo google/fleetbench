@@ -199,6 +199,7 @@ def main(argv: Sequence[str]) -> None:
       repetitions=_REPETITIONS.value,
       temp_parent_root=_TEMP_ROOT.value,
       keep_raw_data=_KEEP_RAW_DATA.value,
+      benchmark_perf_counters=_BENCHMARK_PERF_COUNTERS.value,
   )
 
   bench.SetWeights(
@@ -210,7 +211,6 @@ def main(argv: Sequence[str]) -> None:
   )
 
   bench.Run(
-      benchmark_perf_counters=_BENCHMARK_PERF_COUNTERS.value,
       benchmark_repetitions=_BENCHMARK_REPETITIONS.value,
       benchmark_min_time=_BENCHMARK_MIN_TIME.value,
   )

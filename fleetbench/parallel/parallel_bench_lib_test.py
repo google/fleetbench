@@ -43,6 +43,7 @@ class ParallelBenchTest(parameterized.TestCase):
         repetitions=1,
         temp_parent_root=absltest.get_default_test_tmpdir(),
         keep_raw_data=True,
+        benchmark_perf_counters="",
     )
 
   def tearDown(self):
@@ -102,6 +103,7 @@ class ParallelBenchTest(parameterized.TestCase):
         repetitions=1,
         temp_parent_root=absltest.get_default_test_tmpdir(),
         keep_raw_data=True,
+        benchmark_perf_counters="",
     )
     self.pb.SetWeights(
         benchmark_target="fake_bench",
@@ -164,7 +166,7 @@ class ParallelBenchTest(parameterized.TestCase):
   def test_set_extra_benchmark_flags(self):
     self.assertEqual(
         parallel_bench_lib._SetExtraBenchmarkFlags(
-            benchmark_perf_counters="instructions",
+            benchmark_perf_counters=["instructions"],
             benchmark_repetitions=10,
             benchmark_min_time="10s",
         ),
@@ -177,12 +179,12 @@ class ParallelBenchTest(parameterized.TestCase):
 
     self.assertEqual(
         parallel_bench_lib._SetExtraBenchmarkFlags(
-            benchmark_perf_counters="instructions",
+            benchmark_perf_counters=["instructions", "cycles"],
             benchmark_repetitions=0,
             benchmark_min_time="",
         ),
         [
-            "--benchmark_perf_counters=instructions",
+            "--benchmark_perf_counters=instructions,cycles",
         ],
     )
 
@@ -274,8 +276,8 @@ class ParallelBenchTest(parameterized.TestCase):
     with open(os.path.join(self.pb.temp_root, "run_3"), "w") as f:
       json.dump(mock_data3, f)
 
-    counters = "instructions,cycles"
-    df = self.pb.GeneratePerfCounterDataFrame(counters)
+    self.pb.perf_counters = ["instructions", "cycles"]
+    df = self.pb.GeneratePerfCounterDataFrame()
 
     self.assertIsInstance(df, pd.DataFrame)
     self.assertLen(df, 2)  # There are two benchmarks
@@ -311,7 +313,7 @@ class ParallelBenchTest(parameterized.TestCase):
     ])
 
     mock_save_benchmark_results.return_value = (None, None)
-    self.pb.PostProcessBenchmarkResults("instructions,cycles")
+    self.pb.PostProcessBenchmarkResults()
     mock_generate_perf_counter_dataframe.assert_called_once()
     mock_generate_benchmark_report.assert_called_once()
     mock_save_benchmark_results.assert_called_once()
