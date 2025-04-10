@@ -320,6 +320,98 @@ class ReportedTest(absltest.TestCase):
     }
     self.assertEqual(remapped_data, expected_remapped_data)
 
+  def test_generate_final_report_multiple_repetitions(self):
+    output_dir = self.create_tempdir()
+    context_list = [{"key": "value1"}, {"key": "value2"}]
+    data_list = [
+        {"benchmark_1": {"metric_1": 10}},
+        {"benchmark_1": {"metric_1": 12}},
+    ]
+    repetitions = 2
+
+    mock_aggregate_final_context = self.enter_context(
+        mock.patch.object(
+            reporter,
+            "AggregateFinalContext",
+            return_value={"key": "final_value"},
+        )
+    )
+    mock_aggregate_final_data = self.enter_context(
+        mock.patch.object(
+            reporter,
+            "AggregateFinalData",
+            return_value=[{
+                "name": "benchmark_1",
+                "Count": 2,
+                "real_time": 11.0,
+                "cpu_time": 21.0,
+            }],
+        )
+    )
+    mock_save_file = self.enter_context(
+        mock.patch.object(reporter, "_SaveFile")
+    )
+
+    # Capture the output of print
+    with mock.patch("builtins.print") as mock_print:
+      reporter.GenerateFinalReport(
+          output_dir.full_path, context_list, data_list, repetitions
+      )
+
+    mock_aggregate_final_context.assert_called_once_with(context_list)
+    mock_aggregate_final_data.assert_called_once_with(data_list)
+    mock_print.assert_called_once()
+    mock_save_file.assert_called_once_with(
+        os.path.join(output_dir.full_path, "results.json"),
+        [{
+            "name": "benchmark_1",
+            "Count": 2,
+            "real_time": 11.0,
+            "cpu_time": 21.0,
+        }],
+        {"key": "final_value"},
+    )
+    # Check the output of print
+    keywords = ["name", "Count", "real_time", "cpu_time"]
+    for keyword in keywords:
+      self.assertIn(keyword, mock_print.call_args.args[0])
+
+    self.assertIn(
+        "benchmark_1",
+        mock_print.call_args.args[0],
+    )
+
+  def test_generate_final_report_single_repetition(self):
+    output_dir = self.create_tempdir()
+    context_list = [{"key": "value1"}]
+    data_list = [{"benchmark_1": {"metric_1": 10}}]
+    repetitions = 1
+
+    # Create a dummy results.json file in the run_0 directory
+    run_0_dir = os.path.join(output_dir.full_path, "run_0")
+    os.makedirs(run_0_dir)
+    input_content = (
+        '{"context": {"key": "value"}, "benchmarks": [{"name": "benchmark_1",'
+        ' "metric_1": 10}]}'
+    )
+    with open(os.path.join(run_0_dir, "results.json"), "w") as f:
+      f.write(input_content)
+
+    reporter.GenerateFinalReport(
+        output_dir.full_path, context_list, data_list, repetitions
+    )
+
+    # Check if the results.json file was copied to the output directory
+    self.assertTrue(
+        os.path.exists(os.path.join(output_dir.full_path, "results.json"))
+    )
+    with open(os.path.join(output_dir.full_path, "results.json"), "r") as f:
+      output_content = f.read()
+      self.assertEqual(
+          output_content,
+          input_content,
+      )
+
 
 if __name__ == "__main__":
   absltest.main()

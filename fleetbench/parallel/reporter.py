@@ -302,7 +302,7 @@ def GenerateFinalReport(
   This function takes the output directory, a list of context dictionaries,
   a list of data dictionaries, and the number of repetitions as input. It
   aggregates the context and data from all repetitions, and saves the final
-  report to a JSON file.
+  report to a JSON file. It also prints the final report to the console.
 
   Args:
     output_dir: The directory where the output files are stored.
@@ -334,4 +334,14 @@ def GenerateFinalReport(
   data = AggregateFinalData(data_list)
   _SaveFile(output_file, data, context)
 
-  # TODO: b/408469060 - print the selected columns in the console report.
+  df = pd.DataFrame(data)
+  selected_columns = [
+      "name",
+      "Count",
+      "real_time",
+      "cpu_time",
+  ]
+
+  # TODO: b/408469060 - Add perf_counter to the final report.
+
+  print(df[selected_columns].to_string(index=False))
