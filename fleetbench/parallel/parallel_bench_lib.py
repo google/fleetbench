@@ -554,5 +554,9 @@ class ParallelBench:
       data_list.append(data)
 
     reporter.GenerateFinalReport(
-        self.temp_parent_root, context_list, data_list, self.repetitions
+        self.temp_parent_root,
+        context_list,
+        data_list,
+        self.repetitions,
+        self.perf_counters,
     )

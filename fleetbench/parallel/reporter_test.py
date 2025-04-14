@@ -355,7 +355,7 @@ class ReportedTest(absltest.TestCase):
     # Capture the output of print
     with mock.patch("builtins.print") as mock_print:
       reporter.GenerateFinalReport(
-          output_dir.full_path, context_list, data_list, repetitions
+          output_dir.full_path, context_list, data_list, repetitions, []
       )
 
     mock_aggregate_final_context.assert_called_once_with(context_list)
@@ -381,7 +381,7 @@ class ReportedTest(absltest.TestCase):
         mock_print.call_args.args[0],
     )
 
-  def test_generate_final_report_single_repetition(self):
+  def test_generate_final_report_single_repetition_perf_counters(self):
     output_dir = self.create_tempdir()
     context_list = [{"key": "value1"}]
     data_list = [{"benchmark_1": {"metric_1": 10}}]
@@ -392,13 +392,13 @@ class ReportedTest(absltest.TestCase):
     os.makedirs(run_0_dir)
     input_content = (
         '{"context": {"key": "value"}, "benchmarks": [{"name": "benchmark_1",'
-        ' "metric_1": 10}]}'
+        ' "metric_1": 10, "cycles": 100}]}'
     )
     with open(os.path.join(run_0_dir, "results.json"), "w") as f:
       f.write(input_content)
 
     reporter.GenerateFinalReport(
-        output_dir.full_path, context_list, data_list, repetitions
+        output_dir.full_path, context_list, data_list, repetitions, ["cycles"]
     )
 
     # Check if the results.json file was copied to the output directory

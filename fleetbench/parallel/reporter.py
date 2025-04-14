@@ -197,23 +197,13 @@ def GenerateBenchmarkReport(
       "Mean_Iterations"
   ].astype(int)
 
-  # We only show the following columns in the console report.
-  # More metrics can be founded in the dumped JSON file.
-  selected_columns = [
-      "Count",
-      "Mean_Wall_Time",
-      "Mean_CPU_Time",
-  ]
-
   # Combine perf_counter_df and benchmark run results on the same
   # "benchmark" entry.
   if perf_counter_df is not None:
     grouped_results = pd.merge(
         grouped_results, perf_counter_df, on="Benchmark", how="left"
     )
-    selected_columns.extend(perf_counter_df.columns.tolist())
 
-  print(grouped_results[selected_columns].to_string())
   return grouped_results
 
 
@@ -296,6 +286,7 @@ def GenerateFinalReport(
     context_list: list[ContextInfo],
     data_list: list[BenchmarkRuntimeInfo],
     repetitions: int,
+    perf_counters: Sequence[str],
 ) -> None:
   """Generates a final report for the parallel benchmark run.
 
@@ -311,6 +302,8 @@ def GenerateFinalReport(
     data_list: A list of dictionaries containing the benchmark results for each
       repetition.
     repetitions: The number of repetitions of the benchmark.
+    perf_counters: A list of performance counters to include in the final
+      report.
 
   Returns:
     None.
@@ -342,6 +335,6 @@ def GenerateFinalReport(
       "cpu_time",
   ]
 
-  # TODO: b/408469060 - Add perf_counter to the final report.
+  selected_columns.extend(perf_counters)
 
   print(df[selected_columns].to_string(index=False))
