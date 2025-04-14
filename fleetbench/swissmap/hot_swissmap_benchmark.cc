@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -50,8 +51,11 @@ void FindMiss_Hot(benchmark::State& state) {
   static constexpr size_t kOpsPerKey = 512;
 
   auto& sc = SetsCache<Set>::GetInstance();
-  auto& sets = sc.GetGeneratedSets(state.range(0), kMinTotalKeyCount,
-                                   static_cast<Density>(state.range(1)));
+  // If kLookup is false, we need to create a copy of the cached sets vector
+  // because the benchmark loop modifies it.
+  std::conditional_t<kLookup, std::vector<Set>&, std::vector<Set>> sets =
+      sc.GetGeneratedSets(state.range(0), kMinTotalKeyCount,
+                          static_cast<Density>(state.range(1)));
   const size_t keys_per_set = kMinTotalKeyCount / sets.size();
 
   while (state.KeepRunningBatch(sets.size() * keys_per_set * kOpsPerKey)) {
