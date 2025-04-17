@@ -42,12 +42,15 @@ static void FindMiss_Cold(benchmark::State& state) {
   static constexpr size_t kMinTotalBytes = 256 << 20;
 
   auto& sc = SetsCache<Set>::GetInstance();
+  std::vector<Set>& cached_sets =
+      sc.GetGeneratedSets(state.range(0), kMinTotalBytes / kValueSizeT,
+                          static_cast<Density>(state.range(1)));
+  std::vector<uint32_t>& keys = sc.GetNonExistingKeys(cached_sets);
+
   // If kLookup is false, we need to create a copy of the cached sets vector
   // because the benchmark loop modifies it.
   std::conditional_t<kLookup, std::vector<Set>&, std::vector<Set>> sets =
-      sc.GetGeneratedSets(state.range(0), kMinTotalBytes / kValueSizeT,
-                          static_cast<Density>(state.range(1)));
-  auto& keys = sc.GetNonExistingKeys(sets);
+      cached_sets;
 
   int warmup = 5;
   while (true) {
