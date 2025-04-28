@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -94,7 +95,11 @@ std::string HostPortString(absl::string_view host, uint16_t port) {
 std::unique_ptr<GRPCServer> CreateAndStartServer(
     std::vector<std::string> ports, int32_t workers, bool compress,
     bool checksum, std::string logstats_output_path,
-    std::string resp_delay_us_dist, absl::string_view program) {
+    std::string resp_delay_us_dist, absl::string_view program,
+    std::vector<int>* selected_ports) {
+  CHECK(selected_ports == nullptr || selected_ports->size() == ports.size())
+      << "selected_ports must be nullptr, or have the same size as ports";
+
   // First parse the distributions.
   fleetbench::rpc::DistributionArgs resp_delay_us_dist_args =
       ParseDistributionArgs(resp_delay_us_dist, "<Response delay distribution>",
@@ -102,7 +107,8 @@ std::unique_ptr<GRPCServer> CreateAndStartServer(
 
   grpc::ServerBuilder builder;
 
-  for (const auto& port_str : ports) {
+  for (int i = 0; i < ports.size(); ++i) {
+    std::string& port_str = ports[i];
     if (port_str.empty()) {
       continue;
     }
@@ -112,8 +118,9 @@ std::unique_ptr<GRPCServer> CreateAndStartServer(
       continue;
     }
 
+    int* selected_port = selected_ports ? &(*selected_ports)[i] : nullptr;
     builder.AddListeningPort(HostPortString("::", port),
-                             grpc::InsecureServerCredentials());
+                             grpc::InsecureServerCredentials(), selected_port);
   }
 
   fleetbench::rpc::GRPCServerOptions opts;

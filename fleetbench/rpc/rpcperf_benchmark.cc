@@ -15,6 +15,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
@@ -37,18 +38,26 @@ void BM_Rpc(benchmark::State &state, absl::string_view program) {
   CHECK(fleetbench::rpc::kPrograms->count(program))
       << "Invalid program name \"" << program << "\" provided to benchmark";
 
+  // Requesting port 0 causes the OS to select a random unused port.
+  std::vector<std::string> ports = {"0"};
+  std::vector<int> selected_ports(ports.size());
+
   std::unique_ptr<fleetbench::rpc::GRPCServer> server =
       fleetbench::rpc::CreateAndStartServer(
-          /*ports=*/{"10000"}, /*workers=*/1, /*compress=*/false,
+          /*ports=*/ports, /*workers=*/1, /*compress=*/false,
           /*checksum=*/false, /*logstats_output_path=*/"",
-          /*resp_delay_us_dist=*/"", /*program=*/program);
+          /*resp_delay_us_dist=*/"", /*program=*/program,
+          /*selected_ports=*/&selected_ports);
+
+  std::vector<std::string> peers = {
+      absl::StrCat("localhost:", selected_ports[0])};
 
   absl::Mutex keep_running_mtx;
   std::unique_ptr<fleetbench::rpc::GRPCClient> client =
       fleetbench::rpc::CreateAndStartClient(
           /*max_outstanding_rpcs=*/1, /*compress=*/false,
           /*checksum=*/false, /*skip_loopback=*/false,
-          /*peers=*/{"localhost:10000"}, /*max_peers=*/-1,
+          /*peers=*/peers, /*max_peers=*/-1,
           /*connections_per_peer=*/1, /*logstats_output_path=*/"",
           /*req_delay_us_dist=*/"", /*program=*/program,
           /*keep_running=*/[&state, &keep_running_mtx]() {

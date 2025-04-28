@@ -30,7 +30,8 @@ namespace fleetbench::rpc {
 std::unique_ptr<GRPCServer> CreateAndStartServer(
     std::vector<std::string> ports, int32_t workers, bool compress,
     bool checksum, std::string logstats_output_path,
-    std::string resp_delay_us_dist, absl::string_view program);
+    std::string resp_delay_us_dist, absl::string_view program,
+    std::vector<int>* selected_ports = nullptr);
 
 std::unique_ptr<GRPCClient> CreateAndStartClient(
     int32_t max_outstanding_rpcs, bool compress, bool checksum,
