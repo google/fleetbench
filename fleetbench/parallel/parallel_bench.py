@@ -27,10 +27,11 @@ from absl import app
 from absl import flags
 from absl import logging
 
+# pylint:disable=line-too-long
 from fleetbench.parallel import cpu
 from fleetbench.parallel import parallel_bench_lib
 from fleetbench.parallel import weights
-
+# pylint:enable=line-too-long
 
 _CPU_AFFINITY = flags.DEFINE_bool(
     "cpu_affinity", True, "Bind each worker to a single CPU."
