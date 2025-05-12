@@ -37,10 +37,11 @@ namespace fleetbench {
 
 using ::benchmark::DoNotOptimize;
 
-// Helper function used to implement two similar benchmarks that the given input
-// key is not present in the set.
-template <template <class...> class SetT, size_t kValueSizeT, bool kLookup>
-void FindMiss_Hot(benchmark::State& state) {
+// Measures the time it takes to `find` a non-existent element.
+//
+// assert(set.find(key) == set.end());
+template <template <class...> class SetT, size_t kValueSizeT>
+static void BM_SWISSMAP_FindMiss_Hot(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
 
   // The larger this value, the less the results will depend on randomness and
@@ -51,11 +52,8 @@ void FindMiss_Hot(benchmark::State& state) {
   static constexpr size_t kOpsPerKey = 512;
 
   auto& sc = SetsCache<Set>::GetInstance();
-  // If kLookup is false, we need to create a copy of the cached sets vector
-  // because the benchmark loop modifies it.
-  std::conditional_t<kLookup, std::vector<Set>&, std::vector<Set>> sets =
-      sc.GetGeneratedSets(state.range(0), kMinTotalKeyCount,
-                          static_cast<Density>(state.range(1)));
+  std::vector<Set>& sets = sc.GetGeneratedSets(
+      state.range(0), kMinTotalKeyCount, static_cast<Density>(state.range(1)));
   const size_t keys_per_set = kMinTotalKeyCount / sets.size();
 
   while (state.KeepRunningBatch(sets.size() * keys_per_set * kOpsPerKey)) {
@@ -65,33 +63,56 @@ void FindMiss_Hot(benchmark::State& state) {
         for (size_t j = 0; j != kOpsPerKey; ++j) {
           DoNotOptimize(set);
           DoNotOptimize(key);
-          if (kLookup) {
-            auto res = set.find(key);
-            DoNotOptimize(res);
-          } else {
-            auto res = set.insert(key);
-            DoNotOptimize(res);
-          }
+          auto res = set.find(key);
+          DoNotOptimize(res);
         }
       }
     }
   }
 }
 
-// Measures the time it takes to `find` an existent element.
-//
-// assert(set.find(key) == set.end());
-template <template <class...> class SetT, size_t kValueSizeT>
-static void BM_SWISSMAP_FindMiss_Hot(benchmark::State& state) {
-  FindMiss_Hot<SetT, kValueSizeT, true>(state);
-}
-
-// Measures the time it takes to `insert` an existent element.
+// Measures the time it takes to `insert` a non-existent element.
 //
 //  assert(set.insert(key).second);
 template <template <class...> class SetT, size_t kValueSizeT>
 static void BM_SWISSMAP_InsertMiss_Hot(benchmark::State& state) {
-  FindMiss_Hot<SetT, kValueSizeT, false>(state);
+  using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
+
+  // The larger this value, the less the results will depend on randomness and
+  // the longer the benchmark will run.
+  static constexpr size_t kMinTotalKeyCount = 64 << 10;
+
+  auto& sc = SetsCache<Set>::GetInstance();
+  // We need to create a copy of the cached sets vector
+  // because the benchmark loop modifies it.
+  std::vector<Set> sets = sc.GetGeneratedSets(
+      state.range(0), kMinTotalKeyCount, static_cast<Density>(state.range(1)));
+  const size_t keys_per_set = kMinTotalKeyCount / sets.size();
+
+  std::vector<uint32_t> keys;
+  keys.resize(keys_per_set);
+  for (uint32_t& key : keys) key = RandomNonexistent();
+
+  while (state.KeepRunningBatch(sets.size() * keys_per_set)) {
+    for (auto& set : sets) {
+      for (uint32_t key : keys) {
+        DoNotOptimize(set);
+        DoNotOptimize(key);
+        auto res = set.insert(key);
+        DoNotOptimize(res);
+      }
+    }
+
+    // Since we are using the same set for all iterations, we need to reset it
+    // to avoid `InsertHit` behavior.
+    state.PauseTiming();
+    for (auto& set : sets) {
+      for (uint32_t& key : keys) {
+        set.erase(key);
+      }
+    }
+    state.ResumeTiming();
+  }
 }
 
 // Helper function used to implement two similar benchmarks defined below that
