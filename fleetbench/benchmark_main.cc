@@ -14,6 +14,9 @@
 
 #include <stdlib.h>
 
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <string>
 #include <thread>
@@ -26,6 +29,9 @@
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
 #include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/common/common.h"
 #include "fleetbench/dynamic_registrar.h"
@@ -37,6 +43,43 @@ ABSL_FLAG(bool, prevent_numa_migrations, true,
           "CPU affinity to the intersection of the affinity at the start of the"
           " benchmark and the CPUs in the current NUMA node at the start of the"
           " benchmark, and limits memory allocations to this NUMA node.");
+
+void CheckMemoryLimit() {
+  // Try to detect memory limit via cgroup and warn if the limit is too low.
+  // This may provide a clue to the user about a potential OOM death.
+  const std::filesystem::path cgroup_path = "/proc/self/cgroup";
+  std::ifstream cgroup_file(cgroup_path);
+  std::filesystem::path memory_cgroup;
+  for (std::string line; std::getline(cgroup_file, line);) {
+    if (!absl::StrContains(line, "memory")) {
+      continue;
+    }
+    std::vector<absl::string_view> fields = absl::StrSplit(line, ':');
+    if (fields.size() > 1) {
+      memory_cgroup = fields.back();
+      LOG(INFO) << "mem cgroup is " << memory_cgroup;
+    }
+  }
+  cgroup_file.close();
+  if (memory_cgroup.empty()) {
+    LOG(INFO) << "Did not find memory cgroup";
+    return;
+  }
+  std::filesystem::path cgroup_root("/sys/fs/cgroup");
+  std::filesystem::path memory_limit_path = cgroup_root;
+  memory_limit_path += memory_cgroup / "memory.limit_in_bytes";
+  std::ifstream memory_limit_file(memory_limit_path);
+  if (memory_limit_file.good()) {
+    uint64_t memory_limit = 0;
+    memory_limit_file >> memory_limit;
+    if (memory_limit < 2'000'000'000) {
+      LOG(WARNING) << "cgroup memory limit is low: "
+                   << memory_limit / 1024 / 1024 << "MiB.";
+    }
+  } else {
+    LOG(INFO) << "Couldn't read memory limit " << memory_limit_path;
+  }
+}
 
 int main(int argc, char* argv[]) {
   benchmark::Initialize(&argc, argv);
@@ -83,6 +126,8 @@ int main(int argc, char* argv[]) {
     numa_set_membind(node_mask);
     numa_free_nodemask(node_mask);
   }
+
+  CheckMemoryLimit();
 
   if (benchmark::GetBenchmarkFilter().empty() ||
       benchmark::GetBenchmarkFilter() == "default") {
