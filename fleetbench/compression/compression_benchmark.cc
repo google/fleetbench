@@ -220,7 +220,8 @@ static void BM_Compress(benchmark::State& state,
   std::vector<std::string> decompressed(corpora.size());
 
   size_t batch_size = ComputeTotalNumChars(corpora);
-  while (state.KeepRunningBatch(batch_size)) {
+  int64_t warmup = 1;
+  while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
     //  Compress file
     for (size_t i = 0; i < corpora.size(); i++) {
       auto res = compressor->Compress(corpora[i], &compressed[i]);
@@ -267,7 +268,8 @@ static void BM_Decompress(benchmark::State& state,
   }
 
   size_t batch_size = ComputeTotalNumChars(corpora);
-  while (state.KeepRunningBatch(batch_size)) {
+  int64_t warmup = 1;
+  while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
     for (size_t i = 0; i < compressed.size(); i++) {
       auto res = compressor->Decompress(compressed[i], &decompressed[i]);
       benchmark::DoNotOptimize(res);
