@@ -356,11 +356,12 @@ class alignas(kSize < 8 ? 4 : 8) Value : private Ballast<kSize - 4> {
   uint32_t value_;
 };
 
-// Use a zero cost hash function. The purpose of this benchmark is to focus on
+// Use a low cost hash function. The purpose of this benchmark is to focus on
 // the implementations of the containers, not the quality or speed of their hash
-// functions.
+// functions. We can't use identity hash function with random 32-bit keys
+// because then the high bits of the hashes would be always 0.
 struct Hash {
-  size_t operator()(size_t x) const { return x; }
+  size_t operator()(size_t x) const { return x ^ (x << 32); }
 };
 
 struct Eq {
