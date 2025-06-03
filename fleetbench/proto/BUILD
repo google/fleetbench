@@ -3,17 +3,44 @@ load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
 
 package(default_visibility = ["//visibility:private"])
 
+NUM_MESSAGES = 10
+
 [proto_library(
     name = "Message%d_proto" % id,
     testonly = True,
     srcs = ["Message%d.proto" % id],
-) for id in range(0, 10)]
+) for id in range(0, NUM_MESSAGES)]
+
+cc_library(
+    name = "receiver",
+    testonly = True,
+    hdrs = ["receiver.h"],
+    deps = [
+        "@com_google_absl//absl/strings:cord",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_benchmark//:benchmark",
+    ],
+)
 
 [cc_proto_library(
     name = "Message%d_cc_proto" % id,
     testonly = True,
     deps = [":Message%d_proto" % id],
-) for id in range(0, 10)]
+) for id in range(0, NUM_MESSAGES)]
+
+[cc_library(
+    name = "access_message_%d" % id,
+    testonly = True,
+    srcs = ["access_message%d.cc" % id],
+    hdrs = [
+        "access_message%d.h" % id,
+    ],
+    deps = [
+        ":Message%d_cc_proto" % id,
+        ":receiver",
+        "@com_google_absl//absl/log:check",
+    ],
+) for id in range(0, NUM_MESSAGES)]
 
 cc_library(
     name = "proto_benchmark_lib",
@@ -22,12 +49,16 @@ cc_library(
         "benchmark.cc",
         "lifecycle.cc",
     ],
-    hdrs = ["access_message%d.h" % id for id in range(0, 10)] + [
-        "lifecycle.h",
-        "receiver.h",
-    ],
+    hdrs = ["lifecycle.h"],
     visibility = ["//fleetbench:__pkg__"],
-    deps = [":Message%d_cc_proto" % id for id in range(0, 10)] + [
+    deps = [
+        ":Message%d_cc_proto" % id
+        for id in range(0, NUM_MESSAGES)
+    ] + [
+        ":access_message_%d" % id
+        for id in range(0, NUM_MESSAGES)
+    ] + [
+        ":receiver",
         "//fleetbench:dynamic_registrar",
         "//fleetbench:productivity_reporter",
         "//fleetbench/common",
