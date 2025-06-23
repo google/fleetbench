@@ -1,10 +1,10 @@
-// Copyright 2022 The Fleetbench Authors
+// Copyright 2025 The Fleetbench Authors
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the Apache License, Version 2.0 (the "License" );
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     https://www.apache.org/licenses/LICENSE-2.0
+//      https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// WARNING: DO NOT EDIT! This file is auto-generated.
+
 #ifndef THIRD_PARTY_FLEETBENCH_PROTO_LIFECYCLE_H_
 #define THIRD_PARTY_FLEETBENCH_PROTO_LIFECYCLE_H_
 
-#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -45,24 +46,11 @@ struct Message {
 
 class ProtoLifecycle {
  public:
-  explicit ProtoLifecycle(uint32_t working_set_size)
-      : working_set_size_(working_set_size),
-        s_(kMaxValueStringSize, 'a'),
-        indices_(working_set_size) {
-    Resize(message0_);
-    Resize(message1_);
-    Resize(message2_);
-    Resize(message3_);
-    Resize(message4_);
-    Resize(message5_);
-    Resize(message6_);
-    Resize(message7_);
-    Resize(message8_);
-    Resize(message9_);
-  }
-  // Messages are allocated on the arena, and are freed automatically when
-  // arena goes out of scope, so no need to `delete` them explicitly.
-  ~ProtoLifecycle() {}
+  explicit ProtoLifecycle(uint32_t working_set_size);
+  // Messages are allocated on the arena, and are freed automatically
+  // when arena goes out of scope, so no need to `delete` them
+  // explicitly.
+  ~ProtoLifecycle() = default;
   void Init(google::protobuf::Arena* arena);
   void Run();
   uint32_t GetWorkingSetSize() { return working_set_size_; }
@@ -70,7 +58,7 @@ class ProtoLifecycle {
  private:
   template <typename T>
   void InitMessages(std::vector<T*>& messages, std::vector<T*>& other_messages,
-                    google::protobuf::Arena* arena);
+                    std::vector<std::string>& strings, google::protobuf::Arena* arena);
 
   template <typename T>
   void Resize(T& messages) {
@@ -96,5 +84,4 @@ class ProtoLifecycle {
 };
 
 }  // namespace fleetbench::proto
-
 #endif  // THIRD_PARTY_FLEETBENCH_PROTO_LIFECYCLE_H_
