@@ -348,9 +348,8 @@ void RegisterBenchmarks() {
     // max_threads)` (if max_threads >= 2).
     if (UseExplicitIterationCounts() && distribution_name == "TCMALLOC_5") {
       // Set an explicit iteration count for the default benchmark.
-      benchmark::RegisterBenchmark(
-          absl::StrCat("BM_", distribution_name).c_str(),
-          BM_TCMalloc_Empirical_Driver)
+      benchmark::RegisterBenchmark(absl::StrCat("BM_", distribution_name),
+                                   BM_TCMalloc_Empirical_Driver)
           ->Setup(BM_TCMalloc_Empirical_Driver_Setup)
           ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
           ->ThreadRange(1, 1)
@@ -360,9 +359,8 @@ void RegisterBenchmarks() {
     }
 
     if (distribution_name != "TCMALLOC_5" || max_threads >= min_threads)
-      benchmark::RegisterBenchmark(
-          absl::StrCat("BM_", distribution_name).c_str(),
-          BM_TCMalloc_Empirical_Driver)
+      benchmark::RegisterBenchmark(absl::StrCat("BM_", distribution_name),
+                                   BM_TCMalloc_Empirical_Driver)
           ->Setup(BM_TCMalloc_Empirical_Driver_Setup)
           ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
           ->ThreadRange(min_threads, max_threads)
