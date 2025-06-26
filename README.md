@@ -54,17 +54,19 @@ HEAD only.
 
 ## Workloads coverage
 
-As of Q2'24, Fleetbench provides coverage for several major hot functions.
+As of Q2'25, Fleetbench provides coverage for several major hot libraries.
 
 Benchmark   | Description
 ----------- | -----------
 Proto       | Instruction-focused.
 Swissmap    | Data-focused.
-Libc        | Data-focused.
+Libc        | Data-focused. Benchmarking `memcpy`, `memcmp/bcmp`, `memset`, and `memmove`.
 TCMalloc    | Data-focused.
 Compression | Data-focused. Covers [Snappy](https://github.com/google/snappy), [ZSTD](https://facebook.github.io/zstd/), [Brotli](https://github.com/google/brotli), and Zlib.
 Hashing     | Data-focused. Supports algorithms [CRC32](https://github.com/abseil/abseil-cpp/tree/master/absl/crc) and [absl::Hash](https://github.com/abseil/abseil-cpp/tree/master/absl/hash).
 STL-Cord    | Instruction-focused.
+RPC         | Instruction-focused with a strong data-drive aspect and buit on [gRPC framework](https://grpc.io)
+SIMD        | [ScaNN LUT16](https://research.google/blog/announcing-scann-efficient-vector-similarity-search/) based and measures performance of lookup-and-accumulate.
 
 ## Running Benchmarks
 
@@ -129,13 +131,15 @@ GLIBC_TUNABLES=glibc.pthread.rseq=0 bazel run --config=clang --config=opt \
 
 Benchmark   | WORKLOAD    | BUILD_TARGET          | Binary run flags
 ----------- | ----------- | --------------------- | ----------------
-Proto       | proto       | proto_benchmark       | `--benchmark_min_time=3s`
+Proto       | proto       | proto_benchmark       |
 Swissmap    | swissmap    | swissmap_benchmark    |
 Libc memory | libc        | mem_benchmark         | `--benchmark_counters_tabular=true`
-TCMalloc    | tcmalloc    | empirical_driver      | `--benchmark_min_time=10s`. Check `--benchmark_filter` below.
+TCMalloc    | tcmalloc    | empirical_driver      | Check `--benchmark_filter` below.
 Compression | compression | compression_benchmark | `--benchmark_counters_tabular=true`
 Hashing     | hashing     | hashing_benchmark     | `--benchmark_counters_tabular=true`
 STL-Cord    | stl         | cord_benchmark        |
+RPC         | rpc         | rpc_benchmark         |
+SIMD        | simd        | simd_benchmark        |
 
 NOTE: By default, each benchmark only runs a minimal set of tests that we have
 selected as the most representative. To see the default lists, you can use the
