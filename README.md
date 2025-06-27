@@ -20,10 +20,21 @@ microbenchmarks for hot functions across Google's fleet. The data set
 distributions it uses for executing the benchmarks are derived from data
 collected in production.
 
-IMPORTANT: This benchmark at `v1.0.0` represents subset of core libraries used
-across the fleet. Future releases will continue to increase this coverage. The
-goal is to expand coverage iteratively and keep distributions up-to-date, so
-always use its version at `HEAD`.
+IMPORTANT: We released our latest
+[v2.0.0](https://github.com/google/fleetbench/releases/tag/v2.0.0), a major
+milestone that significantly enhances our benchmarking suite's capability to
+accurately characterize system performance under realistic, concurrent
+workloads. This release ensures the benchmark suite is runnable on emulation and
+real hardware, and introduces a powerful multiprocessing framework, alongside
+critical new benchmarks (gRPC and SIMD), and substantial improvements and bug
+fixes across the suite. Please check out the
+[release note](https://github.com/google/fleetbench/releases/tag/v2.0.0) for
+more information!
+
+This new version represents a substantial step forward in capturing system
+performance from diverse angles, enabling developers and performance engineers
+to gain granular insights into how important libraries behave in complex,
+multi-core environments.
 
 For more information, see:
 
