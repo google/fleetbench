@@ -20,10 +20,12 @@ build --host_cxxopt='-std=c++17'
 # the config setting in the benchmark library:
 # https://github.com/google/benchmark/blob/d99cdd7356de97b3056684d6b511189778d8a247/BUILD.bazel#L47
 build --define=pfm=1
+
 # Disable RLS and XDS support in gRPC. We don't need these and they take
 # a long time to build.
 build --@com_github_grpc_grpc//:disable_grpc_rls
 build --define=grpc_no_xds=true
+
 test --test_timeout=1500
 
 # Enable bounds-checking assertions in LLVM libcpp containers by default.
@@ -56,6 +58,9 @@ build:opt --force_pic
 build:clang --repo_env=CC=clang --repo_env=CXX=clang++
 # Prevent warnings about gcc-specific arguments from --fdo_optimize.
 build:clang --copt='-Wno-ignored-optimization-argument'
+# bazel passes an unused '-c' flag to clang during header parsing.
+# clang 21 complains about that.
+build:clang --copt='-Wno-unused-command-line-argument'
 # Allow instrprof_error::hash_mismatch profiles.
 build:clang --copt='-Wno-error=backend-plugin'
 build:clang --copt='-faligned-allocation'

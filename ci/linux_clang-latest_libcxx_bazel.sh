@@ -24,7 +24,7 @@ if [ -z ${FLEETBENCH_ROOT:-} ]; then
   FLEETBENCH_ROOT="$(realpath $(dirname ${0})/..)"
 fi
 
-readonly DOCKER_CONTAINER="gcr.io/google.com/absl-177019/linux_hybrid-latest:20231218"
+readonly DOCKER_CONTAINER="gcr.io/google.com/absl-177019/linux_hybrid-latest:20250527"
 
 # USE_BAZEL_CACHE=1 only works on Kokoro.
 # Without access to the credentials this won't work.

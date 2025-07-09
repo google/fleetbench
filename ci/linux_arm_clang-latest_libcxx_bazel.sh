@@ -24,7 +24,7 @@ if [ -z ${FLEETBENCH_ROOT:-} ]; then
   FLEETBENCH_ROOT="$(realpath $(dirname ${0})/..)"
 fi
 
-readonly DOCKER_CONTAINER="gcr.io/google.com/absl-177019/linux_arm_hybrid-latest:20231219"
+readonly DOCKER_CONTAINER="gcr.io/google.com/absl-177019/linux_arm_hybrid-latest:20250430"
 
 # USE_BAZEL_CACHE=1 only works on Kokoro.
 # Without access to the credentials this won't work.
@@ -43,10 +43,13 @@ source "${FLEETBENCH_ROOT}/ci/common.sh"
 start_docker_container
 sanity_check_docker_container
 
-CLANG_PATH="/opt/llvm/clang"
-TOOLCHAIN_TYPE="aarch64-unknown-linux-gnu"
+# In the 20250430 Arm image, clang is installed at /usr/bin/clang-19.
+# Fleetbench wants to just call 'clang', so install it accordingly.
+docker exec fleetbench update-alternatives --install /usr/bin/clang clang /usr/bin/clang-19 100
+docker exec fleetbench update-alternatives --set clang /usr/bin/clang-19
+
 for std in ${STD}; do
   run_generic_tests \
-    "-e PATH=${PATH}:${CLANG_PATH}/bin -e BAZEL_CXXOPTS=-std=${std}:-nostdinc++ -e BAZEL_LINKOPTS=-L${CLANG_PATH}/lib/${TOOLCHAIN_TYPE}:-lc++:-lc++abi:-lm:-Wl,-rpath=${CLANG_PATH}/lib/${TOOLCHAIN_TYPE} -e CPLUS_INCLUDE_PATH=${CLANG_PATH}/include/${TOOLCHAIN_TYPE}/c++/v1:${CLANG_PATH}/include/c++/v1" \
+    "-e BAZEL_CXXOPTS=-std=${std}:-stdlib=libc++ -e BAZEL_LINKOPTS=-lc++:-lc++abi:-lm:-stdlib=libc++" \
     "--config=clang --config=arm"
 done
