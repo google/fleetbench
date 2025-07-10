@@ -245,6 +245,8 @@ static void BM_Compress(benchmark::State& state,
   state.counters["compression_byte_rate"] =
       benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate,
                          benchmark::Counter::OneK::kIs1024);
+  state.counters["decompression_byte_rate"] =
+      benchmark::Counter(0, benchmark::Counter::kIsRate);
 
   if (!distribution_name.empty()) state.SetLabel(distribution_name);
 }
@@ -290,6 +292,8 @@ static void BM_Decompress(benchmark::State& state,
   state.counters["decompression_byte_rate"] =
       benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate,
                          benchmark::Counter::OneK::kIs1024);
+  state.counters["compression_byte_rate"] =
+      benchmark::Counter(0, benchmark::Counter::kIsRate);
 
   if (!distribution_name.empty()) state.SetLabel(distribution_name);
 }
