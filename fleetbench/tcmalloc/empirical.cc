@@ -83,7 +83,6 @@ EmpiricalData::EmpiricalData(size_t seed, const absl::Span<const Entry> weights,
       alloc_(alloc),
       dealloc_(dealloc),
       usage_(0),
-      num_live_(0),
       total_num_allocated_(0),
       total_bytes_allocated_(0),
       birth_sampler_(BirthRateDistribution(weights)),
@@ -155,7 +154,6 @@ void* EmpiricalData::DoBirth(const size_t i) {
   usage_ += size;
   total_num_allocated_++;
   total_bytes_allocated_ += size;
-  num_live_++;
   void* p = alloc_(size);
   s.objs.push_back(p);
   s.total++;
@@ -170,7 +168,6 @@ void EmpiricalData::DoDeath(const size_t i) {
   death_sampler_.AdjustWeight(i, -s.death_rate);
   const size_t size = s.size;
   usage_ -= size;
-  num_live_--;
   void* p = s.objs[obj];
   s.objs[obj] = s.objs.back();
   s.objs.pop_back();
@@ -195,7 +192,6 @@ void* EmpiricalData::ReplayBirth(const size_t i) {
   usage_ += size;
   total_num_allocated_++;
   total_bytes_allocated_ += size;
-  num_live_++;
   void* p = alloc_(size);
   s.objs.push_back(p);
   s.total++;
