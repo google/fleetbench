@@ -14,8 +14,6 @@
 // This file defines the skeleton of generated benchmark files. It contains
 // the includes, gunit benchmark code, and main entrypoint.
 
-#include "fleetbench/tcmalloc/empirical_driver.h"
-
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
@@ -28,13 +26,12 @@
 #include <thread>  // NOLINT(build/c++11)
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "absl/base/internal/spinlock.h"
 #include "absl/log/check.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 #include "benchmark/benchmark.h"
 #include "fleetbench/common/common.h"
 #include "fleetbench/dynamic_registrar.h"
@@ -74,8 +71,6 @@ class SequenceNumber {
  private:
   std::atomic<intptr_t> value_;
 };
-
-ABSL_CONST_INIT StatsCounter reps;
 
 class SimThread {
  public:
@@ -141,7 +136,6 @@ class SimThread {
       load_.ReplayNext();
     }
     load_.RestartTraceIfNecessary();
-    reps.Add(kBatch);
     auto allocated = load_.total_bytes_allocated();
     load_bytes_allocated_.store(allocated, std::memory_order_relaxed);
     auto total_num_allocated = load_.total_num_allocated();

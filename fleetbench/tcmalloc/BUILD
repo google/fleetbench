@@ -41,7 +41,6 @@ cc_library(
     testonly = True,
     srcs = [
         "empirical_driver.cc",
-        "empirical_driver.h",
     ],
     copts = TCMALLOC_DEFAULT_COPTS,
     data = glob(["distributions/**"]),
@@ -52,9 +51,9 @@ cc_library(
         "//fleetbench:dynamic_registrar",
         "//fleetbench/common",
         "@com_google_absl//absl/base",
-        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
         "@com_google_benchmark//:benchmark",
         "@com_google_tcmalloc//tcmalloc:malloc_extension",
     ],
