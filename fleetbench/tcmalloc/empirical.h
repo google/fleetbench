@@ -193,9 +193,6 @@ class EmpiricalData {
 
   ~EmpiricalData();
 
-  // Total memory consumed by objects
-  size_t usage() const { return usage_; }
-
   // How many objects have we made in our total life?
   // Note that these *DO* include startup allocations.
   size_t total_num_allocated() const { return total_num_allocated_; }

@@ -103,8 +103,6 @@ class SimThread {
     return load_allocations_.load(std::memory_order_relaxed);
   }
 
-  size_t usage() { return load_usage_.load(std::memory_order_relaxed); }
-
   void RecordBirthsAndDeaths(EmpiricalData* load) {
     // Round number of births / deaths to record down to a multiple of kBatch.
     const int buffer_size = (kRecordAndReplayBufferSize / kBatch) * kBatch;
@@ -146,8 +144,6 @@ class SimThread {
       ::tcmalloc::MallocExtension::ReleaseMemoryToSystem(
           kEmpiricalMallocReleaseBytesPerSec);
     }
-
-    load_usage_.store(load_.usage(), std::memory_order_relaxed);
   }
 
  private:
@@ -159,7 +155,6 @@ class SimThread {
   std::vector<EmpiricalData::Entry> profile_;
   std::atomic<size_t> load_bytes_allocated_{0};
   std::atomic<size_t> load_allocations_{0};
-  std::atomic<size_t> load_usage_{0};
   absl::base_internal::SpinLock lock_;
   size_t run_release_each_bytes_{};
   size_t next_release_boundary_{};
