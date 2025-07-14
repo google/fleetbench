@@ -50,7 +50,6 @@ cc_library(
         "//fleetbench:benchmark_main",
         "//fleetbench:dynamic_registrar",
         "//fleetbench/common",
-        "@com_google_absl//absl/base",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:span",

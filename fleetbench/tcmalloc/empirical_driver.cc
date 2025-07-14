@@ -26,7 +26,6 @@
 #include <thread>  // NOLINT(build/c++11)
 #include <vector>
 
-#include "absl/base/internal/spinlock.h"
 #include "absl/log/check.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -71,25 +70,17 @@ class SequenceNumber {
 
 class SimThread {
  public:
-  SimThread(int n, absl::Span<const std::unique_ptr<SimThread>> siblings,
-            size_t bytes, size_t transient, absl::string_view profile)
+  SimThread(int n, uint64_t nthreads, size_t bytes, size_t transient,
+            absl::string_view profile)
       : n_(n),
-        thread_is_done_(false),
-        siblings_(siblings),
-        bytes_(bytes),
         transient_(transient),
-        nthreads_(siblings.size()),
         profile_((GetEmpiricalDataEntries(profile))),
-        load_(GetRNG()(), profile_, bytes_, alloc, sized_delete),
+        load_(GetRNG()(), profile_, bytes, alloc, sized_delete),
         done_recording_(false) {
     if (n == 0) {
       run_release_each_bytes_ =
-          (kSimulatedBytesPerSec + nthreads_ - 1) / nthreads_;
+          (kSimulatedBytesPerSec + nthreads - 1) / nthreads;
     }
-  }
-
-  void mark_thread_done() {
-    thread_is_done_.store(true, std::memory_order_release);
   }
 
   size_t total_bytes_allocated() {
@@ -145,14 +136,10 @@ class SimThread {
 
  private:
   size_t n_;
-  std::atomic<bool> thread_is_done_;
-  const absl::Span<const std::unique_ptr<SimThread>> siblings_;
-  size_t bytes_, transient_;
-  uint64_t nthreads_;
+  size_t transient_;
   std::vector<EmpiricalData::Entry> profile_;
   std::atomic<size_t> load_bytes_allocated_{0};
   std::atomic<size_t> load_allocations_{0};
-  absl::base_internal::SpinLock lock_;
   size_t run_release_each_bytes_{};
   size_t next_release_boundary_{};
   EmpiricalData load_;
@@ -226,7 +213,7 @@ void BM_TCMalloc_Empirical_Driver_Setup(const benchmark::State& state) {
   for (size_t i = 0; i < nthreads; ++i) {
     auto& sim_threads = GetSimThreads();
     sim_threads[i] = std::make_unique<SimThread>(
-        i, sim_threads, per_thread_size, per_thread_transient, profile_path);
+        i, nthreads, per_thread_size, per_thread_transient, profile_path);
   }
 }
 
