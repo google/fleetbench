@@ -82,7 +82,6 @@ EmpiricalData::EmpiricalData(size_t seed, const absl::Span<const Entry> weights,
     : rng_(seed),
       alloc_(alloc),
       dealloc_(dealloc),
-      usage_(0),
       total_num_allocated_(0),
       total_bytes_allocated_(0),
       birth_sampler_(BirthRateDistribution(weights)),
@@ -124,9 +123,11 @@ EmpiricalData::EmpiricalData(size_t seed, const absl::Span<const Entry> weights,
   absl::discrete_distribution<int> live_dist(avg_counts.begin(),
                                              avg_counts.end());
 
-  while (usage_ < total_mem) {
+  size_t usage = 0;
+  while (usage < total_mem) {
     int i = live_dist(rng_);
     DoBirth(i);
+    usage += state_[i].size;
   }
 
   SnapshotLiveObjects();
@@ -151,7 +152,6 @@ void* EmpiricalData::DoBirth(const size_t i) {
   // We have an extra live object, so the overall death rate goes up.
   death_sampler_.AdjustWeight(i, s.death_rate);
   const size_t size = s.size;
-  usage_ += size;
   total_num_allocated_++;
   total_bytes_allocated_ += size;
   void* p = alloc_(size);
@@ -167,7 +167,6 @@ void EmpiricalData::DoDeath(const size_t i) {
       absl::uniform_int_distribution<int>(0, s.objs.size() - 1)(rng_);
   death_sampler_.AdjustWeight(i, -s.death_rate);
   const size_t size = s.size;
-  usage_ -= size;
   void* p = s.objs[obj];
   s.objs[obj] = s.objs.back();
   s.objs.pop_back();
@@ -189,7 +188,6 @@ void EmpiricalData::RecordBirth(const size_t i) {
 void* EmpiricalData::ReplayBirth(const size_t i) {
   SizeState& s = state_[i];
   const size_t size = s.size;
-  usage_ += size;
   total_num_allocated_++;
   total_bytes_allocated_ += size;
   void* p = alloc_(size);

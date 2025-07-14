@@ -266,7 +266,6 @@ class EmpiricalData {
   absl::FunctionRef<void*(size_t)> alloc_;
   absl::FunctionRef<void(void*, size_t)> dealloc_;
 
-  size_t usage_;
   size_t total_num_allocated_;
   size_t total_bytes_allocated_;
   std::vector<SizeState> state_;
