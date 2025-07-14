@@ -56,18 +56,6 @@ static constexpr int64_t kEmpiricalMallocReleaseBytesPerSec = 0;
 // Number of iterations to warm up the benchmark before the main benchmark loop.
 static constexpr size_t kNumWarmUpIterations = 500000;
 
-class SequenceNumber {
- public:
-  constexpr SequenceNumber() : value_(0) {}
-  SequenceNumber(const SequenceNumber&) = delete;
-  SequenceNumber& operator=(const SequenceNumber&) = delete;
-
-  intptr_t GetNext() { return value_.fetch_add(1, std::memory_order_relaxed); }
-
- private:
-  std::atomic<intptr_t> value_;
-};
-
 class SimThread {
  public:
   SimThread(int n, uint64_t nthreads, size_t bytes, size_t transient,
