@@ -45,9 +45,6 @@ namespace {
 
 void* alloc(size_t s) { return ::operator new(s); }
 
-// The constants below represent the defaults in the benchmark construction
-// parameters.
-
 static constexpr int64_t kBatch = 100;
 // When non-zero, empirical driver will simulate tick of ReleaseMemoryToOS
 // iteration, given number of bytes allocated.
