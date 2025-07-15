@@ -14,9 +14,9 @@
 
 #include "fleetbench/tcmalloc/empirical.h"
 
-#include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <fstream>
-#include <ostream>
 #include <string>
 #include <vector>
 
@@ -42,49 +42,6 @@ const std::vector<EmpiricalData::Entry>& dummy() {
   return e;
 }
 
-MATCHER(EntrySizeEq, "have equal size") {
-  return std::get<0>(arg).size == std::get<1>(arg).size;
-}
-
-std::vector<double> Normalize(const std::vector<double>& xs) {
-  double total = 0;
-  for (double x : xs) {
-    total += x;
-  }
-  double inv = 1 / total;
-  std::vector<double> ret;
-  for (double x : xs) {
-    ret.push_back(x * inv);
-  }
-
-  return ret;
-}
-
-std::vector<double> GetRates(const std::vector<EmpiricalData::Entry>& es) {
-  std::vector<double> ret;
-  for (auto e : es) {
-    ret.push_back(e.alloc_rate);
-  }
-
-  return ret;
-}
-
-std::vector<double> GetCounts(const std::vector<EmpiricalData::Entry>& es) {
-  std::vector<double> ret;
-  for (auto e : es) {
-    ret.push_back(e.num_live);
-  }
-
-  return ret;
-}
-
-MATCHER_P(DoubleRelEq, err,
-          absl::StrCat(negation ? "aren't" : "are", " within ",
-                       absl::SixDigits(err * 100), "% of each other")) {
-  double a = std::get<0>(arg);
-  double b = std::get<1>(arg);
-  return (std::max(a / b, b / a) - 1) < err;
-}
 
 TEST(EmpiricalRecordAndReplay, Basic) {
   constexpr uint32_t kBufferSize = 100000;
