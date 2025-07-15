@@ -208,10 +208,6 @@ class EmpiricalData {
   // incremented.
   void ReplayNext();
 
-  // Empirical stats for the lifetime of this simulation (not including
-  // startup allocations.)
-  std::vector<Entry> Actual() const;
-
   std::default_random_engine* const rng() { return &rng_; }
 
   // Saves the list of live objects of each size class.  We will later restore

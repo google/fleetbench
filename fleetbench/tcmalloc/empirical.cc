@@ -344,16 +344,6 @@ void EmpiricalData::RestartTraceIfNecessary() {
   }
 }
 
-std::vector<EmpiricalData::Entry> EmpiricalData::Actual() const {
-  std::vector<Entry> data;
-  data.reserve(state_.size());
-  for (const auto& s : state_) {
-    data.push_back({s.size, static_cast<double>(s.total),
-                    static_cast<double>(s.objs.size())});
-  }
-  return data;
-}
-
 std::vector<EmpiricalData::Entry> GetEmpiricalDataEntries(
     absl::string_view file) {
   std::vector<EmpiricalData::Entry> distribution;
