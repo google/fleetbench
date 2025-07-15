@@ -44,17 +44,21 @@ namespace {
 
 void* alloc(size_t s) { return ::operator new(s); }
 
-static constexpr int64_t kBatch = 100;
 // When non-zero, empirical driver will simulate tick of ReleaseMemoryToOS
 // iteration, given number of bytes allocated.
 static constexpr int64_t kSimulatedBytesPerSec = 0;
 // The total number of allocs / deallocs to precalculate for later replay.
 // Memory required to store replay buffers scales with the number of threads.
-static constexpr size_t kRecordAndReplayBufferSize = 1'000'000;
+// The actual number of allocs / deallocs can be slightly larger than this
+// value, as at the end of the replay, additional operations are performed to
+// bring the number of live objects back to where it was at the start of the
+// replay.
+static constexpr size_t kRecordAndReplayBufferSizeTarget = 1'000'000;
 // Number of bytes to try to release from the page heap per second.
 static constexpr int64_t kEmpiricalMallocReleaseBytesPerSec = 0;
-// Number of iterations to warm up the benchmark before the main benchmark loop.
-static constexpr size_t kNumWarmUpIterations = 500000;
+// Number of replays of the entire trace to warm up the benchmark before the
+// main benchmark loop.
+static constexpr size_t kNumWarmUpReplays = 50;
 
 class SimThread {
  public:
@@ -80,11 +84,10 @@ class SimThread {
   }
 
   void RecordBirthsAndDeaths(EmpiricalData* load) {
-    // Round number of births / deaths to record down to a multiple of kBatch.
-    const int buffer_size = (kRecordAndReplayBufferSize / kBatch) * kBatch;
-    for (int i = 0; i < buffer_size; ++i) {
+    for (int i = 0; i < kRecordAndReplayBufferSizeTarget; ++i) {
       load->RecordNext();
     }
+    load->RecordRepairToSnapshotState();
 
     load->RestoreSnapshot();
     load->BuildDeathObjectPointers();
@@ -106,10 +109,8 @@ class SimThread {
 
   void ReplayTrace() {
     DCHECK(done_recording_);
-    for (int i = 0; i < kBatch; i++) {
-      load_.ReplayNext();
-    }
-    load_.RestartTraceIfNecessary();
+    load_.ReplayTrace();
+
     auto allocated = load_.total_bytes_allocated();
     load_bytes_allocated_.store(allocated, std::memory_order_relaxed);
     auto total_num_allocated = load_.total_num_allocated();
@@ -121,6 +122,8 @@ class SimThread {
           kEmpiricalMallocReleaseBytesPerSec);
     }
   }
+
+  size_t TraceLength() { return load_.TraceLength(); }
 
  private:
   size_t n_;
@@ -217,14 +220,14 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
   // We do not use the MinWarmUpTime feature of the benchmark framework here,
   // as that feature calls Teardown and Setup after the warm-up phase, which
   // resets the state that we want to establish with the warm-up.
-  for (int i = 0; i < kNumWarmUpIterations; i++) {
+  for (int i = 0; i < kNumWarmUpReplays; i++) {
     sim_threads[thread_idx]->ReplayTrace();
   }
 
   size_t bytes_warm_up = sim_threads[thread_idx]->total_bytes_allocated();
   size_t allocations_warm_up = sim_threads[thread_idx]->load_allocations();
 
-  for (auto _ : state) {
+  while (state.KeepRunningBatch(sim_threads[thread_idx]->TraceLength())) {
     sim_threads[thread_idx]->ReplayTrace();
   }
 
@@ -315,7 +318,7 @@ void RegisterBenchmarks() {
           ->Teardown(BM_TCMalloc_Empirical_Driver_Teardown)
           ->ThreadRange(1, 1)
           ->UseRealTime()
-          ->Iterations(100000);
+          ->Iterations(10'000'000);
       min_threads = 2;
     }
 

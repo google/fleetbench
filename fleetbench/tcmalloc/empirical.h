@@ -203,10 +203,11 @@ class EmpiricalData {
   // logic of this function please see the comments within Next().
   void RecordNext();
 
-  // Replays the next alloc or dealloc we recorded when building the trace.
-  // Also updates the indices into the recorded birth / death trace.
-  // incremented.
-  void ReplayNext();
+  // Replays the recorded trace.
+  void ReplayTrace();
+
+  // Returns the number of allocs and deallocs in the recorded trace.
+  size_t TraceLength() const { return birth_or_death_.size(); }
 
   std::default_random_engine* const rng() { return &rng_; }
 
@@ -222,22 +223,16 @@ class EmpiricalData {
   // starting to replay the trace.
   void RestoreSnapshot();
 
-  // Restores the *lengths* of the number of live objects within each size class
-  // to what it was after the warmup allocations were complete.  This is
-  // accomplished by either allocating or deallocating objects until the same
-  // number of objects are live within each size class as were live after the
-  // warmup allocations were complete.  This is safe to call repeatedly.
-  void RepairToSnapshotState();
+  // Records a sequence of allocations and deallocations that restores the
+  // *lengths* of the number of live objects within each size class to what it
+  // was after the warmup allocations were complete. This function should only
+  // be called once (at the end of the recording phase).
+  void RecordRepairToSnapshotState();
 
   // Computes addresses to prefetch when executing in record and replay mode.
   // This is necessary to minimize the impact of indexing into SizeState.objs
   // when freeing an object.
   void BuildDeathObjectPointers();
-
-  // Tests whether we have reached the end of the birth / death trace.  If so
-  // performs the actions necessary so that we can start replaying allocs /
-  // deallocs from the beginning of the trace again.
-  void RestartTraceIfNecessary();
 
  private:
   std::default_random_engine rng_;
@@ -276,6 +271,8 @@ class EmpiricalData {
   std::vector<void**> death_object_pointers_;
   uint32_t birth_or_death_index_ = 0;
   uint32_t death_object_index_ = 0;
+  size_t num_allocated_recorded_;
+  size_t bytes_allocated_recorded_;
 };
 
 std::vector<EmpiricalData::Entry> GetEmpiricalDataEntries(

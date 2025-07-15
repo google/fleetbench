@@ -56,15 +56,14 @@ TEST(EmpiricalRecordAndReplay, Basic) {
   for (int j = 0; j < kBufferSize; ++j) {
     data.RecordNext();
   }
+  data.RecordRepairToSnapshotState();
 
   data.RestoreSnapshot();
   data.BuildDeathObjectPointers();
 
   // We need one warmup iteration so we can compute the delta allocations and
   // bytes we should see from each time through the trace.
-  for (int j = 0; j < kBufferSize; ++j) {
-    data.ReplayNext();
-  }
+  data.ReplayTrace();
 
   size_t delta_allocations = data.total_num_allocated() - total_allocations;
   size_t delta_bytes_allocated =
@@ -76,16 +75,10 @@ TEST(EmpiricalRecordAndReplay, Basic) {
     EXPECT_EQ(delta_bytes_allocated,
               data.total_bytes_allocated() - total_bytes_allocated);
 
-    // Restart the trace before updating total_* so we don't capture the
-    // "repair" operations.
-    data.RestartTraceIfNecessary();
-
     total_allocations = data.total_num_allocated();
     total_bytes_allocated = data.total_bytes_allocated();
 
-    for (int j = 0; j < kBufferSize; ++j) {
-      data.ReplayNext();
-    }
+    data.ReplayTrace();
   }
 }
 

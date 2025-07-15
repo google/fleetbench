@@ -86,7 +86,9 @@ EmpiricalData::EmpiricalData(size_t seed, const absl::Span<const Entry> weights,
       total_bytes_allocated_(0),
       birth_sampler_(BirthRateDistribution(weights)),
       total_birth_rate_(0),
-      death_sampler_(weights.size()) {
+      death_sampler_(weights.size()),
+      num_allocated_recorded_(0),
+      bytes_allocated_recorded_(0) {
   // First, compute average live count for each size in a heap of size
   // <total_mem>.
   double total = 0;
@@ -168,9 +170,12 @@ void EmpiricalData::DoDeath(const size_t i) {
 }
 
 void EmpiricalData::RecordBirth(const size_t i) {
+  birth_or_death_.push_back(true);
   birth_or_death_sizes_.push_back(i);
   SizeState& s = state_[i];
   death_sampler_.AdjustWeight(i, s.death_rate);
+  num_allocated_recorded_++;
+  bytes_allocated_recorded_ += s.size;
   // We only care about keeping the number of objects correct when building the
   // trace.  When we replay we will actually push the allocated address but
   // when building the trace we can just push nullptr to keep the length of live
@@ -181,14 +186,13 @@ void EmpiricalData::RecordBirth(const size_t i) {
 void* EmpiricalData::ReplayBirth(const size_t i) {
   SizeState& s = state_[i];
   const size_t size = s.size;
-  total_num_allocated_++;
-  total_bytes_allocated_ += size;
   void* p = alloc_(size);
   s.objs.push_back(p);
   return p;
 }
 
 void EmpiricalData::RecordDeath(const size_t i) {
+  birth_or_death_.push_back(false);
   SizeState& s = state_[i];
   CHECK(!s.objs.empty());
   birth_or_death_sizes_.push_back(i);
@@ -215,7 +219,6 @@ void EmpiricalData::RecordNext() {
   const double Both = B + T;
   absl::uniform_real_distribution<double> which(0, Both);
   bool do_birth = which(rng_) < B;
-  birth_or_death_.push_back(do_birth);
 
   if (do_birth) {
     size_t i = birth_sampler_(rng_);
@@ -226,18 +229,25 @@ void EmpiricalData::RecordNext() {
   }
 }
 
-void EmpiricalData::ReplayNext() {
-  bool do_birth = birth_or_death_[birth_or_death_index_];
-  if (do_birth) {
-    void* allocated = ReplayBirth(birth_or_death_sizes_[birth_or_death_index_]);
-    TouchAllocated(allocated);
-  } else {
-    ReplayDeath(birth_or_death_sizes_[birth_or_death_index_],
-                death_objects_[death_object_index_]);
-    __builtin_prefetch(death_object_pointers_[death_object_index_], 1, 3);
-    death_object_index_++;
+void EmpiricalData::ReplayTrace() {
+  for (birth_or_death_index_ = 0, death_object_index_ = 0;
+       birth_or_death_index_ < birth_or_death_.size();
+       ++birth_or_death_index_) {
+    bool do_birth = birth_or_death_[birth_or_death_index_];
+    if (do_birth) {
+      void* allocated =
+          ReplayBirth(birth_or_death_sizes_[birth_or_death_index_]);
+      TouchAllocated(allocated);
+    } else {
+      ReplayDeath(birth_or_death_sizes_[birth_or_death_index_],
+                  death_objects_[death_object_index_]);
+      __builtin_prefetch(death_object_pointers_[death_object_index_], /*rw=*/1,
+                         /*locality*/ 3);
+      ++death_object_index_;
+    }
   }
-  birth_or_death_index_++;
+  total_num_allocated_ += num_allocated_recorded_;
+  total_bytes_allocated_ += bytes_allocated_recorded_;
 }
 
 void EmpiricalData::SnapshotLiveObjects() {
@@ -301,7 +311,7 @@ void EmpiricalData::BuildDeathObjectPointers() {
               death_object_pointers_.end());
 }
 
-void EmpiricalData::RepairToSnapshotState() {
+void EmpiricalData::RecordRepairToSnapshotState() {
   // Compared to the number of live objects when the snapshot was taken each
   // size state either
   // 1) Contains the same number of live objects as when the snapshot was taken,
@@ -312,26 +322,11 @@ void EmpiricalData::RepairToSnapshotState() {
   //    number of true deallocations.
   for (int i = 0; i < state_.size(); i++) {
     while (state_[i].objs.size() < snapshot_state_[i].objs.size()) {
-      DoBirth(i);
+      RecordBirth(i);
     }
     while (state_[i].objs.size() > snapshot_state_[i].objs.size()) {
-      DoDeath(i);
+      RecordDeath(i);
     }
-  }
-}
-
-void EmpiricalData::RestartTraceIfNecessary() {
-  if (birth_or_death_index_ == birth_or_death_.size()) {
-    // As the snapshotted lists of live objects will contain addresses which
-    // have already been freed we can't just call RestoreSnapshot().  Instead
-    // let's do the necessary allocations / deallocations to end up with the
-    // identical number of live objects we had when initially building the
-    // trace.
-    RepairToSnapshotState();
-    // After the above call we can safely run through the recorded trace
-    // again.
-    birth_or_death_index_ = 0;
-    death_object_index_ = 0;
   }
 }
 
