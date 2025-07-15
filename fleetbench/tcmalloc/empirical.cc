@@ -112,7 +112,7 @@ EmpiricalData::EmpiricalData(size_t seed, const absl::Span<const Entry> weights,
     total_birth_rate_ += w.alloc_rate;
     const double lifespan = avg_count / w.alloc_rate;
     const double death_rate = 1 / lifespan;
-    state_.push_back({w.size, w.alloc_rate, death_rate, 0, {}});
+    state_.push_back({w.size, death_rate, {}});
     state_.back().objs.reserve(avg_count * 2);
   }
 
@@ -131,11 +131,6 @@ EmpiricalData::EmpiricalData(size_t seed, const absl::Span<const Entry> weights,
   }
 
   SnapshotLiveObjects();
-
-  for (auto& s : state_) {
-    // Don't count initial sample towards allocations (skews data).
-    s.total = 0;
-  }
 }
 
 EmpiricalData::~EmpiricalData() {
@@ -156,7 +151,6 @@ void* EmpiricalData::DoBirth(const size_t i) {
   total_bytes_allocated_ += size;
   void* p = alloc_(size);
   s.objs.push_back(p);
-  s.total++;
   return p;
 }
 
@@ -182,7 +176,6 @@ void EmpiricalData::RecordBirth(const size_t i) {
   // when building the trace we can just push nullptr to keep the length of live
   // object lists consistent with what it should have been after a true birth.
   s.objs.push_back(nullptr);
-  s.total++;
 }
 
 void* EmpiricalData::ReplayBirth(const size_t i) {
@@ -192,7 +185,6 @@ void* EmpiricalData::ReplayBirth(const size_t i) {
   total_bytes_allocated_ += size;
   void* p = alloc_(size);
   s.objs.push_back(p);
-  s.total++;
   return p;
 }
 
@@ -250,8 +242,7 @@ void EmpiricalData::ReplayNext() {
 
 void EmpiricalData::SnapshotLiveObjects() {
   for (const auto& s : state_) {
-    snapshot_state_.push_back(
-        {s.size, s.birth_rate, s.death_rate, s.total, s.objs});
+    snapshot_state_.push_back({s.size, s.death_rate, s.objs});
   }
 }
 

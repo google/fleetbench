@@ -244,9 +244,7 @@ class EmpiricalData {
 
   struct SizeState {
     const size_t size;
-    const double birth_rate;
     const double death_rate;
-    size_t total;
     std::vector<void*> objs;
   };
 
