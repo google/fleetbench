@@ -59,11 +59,12 @@ TEST(EmpiricalRecordAndReplay, Basic) {
   data.RecordRepairToSnapshotState();
 
   data.RestoreSnapshot();
-  data.BuildDeathObjectPointers();
+  data.BuildUpdateVectors();
 
   // We need one warmup iteration so we can compute the delta allocations and
   // bytes we should see from each time through the trace.
   data.ReplayTrace();
+  data.PrepareNextReplay();
 
   size_t delta_allocations = data.total_num_allocated() - total_allocations;
   size_t delta_bytes_allocated =
@@ -79,6 +80,7 @@ TEST(EmpiricalRecordAndReplay, Basic) {
     total_bytes_allocated = data.total_bytes_allocated();
 
     data.ReplayTrace();
+    data.PrepareNextReplay();
   }
 }
 

@@ -90,7 +90,7 @@ class SimThread {
     load->RecordRepairToSnapshotState();
 
     load->RestoreSnapshot();
-    load->BuildDeathObjectPointers();
+    load->BuildUpdateVectors();
   }
 
   void RecordTraceIfNeeded() {
@@ -107,9 +107,11 @@ class SimThread {
     done_recording_ = true;
   }
 
-  void ReplayTrace() {
+  void ReplayTrace(benchmark::State& state, bool warmup = false) {
     DCHECK(done_recording_);
     load_.ReplayTrace();
+
+    if (!warmup) state.PauseTiming();
 
     auto allocated = load_.total_bytes_allocated();
     load_bytes_allocated_.store(allocated, std::memory_order_relaxed);
@@ -121,6 +123,10 @@ class SimThread {
       ::tcmalloc::MallocExtension::ReleaseMemoryToSystem(
           kEmpiricalMallocReleaseBytesPerSec);
     }
+
+    load_.PrepareNextReplay();
+
+    if (!warmup) state.ResumeTiming();
   }
 
   size_t TraceLength() { return load_.TraceLength(); }
@@ -221,14 +227,14 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
   // as that feature calls Teardown and Setup after the warm-up phase, which
   // resets the state that we want to establish with the warm-up.
   for (int i = 0; i < kNumWarmUpReplays; i++) {
-    sim_threads[thread_idx]->ReplayTrace();
+    sim_threads[thread_idx]->ReplayTrace(state, /*warmup=*/true);
   }
 
   size_t bytes_warm_up = sim_threads[thread_idx]->total_bytes_allocated();
   size_t allocations_warm_up = sim_threads[thread_idx]->load_allocations();
 
   while (state.KeepRunningBatch(sim_threads[thread_idx]->TraceLength())) {
-    sim_threads[thread_idx]->ReplayTrace();
+    sim_threads[thread_idx]->ReplayTrace(state);
   }
 
   size_t bytes =

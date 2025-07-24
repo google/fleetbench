@@ -133,13 +133,18 @@ EmpiricalData::EmpiricalData(size_t seed, const absl::Span<const Entry> weights,
   }
 
   SnapshotLiveObjects();
+
+  for (auto& s : state_) {
+    for (size_t i = 0; i < s.objs.size(); ++i) {
+      s.objs_indices_after_recording.push_back({.born = false, .index = i});
+    }
+  }
 }
 
 EmpiricalData::~EmpiricalData() {
   for (auto& s : state_) {
-    const size_t size = s.size;
     for (auto p : s.objs) {
-      dealloc_(p, size);
+      dealloc_(p, s.size);
     }
   }
 }
@@ -173,6 +178,7 @@ void EmpiricalData::RecordBirth(const size_t i) {
   birth_or_death_.push_back(true);
   birth_or_death_sizes_.push_back(i);
   SizeState& s = state_[i];
+  birth_or_death_actual_sizes_.push_back(s.size);
   death_sampler_.AdjustWeight(i, s.death_rate);
   num_allocated_recorded_++;
   bytes_allocated_recorded_ += s.size;
@@ -181,13 +187,14 @@ void EmpiricalData::RecordBirth(const size_t i) {
   // when building the trace we can just push nullptr to keep the length of live
   // object lists consistent with what it should have been after a true birth.
   s.objs.push_back(nullptr);
+  s.objs_indices_after_recording.push_back(
+      {.born = true, .index = birth_object_index_});
+  ++birth_object_index_;
 }
 
-void* EmpiricalData::ReplayBirth(const size_t i) {
-  SizeState& s = state_[i];
-  const size_t size = s.size;
+void* EmpiricalData::ReplayBirth(const size_t size) {
   void* p = alloc_(size);
-  s.objs.push_back(p);
+  *birth_pointers_[birth_object_index_] = p;
   return p;
 }
 
@@ -196,21 +203,22 @@ void EmpiricalData::RecordDeath(const size_t i) {
   SizeState& s = state_[i];
   CHECK(!s.objs.empty());
   birth_or_death_sizes_.push_back(i);
+  birth_or_death_actual_sizes_.push_back(s.size);
   auto to_free = absl::uniform_int_distribution<int>(
       0, std::max(0, static_cast<int>(s.objs.size()) - 1))(rng_);
   death_sampler_.AdjustWeight(i, -s.death_rate);
   s.objs[to_free] = s.objs.back();
   s.objs.pop_back();
-  death_objects_.push_back(to_free);
+
+  death_obj_indices_.push_back(s.objs_indices_after_recording[to_free]);
+  s.objs_indices_after_recording[to_free] =
+      s.objs_indices_after_recording.back();
+  s.objs_indices_after_recording.pop_back();
 }
 
-void EmpiricalData::ReplayDeath(const size_t i, uint64_t index) {
-  SizeState& s = state_[i];
-  CHECK(!s.objs.empty());
-  void* p = s.objs[index];
-  s.objs[index] = s.objs.back();
-  s.objs.pop_back();
-  dealloc_(p, s.size);
+void EmpiricalData::ReplayDeath(const size_t size) {
+  void* p = death_objects_[death_object_index_];
+  dealloc_(p, size);
 }
 
 void EmpiricalData::RecordNext() {
@@ -230,19 +238,18 @@ void EmpiricalData::RecordNext() {
 }
 
 void EmpiricalData::ReplayTrace() {
-  for (birth_or_death_index_ = 0, death_object_index_ = 0;
-       birth_or_death_index_ < birth_or_death_.size();
-       ++birth_or_death_index_) {
-    bool do_birth = birth_or_death_[birth_or_death_index_];
+  for (birth_object_index_ = 0, death_object_index_ = 0;
+       birth_object_index_ + death_object_index_ < birth_or_death_.size();) {
+    size_t birth_or_death_index = birth_object_index_ + death_object_index_;
+    bool do_birth = birth_or_death_[birth_or_death_index];
+    size_t size = birth_or_death_actual_sizes_[birth_or_death_index];
+
     if (do_birth) {
-      void* allocated =
-          ReplayBirth(birth_or_death_sizes_[birth_or_death_index_]);
+      void* allocated = ReplayBirth(size);
       TouchAllocated(allocated);
+      ++birth_object_index_;
     } else {
-      ReplayDeath(birth_or_death_sizes_[birth_or_death_index_],
-                  death_objects_[death_object_index_]);
-      __builtin_prefetch(death_object_pointers_[death_object_index_], /*rw=*/1,
-                         /*locality*/ 3);
+      ReplayDeath(size);
       ++death_object_index_;
     }
   }
@@ -250,9 +257,24 @@ void EmpiricalData::ReplayTrace() {
   total_bytes_allocated_ += bytes_allocated_recorded_;
 }
 
+void EmpiricalData::PrepareNextReplay() {
+  for (auto& s : state_) {
+    for (const auto& update : s.obj_update) {
+      s.objs[update.to] = s.objs[update.from];
+    }
+    for (const auto& update : s.birth_update) {
+      s.objs[update.to] = birth_objects_[update.from];
+    }
+    for (const auto& update : s.death_update) {
+      death_objects_[update.to] = s.objs[update.from];
+    }
+  }
+}
+
 void EmpiricalData::SnapshotLiveObjects() {
   for (const auto& s : state_) {
-    snapshot_state_.push_back({s.size, s.death_rate, s.objs});
+    snapshot_state_.push_back(
+        {s.size, s.death_rate, s.objs, s.objs_indices_after_recording});
   }
 }
 
@@ -262,53 +284,46 @@ void EmpiricalData::RestoreSnapshot() {
   }
 }
 
-void EmpiricalData::ReserveSizeClassObjects() {
-  // Keep a running sum and high water mark for the delta in the size class
-  // object arrays.
-  std::vector<int32_t> max_object_size_delta(state_.size(), 0);
-  std::vector<int32_t> cur_object_size_delta(state_.size(), 0);
-  for (int i = 0; i < birth_or_death_.size(); i++) {
-    auto size_class = birth_or_death_sizes_[i];
-    if (birth_or_death_[i]) {
-      cur_object_size_delta[size_class]++;
-      max_object_size_delta[size_class] = std::max(
-          max_object_size_delta[size_class], cur_object_size_delta[size_class]);
-    } else {
-      cur_object_size_delta[size_class]--;
-    }
-  }
+void EmpiricalData::BuildUpdateVectors() {
+  birth_pointers_.resize(birth_object_index_);
+  birth_objects_.resize(birth_object_index_);
+  death_objects_.resize(death_obj_indices_.size());
 
-  for (int i = 0; i < state_.size(); i++) {
-    state_[i].objs.reserve(state_[i].objs.size() + max_object_size_delta[i]);
-  }
-}
-
-void EmpiricalData::BuildDeathObjectPointers() {
-  constexpr uint32_t kPrefetchDistance = 64;
-
-  // This is a bit ugly but because the below code can create pointers past the
-  // end of the current objects arrays we need to first need to reserve their
-  // capacity at the maximum capacity they will ever hit to ensure they won't
-  // grow and possibly be reallocated.  They will never grow beyond the size
-  // calculated by this function.
-  ReserveSizeClassObjects();
-
-  // The easiest way to compute the prefetch objects is to get the pointers
-  // corresponding to each death_objects_[] and then rotating the array so the
-  // N + prefetch_distance object is stored at index N.
-  uint32_t death_index = 0;
-  for (int i = 0; i < birth_or_death_.size(); i++) {
+  for (size_t i = 0, death_index = 0; i < birth_or_death_.size(); ++i) {
     // Skip births
     if (birth_or_death_[i]) {
       continue;
     }
-    SizeState& s = state_[birth_or_death_sizes_[i]];
-    death_object_pointers_.push_back(s.objs.data() +
-                                     death_objects_[death_index++]);
+
+    const ObjectIndex& death_obj_index = death_obj_indices_[death_index];
+    if (!death_obj_index.born) {
+      SizeState& s = state_[birth_or_death_sizes_[i]];
+      size_t from = death_obj_index.index;
+      size_t to = death_index;
+      s.death_update.push_back({.from = from, .to = to});
+      death_objects_[to] = s.objs[from];
+    } else {
+      size_t birth_index = death_obj_index.index;
+      birth_pointers_[birth_index] = &death_objects_[death_index];
+    }
+    ++death_index;
   }
-  std::rotate(death_object_pointers_.begin(),
-              death_object_pointers_.begin() + kPrefetchDistance,
-              death_object_pointers_.end());
+
+  for (SizeState& s : state_) {
+    for (size_t i = 0; i < s.objs_indices_after_recording.size(); ++i) {
+      if (!s.objs_indices_after_recording[i].born) {
+        size_t from = s.objs_indices_after_recording[i].index;
+        size_t to = i;
+        if (from != to) {
+          s.obj_update.push_back({.from = from, .to = to});
+        }
+      } else {
+        size_t birth_index = s.objs_indices_after_recording[i].index;
+        birth_pointers_[birth_index] = &birth_objects_[birth_index];
+        s.birth_update.push_back({.from = birth_index, .to = i});
+      }
+    }
+  }
 }
 
 void EmpiricalData::RecordRepairToSnapshotState() {

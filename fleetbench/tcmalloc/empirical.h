@@ -40,9 +40,11 @@
 
 #include <cstdint>
 #include <random>
+#include <string>
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/base/attributes.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/check.h"
@@ -229,28 +231,81 @@ class EmpiricalData {
   // be called once (at the end of the recording phase).
   void RecordRepairToSnapshotState();
 
-  // Computes addresses to prefetch when executing in record and replay mode.
-  // This is necessary to minimize the impact of indexing into SizeState.objs
-  // when freeing an object.
-  void BuildDeathObjectPointers();
+  // Fills the update vectors in `SizeState` that are used to update the state
+  // after each replay of the recorded trace.
+  // This function should be called once after RestoreSnapshot().
+  void BuildUpdateVectors();
+
+  // Prepares the next replay round by updating the state based on the update
+  // vectors in `SizeState`.
+  // Must be called after each replay, but not before the first replay.
+  void PrepareNextReplay();
 
  private:
   std::default_random_engine rng_;
+
+  struct ObjectIndex {
+    // Whether the object was born during the recording phase.
+    bool born : 1;
+    size_t index : 63;
+  };
+
+  struct UpdatePair {
+    size_t from;
+    size_t to;
+  };
 
   struct SizeState {
     const size_t size;
     const double death_rate;
     std::vector<void*> objs;
+
+    // objs_indices_after_recording[i] = j has the following meaning:
+    //   - if j.born == 0, then after the recording phase, objs[i] contains the
+    //     object that was stored in objs[j.index] before the recording phase.
+    //   - if j.born == 1, then objs[i] contains the (j.index)-th object that
+    //     was born during the recording phase.
+    std::vector<ObjectIndex> objs_indices_after_recording;
+
+    // Updating the objs vector and the death_objects_ vector are relatively
+    // expensive operations. Therefore, we try to avoid performing these updates
+    // after each allocation/deallocation during the main benchmarking loop;
+    // instead, we perform all of the updates (except for the updates to
+    // death_objects_ for ojects that are born and killed in the same replay
+    // round) together after each replay of the entire trace in a
+    // `Pause/ResumeTiming` block so that they don't affect the benchmark
+    // results. To perform these updates, we use the following vectors.
+
+    // obj_update contains pairs of the form (from, to) that are used to update
+    // `objs` after each replay of the recorded trace. After the replay,
+    // objs[to] is updated to store object that was in objs[from] before the
+    // replay. The elements of the vector are ordered such that no `to` value
+    // is equal to a `from` value that occurs later in the vector. Thus, the
+    // update can be performed in place, and it is not necessary to create a
+    // copy of `objs`. Pairs where `from` is equal to `to` are omitted for
+    // efficiency reasons.
+    std::vector<UpdatePair> obj_update;
+
+    // birth_update contains pairs of the form (from, to). After each replay,
+    // objs[to] is updated to store the element that was written to
+    // new_objects_[from] during the replay.
+    // These updates are performed after the obj_update updates.
+    std::vector<UpdatePair> birth_update;
+
+    // death_update contains pairs of the form (from, to). After each replay,
+    // death_objects_[to] is updated to store the element that is currently
+    // stored in objs[from].
+    // These updates are performed after the birth_update updates.
+    std::vector<UpdatePair> death_update;
   };
 
-  void* DoBirth(const size_t i);
-  void DoDeath(const size_t i);
+  void* DoBirth(size_t i);
+  void DoDeath(size_t i);
 
-  void RecordBirth(const size_t i);
-  void* ReplayBirth(const size_t i);
-  void RecordDeath(const size_t i);
-  void ReplayDeath(const size_t i, const uint64_t index);
-  void ReserveSizeClassObjects();
+  void RecordBirth(size_t i);
+  void* ReplayBirth(size_t size);
+  void RecordDeath(size_t i);
+  void ReplayDeath(size_t size);
 
   absl::FunctionRef<void*(size_t)> alloc_;
   absl::FunctionRef<void(void*, size_t)> dealloc_;
@@ -267,12 +322,27 @@ class EmpiricalData {
   std::vector<SizeState> snapshot_state_;
   std::vector<bool> birth_or_death_;
   std::vector<uint16_t> birth_or_death_sizes_;
-  std::vector<uint32_t> death_objects_;
-  std::vector<void**> death_object_pointers_;
-  uint32_t birth_or_death_index_ = 0;
+  std::vector<size_t> birth_or_death_actual_sizes_;
+  std::vector<void*> death_objects_;
+  std::vector<void*> birth_objects_;
   uint32_t death_object_index_ = 0;
+  uint32_t birth_object_index_ = 0;
   size_t num_allocated_recorded_;
   size_t bytes_allocated_recorded_;
+
+  // birth_pointers_[i] contains the address where the i-th object that is born
+  // during the reply should be stored. This address either points to an entry
+  // in death_objects_ if the object is killed during the same replay round, or
+  // to birth_objects_[i] otherwise.
+  std::vector<void**> birth_pointers_;
+
+  // death_obj_indices_[i] = j has the following meaning:
+  //   - if j.born == 0, then the i-th recorded death operation kills the object
+  //     that was stored in objs[j.index] in the corresponding `SizeState`
+  //     before the recording phase.
+  //   - if j.born == 1, then the i-th recorded death operation kills the
+  //     (j.index)-th object that was born during the recording phase.
+  std::vector<ObjectIndex> death_obj_indices_;
 };
 
 std::vector<EmpiricalData::Entry> GetEmpiricalDataEntries(
