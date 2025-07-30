@@ -1,0 +1,41 @@
+From 1f3b442a5f19f6a861de0df57c75c9aa0c064a3c Mon Sep 17 00:00:00 2001
+From: Richard O'Grady <rjogrady@google.com>
+Date: Tue, 29 Jul 2025 10:49:01 -0700
+Subject: Update path to py_proto_library
+
+The py_proto_library in protobuf moved to a bazel/ directory.
+Adjust scann_py_proto_library wrapper for changes to the upstream build
+rule.
+---
+ scann/scann/oss_wrappers/build_defs.bzl | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
+
+diff --git a/scann/scann/oss_wrappers/build_defs.bzl b/scann/scann/oss_wrappers/build_defs.bzl
+index 5259dd160..825e913df 100644
+--- a/scann/scann/oss_wrappers/build_defs.bzl
++++ b/scann/scann/oss_wrappers/build_defs.bzl
+@@ -1,6 +1,6 @@
+ """.bzl file for ScaNN open source build configs."""
+ 
+-load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
++load("@com_google_protobuf//bazel:py_proto_library.bzl", "py_proto_library")
+ 
+ def scann_py_proto_library(
+         name,
+@@ -18,12 +18,8 @@ def scann_py_proto_library(
+       proto_deps: a list of dependency labels for internal use.
+       **kwargs: other keyword arguments that are passed to py_proto_library.
+     """
+-    _ignore = [proto_deps]  # buildifier: disable=unused-variable
+     py_proto_library(
+         name = name,
+-        srcs = srcs,
+-        deps = py_proto_deps,
+-        default_runtime = "@com_google_protobuf//:protobuf_python",
+-        protoc = "@com_google_protobuf//:protoc",
++        deps = proto_deps,
+         **kwargs
+     )
+-- 
+2.50.1.552.g942d659e1b-goog
+

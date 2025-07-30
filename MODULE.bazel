@@ -16,20 +16,20 @@ module(name = "com_google_fleetbench")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-bazel_dep(name = "protoc-gen-validate", version = "1.0.4.bcr.2")
-bazel_dep(name = "protobuf", version = "29.1", repo_name = "com_google_protobuf")
-bazel_dep(name = "platforms", version = "0.0.10")
-bazel_dep(name = "rules_python", version = "0.40.0")
-bazel_dep(name = "abseil-cpp", version = "20240722.0.bcr.2", repo_name = "com_google_absl")
+bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1")
+bazel_dep(name = "protobuf", version = "31.1", repo_name = "com_google_protobuf")
+bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "rules_python", version = "1.0.0")
+bazel_dep(name = "abseil-cpp", version = "20250512.1", repo_name = "com_google_absl")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "abseil-py", version = "2.1.0", repo_name = "com_google_absl_py")
-bazel_dep(name = "googletest", version = "1.15.2", repo_name = "com_google_googletest")
+bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googletest")
 bazel_dep(name = "google_benchmark", version = "1.8.5", repo_name = "com_google_benchmark")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20240411-5ed309d", repo_name = "com_google_tcmalloc")
 bazel_dep(name = "brotli", version = "1.1.0")
 bazel_dep(name = "snappy", version = "1.2.1")
 bazel_dep(name = "highway", version = "1.2.0", repo_name = "com_google_highway")
-bazel_dep(name = "grpc", version = "1.68.0", repo_name = "com_github_grpc_grpc")
+bazel_dep(name = "grpc", version = "1.74.0", repo_name = "com_github_grpc_grpc")
 bazel_dep(name = "libpfm", version = "4.11.0")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
@@ -103,6 +103,8 @@ http_archive(
         "//fleetbench/patches:0001-Remove-more_deps-argument.patch",
         "//fleetbench/patches:0002-Replace-gtest_main-with-gtest.patch",
         "//fleetbench/patches:0003-Replace-non-standard-uint32-with-uint32_t.patch",
+        "//fleetbench/patches:0004-Remove-dependency-on-absl-endian.patch",
+        "//fleetbench/patches:0005-Update-path-to-py_proto_library.patch",
     ],
     strip_prefix = "google-research-084accd3286a43da7f43b4a1bf0bba7fddd90527/scann",
     urls = ["https://github.com/google-research/google-research/archive/084accd3286a43da7f43b4a1bf0bba7fddd90527.zip"],
