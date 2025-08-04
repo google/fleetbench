@@ -41,6 +41,16 @@
 #include "fleetbench/dynamic_registrar.h"
 #include "fleetbench/libc/utils.h"
 
+#define FLEETBENCH_PRAGMA(x) _Pragma(#x)
+
+#if defined(__clang__)
+#define UNROLL_LOOP(x) FLEETBENCH_PRAGMA(unroll x)
+#elif defined(__GNUC__)
+#define UNROLL_LOOP(x) FLEETBENCH_PRAGMA(GCC unroll x)
+#else
+#define UNROLL_LOOP(x)
+#endif
+
 namespace fleetbench {
 namespace libc {
 // Number of needed buffer of memory operators.
@@ -91,8 +101,8 @@ void MemcpyFunction(benchmark::State &state,
     // sensitivity by partially unrolling the loop, which reduces the number of
     // branch instructions and moves the remaining ones to different offsets in
     // different iterations.
-#pragma unroll 8
-    for (int i = 0; i < parameters.size_bytes.size(); i++) {
+    UNROLL_LOOP(8)
+    for (int i = 0, size = parameters.size_bytes.size(); i < size; i++) {
       auto res =
           memcpy(dst + parameters.dst_offset[i], src + parameters.src_offset[i],
                  parameters.size_bytes[i]);
@@ -110,8 +120,8 @@ void MemmoveFunction(benchmark::State &state,
   int64_t warmup = 10;
   // Run benchmark and call memmove function
   while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
-#pragma unroll 8
-    for (int i = 0; i < parameters.size_bytes.size(); i++) {
+    UNROLL_LOOP(8)
+    for (int i = 0, size = parameters.size_bytes.size(); i < size; i++) {
       auto res =
           memmove(buffer + parameters.dst_offset[i],
                   buffer + parameters.src_offset[i], parameters.size_bytes[i]);
@@ -129,8 +139,8 @@ void CmpFunction(benchmark::State &state, const BM_Mem_Parameters &parameters,
   int64_t warmup = 10;
   // Run benchmark and call cmp function
   while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
-#pragma unroll 8
-    for (int i = 0; i < parameters.size_bytes.size(); i++) {
+    UNROLL_LOOP(8)
+    for (int i = 0, size = parameters.size_bytes.size(); i < size; i++) {
       MemoryBuffers::mark(buffer, parameters.dst_offset[i],
                           parameters.mismatch_pos[i]);
       auto res =
@@ -152,8 +162,8 @@ void MemsetFunction(benchmark::State &state,
   int64_t warmup = 10;
   // Run benchmark and call memset function
   while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
-#pragma unroll 8
-    for (int i = 0; i < parameters.size_bytes.size(); i++) {
+    UNROLL_LOOP(8)
+    for (int i = 0, size = parameters.size_bytes.size(); i < size; i++) {
       auto res = memset(dst + parameters.dst_offset[i],
                         parameters.memset_value[i], parameters.size_bytes[i]);
       benchmark::DoNotOptimize(res);
