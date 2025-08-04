@@ -140,6 +140,8 @@ http_archive(
     patch_cmds = [
         "./autogen.sh",
         "./configure",
+        # clang does not support the symver attribute
+        "sed -i -e 's/\\(#define HAVE_ATTRIBUTE_SYMVER 1\\)/#ifndef __clang__\\n\\1\\n#endif/' config.h",
     ],
     sha256 = "c7aebfc925f2c3827e3cb607092065f3a48986a16aea1bb10ca70937edac278b",
     strip_prefix = "numactl-2.0.19",
