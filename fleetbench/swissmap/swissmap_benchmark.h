@@ -270,11 +270,11 @@ class SetsCache {
     return n_sets_of_size;
   }
 
-  SetsCache<Set>(SetsCache<Set> const&) = delete;
-  void operator=(SetsCache<Set> const&) = delete;
+  SetsCache(SetsCache const&) = delete;
+  void operator=(SetsCache const&) = delete;
 
  private:
-  SetsCache<Set>() {}
+  SetsCache() = default;
 
   using GeneratedSetsMap = absl::flat_hash_map<
       size_t,
