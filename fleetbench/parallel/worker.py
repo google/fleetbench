@@ -87,7 +87,7 @@ class Worker(threading.Thread):
   def run(self):
     """Called when the thread is started. Loops executing commands."""
     if self._affinity:
-      os.sched_setaffinity(os.getpid(), [self._cpu])
+      os.sched_setaffinity(threading.get_native_id(), [self._cpu])
     logging.debug("Worker %d running", self._cpu)
 
     while True:

@@ -19,6 +19,7 @@ import json
 import math
 import os
 import shutil
+import threading
 import time
 from typing import Any
 
@@ -217,7 +218,7 @@ class ParallelBench:
           len(self.cpus),
       )
       logging.debug("CPU activity: %s", self.cpus)
-      os.sched_setaffinity(os.getpid(), [self.controller_cpu])
+      os.sched_setaffinity(threading.get_native_id(), [self.controller_cpu])
 
   def _AdjustProbabilities(
       self, target_ratios: list[float], current_runtime: list[float]
