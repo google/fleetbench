@@ -44,6 +44,7 @@ class ParallelBenchTest(parameterized.TestCase):
         temp_parent_root=absltest.get_default_test_tmpdir(),
         keep_raw_data=True,
         benchmark_perf_counters="",
+        benchmark_threads={},
     )
 
   def tearDown(self):
@@ -104,6 +105,7 @@ class ParallelBenchTest(parameterized.TestCase):
         temp_parent_root=absltest.get_default_test_tmpdir(),
         keep_raw_data=True,
         benchmark_perf_counters="",
+        benchmark_threads={},
     )
     self.pb.SetWeights(
         benchmark_target="fake_bench",
@@ -187,6 +189,68 @@ class ParallelBenchTest(parameterized.TestCase):
             "--benchmark_perf_counters=instructions,cycles",
         ],
     )
+
+  @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
+  @mock.patch.object(run.Run, "Execute", autospec=True)
+  @mock.patch.object(cpu, "Utilization", autospec=True)
+  @mock.patch.object(reporter, "GenerateBenchmarkReport", autospec=True)
+  @mock.patch.object(
+      reporter, "SaveBenchmarkResults", autospec=True, return_value=(None, None)
+  )
+  @flagsaver.flagsaver(
+      benchmark_dir=absltest.get_default_test_tmpdir(),
+  )
+  def testRunThreads(
+      self,
+      mock_save_benchmark_results,
+      mock_generate_benchmark_report,
+      mock_utilization,
+      mock_execute,
+      mock_get_subbenchmarks,
+  ):
+    mock_get_subbenchmarks.return_value = ["BM_Test1"]
+    mock_execute.return_value = result.Result(
+        benchmark="fake_bench (BM_Test1)",
+        rc=0,
+        stdout="fake_stdout",
+        stderr="fake_stderr",
+        duration=0.01,
+        bm_cpu_time=0.01,
+        result="fake_result",
+    )
+    self.create_tempfile(
+        os.path.join(absltest.get_default_test_tmpdir(), "fake_bench")
+    )
+
+    def fake_utilization(unused_cpus):
+      # Return 0% for the first call, then 55% for the rest.
+      fake_utilizations = [(0, {1: 0, 2: 0}, 0), (55, {1: 55, 2: 55}, 1)]
+      return fake_utilizations[min(mock_utilization.call_count - 1, 1)]
+
+    mock_utilization.side_effect = fake_utilization
+
+    mock_generate_benchmark_report.return_value = pd.DataFrame()
+
+    self.pb = parallel_bench_lib.ParallelBench(
+        cpus=[0, 1, 2],
+        cpu_affinity=False,
+        utilization=0.5,
+        duration=0.1,
+        repetitions=1,
+        temp_parent_root=absltest.get_default_test_tmpdir(),
+        keep_raw_data=True,
+        benchmark_perf_counters="",
+        benchmark_threads={"BM_Test1": 2},
+    )
+    self.pb.SetWeights(
+        benchmark_target="fake_bench",
+        benchmark_filter=None,
+        workload_filter=None,
+        scheduling_strategy=weights.SchedulingStrategy.BM_WEIGHTED,
+        custom_benchmark_weights=None,
+    )
+    self.pb.Run()
+    mock_execute.assert_called_once()
 
   def test_convert_to_dataframe(self):
     # First entries are fake durations, the second entries are real durations.

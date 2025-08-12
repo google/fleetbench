@@ -14,6 +14,7 @@
 
 """Run Fleetbench benchmarks in parallel."""
 
+import collections
 import dataclasses
 import json
 import math
@@ -21,7 +22,6 @@ import os
 import shutil
 import threading
 import time
-from typing import Any
 
 from absl import logging
 import numpy as np
@@ -74,6 +74,7 @@ class ParallelBench:
     cpu_affinity: Whether to bind each worker to a CPU or allow the scheduler to
       move them around.
     benchmark_weights: Whether to use adaptive benchmark selection.
+    benchmark_threads: Number of threads to use for selected benchmarks.
     benchmarks: List of benchmarks to run.
     target_utilization: Target utilization from 0 to 1.
     duration: How long in seconds to run for.
@@ -107,6 +108,7 @@ class ParallelBench:
       temp_parent_root: str,
       keep_raw_data: bool,
       benchmark_perf_counters: str,
+      benchmark_threads: dict[str, int],
   ):
     """Initialize the parallel benchmark runner."""
 
@@ -118,6 +120,7 @@ class ParallelBench:
     self.cpus = cpus[1:]
     self.cpu_affinity = cpu_affinity
     self.benchmark_weights: dict[str, float] = {}
+    self.benchmark_threads = benchmark_threads
     self.benchmarks: dict[str, bm.Benchmark] = {}
     self.target_utilization = utilization * 100
     self.duration = duration
@@ -350,8 +353,8 @@ class ParallelBench:
 
       self.utilization_samples.append((pd.Timestamp.now(), total_utilization))
 
-      least_busy_cpus = sorted(
-          utilization_per_cpu.keys(), key=utilization_per_cpu.get
+      least_busy_cpus = collections.OrderedDict(
+          sorted(utilization_per_cpu.items(), key=lambda item: item[1])
       )
 
       # E.g. we are at 50% utilization, target is 70%.
@@ -374,14 +377,40 @@ class ParallelBench:
             benchmark=benchmark,
             out_file=path,
         )
-        for cpu_id in least_busy_cpus:
-          if self.workers[cpu_id].TryAddRun(r):
+        required_n_threads = self.benchmark_threads.get(
+            benchmark.BenchmarkName(), 1
+        )
+        # If required_n_threads > 1, we will try to reserve required_n_threads-1
+        # additional workers, whose CPUs we can temporarily assign to the main
+        # worker for the benchmark.
+        extra_workers = []
+        for cpu_id in list(least_busy_cpus.keys()):
+          if required_n_threads > 1:
+            if self.workers[cpu_id].TryBlock():
+              logging.debug("Reserving CPU %d for %s", cpu_id, benchmark)
+              extra_workers.append(self.workers[cpu_id])
+              del least_busy_cpus[cpu_id]
+              required_n_threads -= 1
+          elif self.workers[cpu_id].TryAddRun(r, extra_workers):
             next_run_id += 1
-            logging.debug("Scheduling %s on CPU %d", benchmark, cpu_id)
+            if extra_workers:
+              logging.debug(
+                  "Scheduling %s on CPUs %s",
+                  benchmark,
+                  [cpu_id]
+                  + [extra_worker.cpu for extra_worker in extra_workers],
+              )
+            else:
+              logging.debug("Scheduling %s on CPU %d", benchmark, cpu_id)
             # We just added something to this worker, so presumably
             # trying to add the next benchmark to it will fail.
-            least_busy_cpus.remove(cpu_id)
+            del least_busy_cpus[cpu_id]
             break
+        else:
+          # We did not find enough CPUs for the benchmark. If we blocked any
+          # extra workers, we will unblock them here.
+          for w in extra_workers:
+            w.Unblock()
 
       # Process any available results. This updates the runtimes of each
       # benchmark to make the scheduling probabilities more accurate.

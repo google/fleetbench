@@ -14,15 +14,24 @@
 
 """Worker for parallel benchmark."""
 
+import dataclasses
 import os
 import queue
 import threading
-from typing import Optional
+from typing import Optional, Self
 
 from absl import logging
 
 from fleetbench.parallel import result
 from fleetbench.parallel import run as parallel_run
+
+
+@dataclasses.dataclass
+class RunAndExtraWorkers:
+  """Groups a benchmark run with any additional workers it needs."""
+
+  run: parallel_run.Run
+  extra_workers: list["Worker"]
 
 
 class Worker(threading.Thread):
@@ -34,31 +43,56 @@ class Worker(threading.Thread):
     result_q: Queue of results from completed runs.
     cpu: The CPU number this worker is assigned to.
     affinity: If true, bind this thread to the assigned CPU.
+    lock: Lock to temporarily block this worker while its CPU is being used by
+      another worker that requires more than one CPU.
+    in_use_as_extra_worker: Whether this worker is currently being used as an
+      extra worker.
   """
 
   def __init__(self, cpu: int, affinity: bool):
     super().__init__()
-    self._command_q: queue.Queue[Optional[parallel_run.Run]] = queue.Queue(
+    self._command_q: queue.Queue[Optional[RunAndExtraWorkers]] = queue.Queue(
         maxsize=1
     )
     self._result_q: queue.Queue[Optional[result.Result]] = queue.Queue()
-    self._cpu = cpu
+    self.cpu = cpu
     self._affinity = affinity
+    self._lock = threading.Lock()
+    self._in_use_as_extra_worker = False
 
-  def TryAddRun(self, run: parallel_run.Run) -> bool:
+  def TryAddRun(self, run: parallel_run.Run, extra_workers: list[Self]) -> bool:
     """Tries to add a run to the worker's queue.
 
     Args:
       run: The run to add to the queue.
+      extra_workers: The extra workers to add to the queue.
 
     Returns:
       True if successful, False if the queue is full.
     """
+    if self._in_use_as_extra_worker:
+      return False
     try:
-      self._command_q.put_nowait(run)
+      self._command_q.put_nowait(RunAndExtraWorkers(run, extra_workers))
       return True
     except queue.Full:
       return False
+
+  def TryBlock(self) -> bool:
+    """Tries to block the worker so that its CPU can be used by another worker.
+
+    Returns:
+      True if successful, False if the worker is busy.
+    """
+    lock_acquired = self._lock.acquire(blocking=False)
+    if lock_acquired:
+      self._in_use_as_extra_worker = True
+    return lock_acquired
+
+  def Unblock(self) -> None:
+    """Resume the worker's normal operation."""
+    self._in_use_as_extra_worker = False
+    self._lock.release()
 
   def StopAndGetResults(self) -> list[result.Result]:
     """Shut down the worker loop, then wait for results."""
@@ -87,15 +121,26 @@ class Worker(threading.Thread):
   def run(self):
     """Called when the thread is started. Loops executing commands."""
     if self._affinity:
-      os.sched_setaffinity(threading.get_native_id(), [self._cpu])
-    logging.debug("Worker %d running", self._cpu)
+      os.sched_setaffinity(threading.get_native_id(), [self.cpu])
+    logging.debug("Worker %d running", self.cpu)
 
     while True:
-      run_object = self._command_q.get()
-      if run_object is None:
-        logging.debug("Worker %d shutting down", self._cpu)
+      task = self._command_q.get()
+      if task is None:
+        logging.debug("Worker %d shutting down", self.cpu)
         self._result_q.put(None)
         break
-      self._result_q.put(run_object.Execute())
+      with self._lock:
+        extra_workers = task.extra_workers
+        if extra_workers and self._affinity:
+          os.sched_setaffinity(
+              threading.get_native_id(),
+              [self.cpu] + [extra_worker.cpu for extra_worker in extra_workers],
+          )
+        self._result_q.put(task.run.Execute())
+        if extra_workers and self._affinity:
+          os.sched_setaffinity(threading.get_native_id(), [self.cpu])
+          for extra_worker in extra_workers:
+            extra_worker.Unblock()
 
-    logging.debug("Worker %d exiting", self._cpu)
+    logging.debug("Worker %d exiting", self.cpu)

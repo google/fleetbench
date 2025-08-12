@@ -130,6 +130,14 @@ _CUSTOM_BENCHMARK_WEIGHTS = flags.DEFINE_multi_string(
     " default weights.",
 )
 
+_CUSTOM_BENCHMARK_THREADS = flags.DEFINE_multi_string(
+    "benchmark_threads",
+    [],
+    "Number of threads to use for selected benchmarks. The input should be in"
+    " the format of <benchmark_name|benchmark_filter>:<n_threads>. Benchmarks"
+    " for which no thread count is specified will use one thread by default.",
+)
+
 _NUM_CPUS = flags.DEFINE_integer(
     "num_cpus",
     len(cpu.Available()),
@@ -169,6 +177,35 @@ _KEEP_RAW_DATA = flags.DEFINE_bool(
 )
 
 
+def _ParseBenchmarkThreads(
+    benchmark_threads_list: list[str],
+) -> dict[str, int]:
+  """Parses a list of benchmark thread count specs into a dictionary.
+
+  The string element in the list should be in the format:
+  <benchmark_name|benchmark_filter>:<n_threads>.
+
+  Args:
+    benchmark_threads_list: A list of strings to parse.
+
+  Returns:
+    A dictionary of {<benchmark_name|benchmark_filter>: <n_threads>}.
+  """
+  benchmark_threads = {}
+  for spec in benchmark_threads_list:
+    try:
+      benchmark, n_threads = spec.rsplit(":", maxsplit=1)
+      benchmark_threads[benchmark] = int(n_threads)
+    except ValueError:
+      logging.warning(
+          "Invalid benchmark string: %s. The format should be"
+          " <benchmark_name|benchmark_filter>:<n_threads>. Skipping...",
+          spec,
+      )
+
+  return benchmark_threads
+
+
 def main(argv: Sequence[str]) -> None:
   if len(argv) > 1:
     raise app.UsageError("Too many command-line arguments.")
@@ -201,6 +238,7 @@ def main(argv: Sequence[str]) -> None:
       temp_parent_root=_TEMP_ROOT.value,
       keep_raw_data=_KEEP_RAW_DATA.value,
       benchmark_perf_counters=_BENCHMARK_PERF_COUNTERS.value,
+      benchmark_threads=_ParseBenchmarkThreads(_CUSTOM_BENCHMARK_THREADS.value),
   )
 
   bench.SetWeights(
