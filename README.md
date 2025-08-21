@@ -79,7 +79,17 @@ STL-Cord    | Instruction-focused.
 RPC         | Instruction-focused with a strong data-drive aspect and buit on [gRPC framework](https://grpc.io)
 SIMD        | [ScaNN LUT16](https://research.google/blog/announcing-scann-efficient-vector-similarity-search/) based and measures performance of lookup-and-accumulate.
 
+Benchmarks are classified by their core characteristics, such as being
+compute-bound, memory-bound, or sensitive to memory bandwidth vs. latency. For a
+detailed breakdown, see the
+[benchmark characteristics documentation](https://github.com/google/fleetbench/blob/main/fleetbench/README.md).
+
 ## Running Benchmarks
+
+Fleetbench supports running benchmarks in two modes: single-threaded and
+multi-cores. The following command is for a single-threaded run. For multi-core
+execution, please refer to the
+[parallel run instructions](https://github.com/google/fleetbench/blob/main/fleetbench/parallel/README.md).
 
 ### Setup
 
