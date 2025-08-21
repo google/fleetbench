@@ -1,105 +1,101 @@
 {
   "3.0": {
-    "count": 99,
-    "bytes": 688,
+    "count": 146,
+    "bytes": 976,
     "compression_ratio": {
       "0.9": {
-        "count": 99,
-        "bytes": 688
+        "count": 146,
+        "bytes": 976
       }
     }
   },
   "4.0": {
-    "count": 479,
-    "bytes": 7532,
+    "count": 487,
+    "bytes": 7646,
     "compression_ratio": {
       "0.9": {
-        "count": 479,
-        "bytes": 7532
+        "count": 487,
+        "bytes": 7646
       }
     }
   },
   "5.0": {
-    "count": 244910,
-    "bytes": 4534193,
+    "count": 240769,
+    "bytes": 4454915,
     "compression_ratio": {
       "0.9": {
-        "count": 175005,
-        "bytes": 3135504
+        "count": 172901,
+        "bytes": 3096903
       },
       "1.0": {
-        "count": 69900,
-        "bytes": 1398549
+        "count": 67864,
+        "bytes": 1357900
       },
       "1.1": {
-        "count": 5,
-        "bytes": 140
-      }
-    }
-  },
-  "6.0": {
-    "count": 285,
-    "bytes": 14193,
-    "compression_ratio": {
-      "1.0": {
-        "count": 235,
-        "bytes": 11565
-      },
-      "1.1": {
-        "count": 45,
-        "bytes": 2352
-      },
-      "1.2": {
-        "count": 5,
-        "bytes": 276
-      }
-    }
-  },
-  "7.0": {
-    "count": 307,
-    "bytes": 28611,
-    "compression_ratio": {
-      "1.0": {
-        "count": 205,
-        "bytes": 18675
-      },
-      "1.1": {
-        "count": 91,
-        "bytes": 8880
-      },
-      "1.2": {
-        "count": 5,
-        "bytes": 512
-      },
-      "1.3": {
-        "count": 2,
-        "bytes": 196
-      },
-      "1.4": {
-        "count": 3,
-        "bytes": 236
-      },
-      "1.5": {
-        "count": 1,
+        "count": 4,
         "bytes": 112
       }
     }
   },
-  "8.0": {
-    "count": 381091,
-    "bytes": 96300090,
+  "6.0": {
+    "count": 275,
+    "bytes": 13657,
     "compression_ratio": {
       "1.0": {
-        "count": 381040,
-        "bytes": 96291048
+        "count": 231,
+        "bytes": 11357
       },
       "1.1": {
-        "count": 44,
-        "bytes": 7789
+        "count": 39,
+        "bytes": 2060
       },
       "1.2": {
+        "count": 5,
+        "bytes": 240
+      }
+    }
+  },
+  "7.0": {
+    "count": 294,
+    "bytes": 27455,
+    "compression_ratio": {
+      "1.0": {
+        "count": 204,
+        "bytes": 18675
+      },
+      "1.1": {
+        "count": 81,
+        "bytes": 7860
+      },
+      "1.2": {
+        "count": 5,
+        "bytes": 556
+      },
+      "1.3": {
+        "count": 1,
+        "bytes": 128
+      },
+      "1.4": {
         "count": 3,
-        "bytes": 605
+        "bytes": 236
+      }
+    }
+  },
+  "8.0": {
+    "count": 368921,
+    "bytes": 93229273,
+    "compression_ratio": {
+      "1.0": {
+        "count": 368862,
+        "bytes": 93218571
+      },
+      "1.1": {
+        "count": 47,
+        "bytes": 8369
+      },
+      "1.2": {
+        "count": 5,
+        "bytes": 1049
       },
       "1.3": {
         "count": 1,
@@ -110,84 +106,96 @@
         "bytes": 136
       },
       "1.6": {
-        "count": 2,
-        "bytes": 320
+        "count": 4,
+        "bytes": 708
+      },
+      "1.7": {
+        "count": 1,
+        "bytes": 248
       }
     }
   },
   "9.0": {
-    "count": 26180,
-    "bytes": 6757346,
+    "count": 26307,
+    "bytes": 6792218,
     "compression_ratio": {
       "1.0": {
-        "count": 26103,
-        "bytes": 6728219
+        "count": 26223,
+        "bytes": 6760381
       },
       "1.1": {
-        "count": 48,
-        "bytes": 18754
+        "count": 51,
+        "bytes": 19645
       },
       "1.2": {
-        "count": 17,
-        "bytes": 6169
+        "count": 15,
+        "bytes": 5499
       },
       "1.3": {
+        "count": 4,
+        "bytes": 1469
+      },
+      "1.4": {
+        "count": 2,
+        "bytes": 776
+      },
+      "1.5": {
         "count": 3,
-        "bytes": 1080
+        "bytes": 1256
       },
       "1.6": {
-        "count": 2,
-        "bytes": 604
+        "count": 3,
+        "bytes": 1048
       },
       "1.7": {
-        "count": 5,
-        "bytes": 1832
+        "count": 3,
+        "bytes": 984
       },
       "1.8": {
-        "count": 2,
-        "bytes": 688
+        "count": 3,
+        "bytes": 1160
       }
     }
   },
   "10.0": {
-    "count": 1494,
-    "bytes": 1403863,
+    "count": 1458,
+    "bytes": 1366978,
     "compression_ratio": {
       "1.0": {
-        "count": 278,
-        "bytes": 214301
+        "count": 275,
+        "bytes": 209668
       },
       "1.1": {
-        "count": 373,
-        "bytes": 341461
+        "count": 362,
+        "bytes": 329706
       },
       "1.2": {
-        "count": 466,
-        "bytes": 466809
+        "count": 459,
+        "bytes": 461315
       },
       "1.3": {
-        "count": 133,
-        "bytes": 134229
+        "count": 134,
+        "bytes": 135718
       },
       "1.4": {
-        "count": 100,
-        "bytes": 101558
+        "count": 86,
+        "bytes": 87599
       },
       "1.5": {
-        "count": 63,
-        "bytes": 63307
+        "count": 62,
+        "bytes": 62283
       },
       "1.6": {
-        "count": 55,
-        "bytes": 55650
+        "count": 48,
+        "bytes": 47997
       },
       "1.7": {
-        "count": 9,
-        "bytes": 9140
+        "count": 10,
+        "bytes": 10164
       },
       "1.8": {
-        "count": 8,
-        "bytes": 8192
+        "count": 11,
+        "bytes": 11264
       },
       "1.9": {
         "count": 3,
@@ -205,6 +213,10 @@
         "count": 2,
         "bytes": 2048
       },
+      "2.3": {
+        "count": 2,
+        "bytes": 2048
+      },
       "2.4": {
         "count": 1,
         "bytes": 1024
@@ -212,76 +224,76 @@
     }
   },
   "11.0": {
-    "count": 2824,
-    "bytes": 4738825,
+    "count": 2809,
+    "bytes": 4691790,
     "compression_ratio": {
       "1.0": {
-        "count": 937,
-        "bytes": 1418512
+        "count": 916,
+        "bytes": 1381263
       },
       "1.1": {
-        "count": 629,
-        "bytes": 897204
+        "count": 632,
+        "bytes": 887188
       },
       "1.2": {
-        "count": 213,
-        "bytes": 365859
+        "count": 223,
+        "bytes": 380129
       },
       "1.3": {
-        "count": 235,
-        "bytes": 448662
+        "count": 226,
+        "bytes": 433352
       },
       "1.4": {
-        "count": 175,
-        "bytes": 339619
+        "count": 180,
+        "bytes": 349636
       },
       "1.5": {
-        "count": 144,
-        "bytes": 288892
+        "count": 147,
+        "bytes": 292978
       },
       "1.6": {
-        "count": 135,
-        "bytes": 267616
+        "count": 136,
+        "bytes": 269761
       },
       "1.7": {
-        "count": 111,
-        "bytes": 222281
+        "count": 113,
+        "bytes": 226823
       },
       "1.8": {
-        "count": 81,
-        "bytes": 160247
+        "count": 75,
+        "bytes": 148932
       },
       "1.9": {
-        "count": 55,
-        "bytes": 110410
+        "count": 56,
+        "bytes": 111276
       },
       "2.0": {
-        "count": 46,
-        "bytes": 92835
+        "count": 41,
+        "bytes": 81458
       },
       "2.1": {
-        "count": 26,
-        "bytes": 52828
+        "count": 24,
+        "bytes": 49076
       },
       "2.2": {
-        "count": 14,
-        "bytes": 27078
+        "count": 12,
+        "bytes": 22982
       },
       "2.3": {
-        "count": 9,
-        "bytes": 18186
+        "count": 11,
+        "bytes": 22335
       },
       "2.4": {
-        "count": 5,
-        "bytes": 10164
+        "count": 7,
+        "bytes": 14121
       },
       "2.5": {
-        "count": 5,
-        "bytes": 10240
+        "count": 7,
+        "bytes": 14336
       },
       "2.6": {
-        "count": 2,
-        "bytes": 4096
+        "count": 1,
+        "bytes": 2048
       },
       "2.8": {
         "count": 1,
@@ -294,222 +306,230 @@
     }
   },
   "12.0": {
-    "count": 3324,
-    "bytes": 10504163,
+    "count": 3306,
+    "bytes": 10503135,
     "compression_ratio": {
       "1.0": {
-        "count": 377,
-        "bytes": 944633
+        "count": 374,
+        "bytes": 943255
       },
       "1.1": {
-        "count": 458,
-        "bytes": 1191572
+        "count": 436,
+        "bytes": 1135688
       },
       "1.2": {
-        "count": 563,
-        "bytes": 1651821
+        "count": 558,
+        "bytes": 1645089
       },
       "1.3": {
         "count": 406,
-        "bytes": 1296942
+        "bytes": 1302359
       },
       "1.4": {
-        "count": 350,
-        "bytes": 1147054
+        "count": 358,
+        "bytes": 1174356
       },
       "1.5": {
-        "count": 203,
-        "bytes": 677355
+        "count": 209,
+        "bytes": 693127
       },
       "1.6": {
-        "count": 97,
-        "bytes": 327229
+        "count": 112,
+        "bytes": 384417
       },
       "1.7": {
-        "count": 116,
-        "bytes": 400321
+        "count": 101,
+        "bytes": 353189
       },
       "1.8": {
-        "count": 130,
-        "bytes": 462465
+        "count": 144,
+        "bytes": 518351
       },
       "1.9": {
-        "count": 130,
-        "bytes": 476903
+        "count": 124,
+        "bytes": 464125
       },
       "2.0": {
-        "count": 127,
-        "bytes": 485918
+        "count": 122,
+        "bytes": 469263
       },
       "2.1": {
-        "count": 110,
-        "bytes": 425937
+        "count": 104,
+        "bytes": 405916
       },
       "2.2": {
-        "count": 73,
-        "bytes": 290533
+        "count": 76,
+        "bytes": 300007
       },
       "2.3": {
-        "count": 62,
-        "bytes": 246753
+        "count": 56,
+        "bytes": 221882
       },
       "2.4": {
-        "count": 41,
-        "bytes": 158267
+        "count": 38,
+        "bytes": 146479
       },
       "2.5": {
-        "count": 26,
-        "bytes": 104399
+        "count": 28,
+        "bytes": 112591
       },
       "2.6": {
-        "count": 18,
-        "bytes": 71980
+        "count": 19,
+        "bytes": 74256
       },
       "2.7": {
-        "count": 10,
-        "bytes": 40803
+        "count": 9,
+        "bytes": 36315
       },
       "2.8": {
-        "count": 5,
-        "bytes": 19281
+        "count": 6,
+        "bytes": 22522
       },
       "2.9": {
-        "count": 5,
-        "bytes": 17749
+        "count": 4,
+        "bytes": 13653
       },
       "3.0": {
         "count": 6,
-        "bytes": 23291
+        "bytes": 24412
       },
       "3.1": {
-        "count": 5,
-        "bytes": 18421
+        "count": 6,
+        "bytes": 22517
       },
       "3.2": {
-        "count": 2,
-        "bytes": 8192
+        "count": 3,
+        "bytes": 12288
       },
       "3.3": {
-        "count": 2,
-        "bytes": 8192
+        "count": 1,
+        "bytes": 4096
       },
       "3.4": {
-        "count": 1,
-        "bytes": 4056
+        "count": 2,
+        "bytes": 8152
       },
-      "5.4": {
+      "3.7": {
+        "count": 1,
+        "bytes": 4096
+      },
+      "5.0": {
+        "count": 2,
+        "bytes": 6638
+      },
+      "7.1": {
         "count": 1,
         "bytes": 4096
       }
     }
   },
   "13.0": {
-    "count": 948,
-    "bytes": 6590470,
+    "count": 925,
+    "bytes": 6480369,
     "compression_ratio": {
       "1.0": {
-        "count": 16,
-        "bytes": 84785
+        "count": 15,
+        "bytes": 84447
       },
       "1.1": {
-        "count": 6,
-        "bytes": 45029
+        "count": 4,
+        "bytes": 29701
       },
       "1.2": {
-        "count": 16,
-        "bytes": 113748
+        "count": 20,
+        "bytes": 137800
       },
       "1.3": {
-        "count": 111,
-        "bytes": 806862
+        "count": 104,
+        "bytes": 764849
       },
       "1.4": {
-        "count": 66,
-        "bytes": 431126
+        "count": 56,
+        "bytes": 370643
       },
       "1.5": {
-        "count": 19,
-        "bytes": 119498
+        "count": 20,
+        "bytes": 119403
       },
       "1.6": {
-        "count": 33,
-        "bytes": 224847
+        "count": 39,
+        "bytes": 262616
       },
       "1.7": {
-        "count": 44,
-        "bytes": 288915
+        "count": 48,
+        "bytes": 313066
       },
       "1.8": {
-        "count": 50,
-        "bytes": 327337
+        "count": 43,
+        "bytes": 278126
       },
       "1.9": {
-        "count": 41,
-        "bytes": 261871
+        "count": 40,
+        "bytes": 246589
       },
       "2.0": {
-        "count": 37,
-        "bytes": 238004
+        "count": 34,
+        "bytes": 222939
       },
       "2.1": {
-        "count": 46,
-        "bytes": 265236
+        "count": 44,
+        "bytes": 256931
       },
       "2.2": {
-        "count": 40,
-        "bytes": 250279
+        "count": 41,
+        "bytes": 258521
       },
       "2.3": {
-        "count": 44,
-        "bytes": 293307
+        "count": 41,
+        "bytes": 274268
       },
       "2.4": {
-        "count": 41,
-        "bytes": 303698
+        "count": 50,
+        "bytes": 376169
       },
       "2.5": {
-        "count": 72,
-        "bytes": 541914
+        "count": 68,
+        "bytes": 509935
       },
       "2.6": {
-        "count": 47,
-        "bytes": 359882
+        "count": 43,
+        "bytes": 338467
       },
       "2.7": {
-        "count": 62,
-        "bytes": 452428
+        "count": 58,
+        "bytes": 428632
       },
       "2.8": {
-        "count": 43,
-        "bytes": 338337
+        "count": 40,
+        "bytes": 318221
       },
       "2.9": {
-        "count": 22,
-        "bytes": 171827
+        "count": 21,
+        "bytes": 165406
       },
       "3.0": {
-        "count": 17,
-        "bytes": 129384
+        "count": 18,
+        "bytes": 137679
       },
       "3.1": {
-        "count": 10,
-        "bytes": 80134
+        "count": 14,
+        "bytes": 112902
       },
       "3.2": {
-        "count": 8,
-        "bytes": 61197
+        "count": 10,
+        "bytes": 81821
       },
       "3.3": {
-        "count": 4,
-        "bytes": 31040
+        "count": 5,
+        "bytes": 39055
       },
       "3.4": {
-        "count": 2,
-        "bytes": 15203
+        "count": 1,
+        "bytes": 8192
       },
       "3.5": {
-        "count": 3,
-        "bytes": 23461
+        "count": 5,
+        "bytes": 39845
       },
       "3.6": {
         "count": 2,
@@ -532,32 +552,32 @@
         "bytes": 14432
       },
       "4.1": {
-        "count": 3,
-        "bytes": 22132
+        "count": 2,
+        "bytes": 15020
       },
       "4.2": {
+        "count": 3,
+        "bytes": 21976
+      },
+      "4.3": {
         "count": 2,
-        "bytes": 14480
+        "bytes": 14960
       },
       "4.4": {
-        "count": 3,
-        "bytes": 19936
+        "count": 1,
+        "bytes": 7312
       },
       "4.5": {
-        "count": 3,
-        "bytes": 20896
+        "count": 2,
+        "bytes": 14340
       },
       "4.6": {
-        "count": 2,
-        "bytes": 11373
+        "count": 3,
+        "bytes": 18485
       },
       "4.7": {
-        "count": 2,
-        "bytes": 13136
-      },
-      "4.8": {
-        "count": 1,
-        "bytes": 6592
+        "count": 3,
+        "bytes": 21320
       },
       "4.9": {
         "count": 3,
@@ -565,7 +585,7 @@
       },
       "5.0": {
         "count": 4,
-        "bytes": 27843
+        "bytes": 28692
       },
       "5.1": {
         "count": 1,
@@ -576,20 +596,12 @@
         "bytes": 14004
       },
       "5.8": {
-        "count": 1,
-        "bytes": 7140
+        "count": 2,
+        "bytes": 14724
       },
       "7.2": {
         "count": 1,
         "bytes": 6964
-      },
-      "8.8": {
-        "count": 1,
-        "bytes": 6672
-      },
-      "10.5": {
-        "count": 1,
-        "bytes": 6612
       },
       "11.6": {
         "count": 1,
@@ -603,185 +615,161 @@
         "count": 1,
         "bytes": 7104
       },
-      "12.5": {
-        "count": 1,
-        "bytes": 7700
-      },
       "12.7": {
-        "count": 1,
-        "bytes": 6972
-      },
-      "13.2": {
-        "count": 1,
-        "bytes": 6508
+        "count": 2,
+        "bytes": 14132
       },
       "13.7": {
         "count": 1,
         "bytes": 6376
-      },
-      "13.9": {
-        "count": 1,
-        "bytes": 6496
-      },
-      "14.0": {
-        "count": 1,
-        "bytes": 6384
-      },
-      "14.7": {
-        "count": 1,
-        "bytes": 7064
       }
     }
   },
   "14.0": {
-    "count": 754,
-    "bytes": 9574813,
+    "count": 686,
+    "bytes": 8704057,
     "compression_ratio": {
       "1.0": {
-        "count": 7,
-        "bytes": 74824
+        "count": 5,
+        "bytes": 54144
       },
       "1.1": {
         "count": 5,
         "bytes": 60652
       },
       "1.2": {
-        "count": 14,
-        "bytes": 181962
+        "count": 13,
+        "bytes": 172749
       },
       "1.3": {
-        "count": 102,
-        "bytes": 1504928
+        "count": 87,
+        "bytes": 1270681
       },
       "1.4": {
-        "count": 89,
-        "bytes": 1406259
+        "count": 96,
+        "bytes": 1513322
       },
       "1.5": {
-        "count": 23,
-        "bytes": 353243
+        "count": 21,
+        "bytes": 326432
       },
       "1.6": {
-        "count": 17,
-        "bytes": 246746
+        "count": 18,
+        "bytes": 263130
       },
       "1.7": {
-        "count": 36,
-        "bytes": 436975
+        "count": 38,
+        "bytes": 455559
       },
       "1.8": {
-        "count": 29,
-        "bytes": 332069
+        "count": 26,
+        "bytes": 290435
       },
       "1.9": {
-        "count": 53,
-        "bytes": 599547
+        "count": 50,
+        "bytes": 561627
       },
       "2.0": {
-        "count": 57,
-        "bytes": 640831
+        "count": 50,
+        "bytes": 548479
       },
       "2.1": {
-        "count": 55,
-        "bytes": 534884
+        "count": 49,
+        "bytes": 477641
       },
       "2.2": {
-        "count": 44,
-        "bytes": 435784
+        "count": 37,
+        "bytes": 365967
       },
       "2.3": {
-        "count": 37,
-        "bytes": 371344
+        "count": 36,
+        "bytes": 364753
       },
       "2.4": {
-        "count": 19,
-        "bytes": 197717
+        "count": 12,
+        "bytes": 119109
       },
       "2.5": {
-        "count": 14,
-        "bytes": 153909
+        "count": 16,
+        "bytes": 177046
       },
       "2.6": {
-        "count": 15,
-        "bytes": 150650
+        "count": 13,
+        "bytes": 133341
       },
       "2.7": {
-        "count": 16,
-        "bytes": 177184
+        "count": 15,
+        "bytes": 158826
       },
       "2.8": {
         "count": 12,
-        "bytes": 148846
+        "bytes": 150046
       },
       "2.9": {
-        "count": 7,
-        "bytes": 82877
+        "count": 6,
+        "bytes": 78782
       },
       "3.0": {
-        "count": 14,
-        "bytes": 171674
+        "count": 13,
+        "bytes": 157397
       },
       "3.1": {
-        "count": 8,
-        "bytes": 107760
+        "count": 5,
+        "bytes": 66567
       },
       "3.2": {
-        "count": 10,
-        "bytes": 140184
+        "count": 7,
+        "bytes": 96658
       },
       "3.3": {
-        "count": 16,
-        "bytes": 230202
+        "count": 11,
+        "bytes": 153110
       },
       "3.4": {
-        "count": 13,
-        "bytes": 185996
+        "count": 9,
+        "bytes": 132498
       },
       "3.5": {
         "count": 10,
-        "bytes": 161696
+        "bytes": 159277
       },
       "3.6": {
         "count": 7,
-        "bytes": 111993
+        "bytes": 113028
       },
       "3.7": {
-        "count": 10,
-        "bytes": 147246
+        "count": 8,
+        "bytes": 115861
       },
       "3.8": {
-        "count": 5,
-        "bytes": 80769
+        "count": 4,
+        "bytes": 65536
       },
       "3.9": {
-        "count": 2,
-        "bytes": 26797
+        "count": 3,
+        "bytes": 40025
       },
       "4.0": {
-        "count": 5,
-        "bytes": 78486
-      },
-      "4.2": {
-        "count": 1,
-        "bytes": 16384
-      },
-      "5.8": {
-        "count": 1,
-        "bytes": 10316
+        "count": 2,
+        "bytes": 30916
       },
       "6.7": {
         "count": 1,
         "bytes": 14079
+      },
+      "6.9": {
+        "count": 1,
+        "bytes": 16384
       }
     }
   },
   "15.0": {
-    "count": 954,
-    "bytes": 25145854,
+    "count": 949,
+    "bytes": 24961607,
     "compression_ratio": {
       "1.0": {
-        "count": 2,
-        "bytes": 56932
+        "count": 3,
+        "bytes": 89700
       },
       "1.1": {
         "count": 2,
@@ -789,51 +777,51 @@
       },
       "1.2": {
         "count": 5,
-        "bytes": 104984
+        "bytes": 119874
       },
       "1.3": {
-        "count": 13,
-        "bytes": 248468
+        "count": 19,
+        "bytes": 352515
       },
       "1.4": {
-        "count": 78,
-        "bytes": 1480927
+        "count": 74,
+        "bytes": 1396178
       },
       "1.5": {
-        "count": 32,
-        "bytes": 954405
+        "count": 27,
+        "bytes": 778206
       },
       "1.6": {
         "count": 51,
         "bytes": 1656309
       },
       "1.7": {
-        "count": 25,
-        "bytes": 816773
+        "count": 27,
+        "bytes": 878241
       },
       "1.8": {
-        "count": 340,
-        "bytes": 8999370
+        "count": 335,
+        "bytes": 8843666
       },
       "1.9": {
-        "count": 288,
-        "bytes": 7642289
+        "count": 291,
+        "bytes": 7716315
       },
       "2.0": {
-        "count": 12,
-        "bytes": 381109
+        "count": 15,
+        "bytes": 479413
       },
       "2.1": {
-        "count": 15,
-        "bytes": 464031
+        "count": 16,
+        "bytes": 496799
       },
       "2.2": {
-        "count": 9,
-        "bytes": 285276
+        "count": 10,
+        "bytes": 313069
       },
       "2.3": {
         "count": 9,
-        "bytes": 261328
+        "bytes": 244952
       },
       "2.4": {
         "count": 4,
@@ -844,24 +832,24 @@
         "bytes": 65536
       },
       "2.6": {
-        "count": 4,
-        "bytes": 120455
+        "count": 3,
+        "bytes": 87687
       },
       "2.7": {
-        "count": 4,
-        "bytes": 114820
+        "count": 3,
+        "bytes": 82052
       },
       "3.0": {
-        "count": 2,
-        "bytes": 57555
+        "count": 1,
+        "bytes": 32768
       },
       "3.1": {
         "count": 1,
         "bytes": 32768
       },
       "3.2": {
-        "count": 4,
-        "bytes": 131072
+        "count": 2,
+        "bytes": 65536
       },
       "3.3": {
         "count": 1,
@@ -872,36 +860,36 @@
         "bytes": 32768
       },
       "3.6": {
-        "count": 1,
-        "bytes": 17840
+        "count": 2,
+        "bytes": 50608
       },
       "3.7": {
-        "count": 2,
-        "bytes": 48072
+        "count": 3,
+        "bytes": 80338
       },
       "3.8": {
         "count": 2,
         "bytes": 52608
       },
       "3.9": {
-        "count": 3,
-        "bytes": 61282
+        "count": 4,
+        "bytes": 79402
       },
       "4.0": {
         "count": 2,
         "bytes": 59012
       },
       "4.1": {
-        "count": 3,
-        "bytes": 74086
+        "count": 2,
+        "bytes": 50564
       },
       "4.2": {
-        "count": 3,
-        "bytes": 55124
+        "count": 2,
+        "bytes": 36172
       },
       "4.3": {
-        "count": 2,
-        "bytes": 50780
+        "count": 3,
+        "bytes": 68943
       },
       "4.4": {
         "count": 1,
@@ -918,10 +906,6 @@
       "4.8": {
         "count": 3,
         "bytes": 56652
-      },
-      "4.9": {
-        "count": 1,
-        "bytes": 18640
       },
       "5.2": {
         "count": 1,
@@ -947,45 +931,29 @@
         "count": 1,
         "bytes": 19712
       },
-      "5.9": {
-        "count": 1,
-        "bytes": 19848
-      },
       "6.0": {
         "count": 1,
         "bytes": 19884
+      },
+      "6.5": {
+        "count": 1,
+        "bytes": 19900
       },
       "6.9": {
         "count": 1,
         "bytes": 20668
       },
-      "7.0": {
-        "count": 1,
-        "bytes": 19616
-      },
       "7.6": {
         "count": 3,
         "bytes": 61096
-      },
-      "7.9": {
-        "count": 1,
-        "bytes": 20811
       },
       "8.1": {
         "count": 1,
         "bytes": 20920
       },
-      "8.4": {
-        "count": 1,
-        "bytes": 20336
-      },
       "8.7": {
-        "count": 1,
-        "bytes": 21024
-      },
-      "8.8": {
-        "count": 1,
-        "bytes": 20676
+        "count": 2,
+        "bytes": 41748
       },
       "9.0": {
         "count": 1,
@@ -998,20 +966,16 @@
       "10.5": {
         "count": 1,
         "bytes": 20864
-      },
-      "10.8": {
-        "count": 1,
-        "bytes": 20964
       }
     }
   },
   "16.0": {
-    "count": 213,
-    "bytes": 13447549,
+    "count": 209,
+    "bytes": 13241538,
     "compression_ratio": {
       "1.0": {
-        "count": 2,
-        "bytes": 106083
+        "count": 3,
+        "bytes": 142057
       },
       "1.1": {
         "count": 1,
@@ -1022,76 +986,76 @@
         "bytes": 87277
       },
       "1.4": {
-        "count": 10,
-        "bytes": 500854
+        "count": 7,
+        "bytes": 348979
       },
       "1.5": {
-        "count": 7,
-        "bytes": 392225
+        "count": 4,
+        "bytes": 223404
       },
       "1.6": {
-        "count": 15,
-        "bytes": 962180
+        "count": 10,
+        "bytes": 640425
       },
       "1.7": {
-        "count": 29,
-        "bytes": 1900544
+        "count": 30,
+        "bytes": 1966080
       },
       "1.8": {
         "count": 44,
         "bytes": 2883584
       },
       "1.9": {
-        "count": 19,
-        "bytes": 1241497
+        "count": 20,
+        "bytes": 1309934
       },
       "2.0": {
-        "count": 11,
-        "bytes": 706465
+        "count": 12,
+        "bytes": 748916
       },
       "2.1": {
-        "count": 8,
-        "bytes": 524288
+        "count": 7,
+        "bytes": 458752
       },
       "2.2": {
-        "count": 15,
-        "bytes": 964438
+        "count": 12,
+        "bytes": 785464
       },
       "2.3": {
-        "count": 6,
-        "bytes": 340217
+        "count": 9,
+        "bytes": 535196
       },
       "2.4": {
-        "count": 6,
-        "bytes": 391655
+        "count": 10,
+        "bytes": 651834
       },
       "2.5": {
-        "count": 6,
-        "bytes": 393216
+        "count": 5,
+        "bytes": 327680
       },
       "2.6": {
         "count": 3,
         "bytes": 196608
       },
       "2.7": {
-        "count": 6,
-        "bytes": 393216
+        "count": 5,
+        "bytes": 326118
       },
       "2.8": {
-        "count": 3,
-        "bytes": 196608
+        "count": 2,
+        "bytes": 131072
       },
       "3.0": {
-        "count": 1,
-        "bytes": 53894
+        "count": 2,
+        "bytes": 130951
       },
       "3.1": {
-        "count": 1,
-        "bytes": 65536
+        "count": 2,
+        "bytes": 130080
       },
-      "3.2": {
-        "count": 1,
-        "bytes": 65536
+      "3.3": {
+        "count": 2,
+        "bytes": 130636
       },
       "3.5": {
         "count": 1,
@@ -1102,12 +1066,12 @@
         "bytes": 65536
       },
       "3.8": {
-        "count": 1,
-        "bytes": 65536
+        "count": 2,
+        "bytes": 130633
       },
       "3.9": {
-        "count": 2,
-        "bytes": 117781
+        "count": 1,
+        "bytes": 59660
       },
       "4.0": {
         "count": 3,
@@ -1119,13 +1083,13 @@
       },
       "4.3": {
         "count": 3,
-        "bytes": 173584
+        "bytes": 173063
+      },
+      "4.4": {
+        "count": 1,
+        "bytes": 63944
       },
       "5.0": {
-        "count": 1,
-        "bytes": 65536
-      },
-      "5.1": {
         "count": 1,
         "bytes": 65536
       },
@@ -1133,7 +1097,7 @@
         "count": 1,
         "bytes": 40385
       },
-      "6.7": {
+      "6.1": {
         "count": 1,
         "bytes": 65536
       },
@@ -1144,94 +1108,86 @@
     }
   },
   "17.0": {
-    "count": 32511,
-    "bytes": 2936336595,
+    "count": 31664,
+    "bytes": 2859993480,
     "compression_ratio": {
       "1.0": {
-        "count": 1736,
-        "bytes": 150211468
+        "count": 1650,
+        "bytes": 142987217
       },
       "1.1": {
-        "count": 2972,
-        "bytes": 265115294
+        "count": 2978,
+        "bytes": 265674273
       },
       "1.2": {
-        "count": 2481,
-        "bytes": 219260805
+        "count": 2350,
+        "bytes": 208037068
       },
       "1.3": {
-        "count": 6658,
-        "bytes": 587451443
+        "count": 6407,
+        "bytes": 566644144
       },
       "1.4": {
-        "count": 9411,
-        "bytes": 836011130
+        "count": 9303,
+        "bytes": 826868242
       },
       "1.5": {
-        "count": 6371,
-        "bytes": 588670981
+        "count": 6320,
+        "bytes": 582525635
       },
       "1.6": {
-        "count": 2264,
-        "bytes": 221097882
+        "count": 2062,
+        "bytes": 201189334
       },
       "1.7": {
-        "count": 421,
-        "bytes": 44622172
+        "count": 391,
+        "bytes": 41383844
       },
       "1.8": {
-        "count": 95,
-        "bytes": 11278905
+        "count": 101,
+        "bytes": 12133745
       },
       "1.9": {
-        "count": 30,
-        "bytes": 3547468
+        "count": 35,
+        "bytes": 4229730
       },
       "2.0": {
-        "count": 14,
-        "bytes": 1820206
+        "count": 17,
+        "bytes": 2164450
       },
       "2.1": {
         "count": 9,
-        "bytes": 1060428
+        "bytes": 1078072
       },
       "2.2": {
+        "count": 6,
+        "bytes": 786432
+      },
+      "2.3": {
         "count": 7,
         "bytes": 917504
       },
-      "2.3": {
-        "count": 10,
-        "bytes": 1310720
-      },
       "2.4": {
-        "count": 5,
-        "bytes": 655360
+        "count": 4,
+        "bytes": 524288
       },
       "2.5": {
-        "count": 7,
-        "bytes": 852830
+        "count": 6,
+        "bytes": 721758
       },
       "2.6": {
-        "count": 2,
-        "bytes": 262144
+        "count": 1,
+        "bytes": 131072
       },
       "2.7": {
-        "count": 2,
-        "bytes": 262144
+        "count": 3,
+        "bytes": 393216
       },
       "2.8": {
-        "count": 2,
-        "bytes": 262144
+        "count": 3,
+        "bytes": 393216
       },
       "2.9": {
-        "count": 1,
-        "bytes": 131072
-      },
-      "3.0": {
-        "count": 1,
-        "bytes": 131072
-      },
-      "3.1": {
         "count": 1,
         "bytes": 131072
       },
@@ -1247,25 +1203,17 @@
         "count": 1,
         "bytes": 131072
       },
-      "4.1": {
-        "count": 1,
-        "bytes": 131072
-      },
-      "5.1": {
-        "count": 1,
-        "bytes": 131072
-      },
       "5.3": {
         "count": 1,
         "bytes": 67482
       },
-      "5.8": {
+      "6.0": {
         "count": 1,
-        "bytes": 131072
+        "bytes": 117811
       },
-      "5.9": {
+      "6.2": {
         "count": 1,
-        "bytes": 130280
+        "bytes": 129565
       },
       "6.7": {
         "count": 1,
@@ -1275,6 +1223,10 @@
         "count": 1,
         "bytes": 90742
       },
+      "10.5": {
+        "count": 1,
+        "bytes": 82937
+      },
       "21.2": {
         "count": 1,
         "bytes": 87388
@@ -1282,68 +1234,72 @@
     }
   },
   "18.0": {
-    "count": 237,
-    "bytes": 55797699,
+    "count": 240,
+    "bytes": 56632847,
     "compression_ratio": {
+      "1.0": {
+        "count": 1,
+        "bytes": 185399
+      },
       "1.2": {
         "count": 1,
         "bytes": 131717
       },
       "1.3": {
-        "count": 3,
-        "bytes": 566564
+        "count": 4,
+        "bytes": 711767
       },
       "1.4": {
         "count": 3,
         "bytes": 566215
       },
       "1.5": {
-        "count": 9,
-        "bytes": 1728722
+        "count": 7,
+        "bytes": 1268545
       },
       "1.6": {
-        "count": 14,
-        "bytes": 2784895
+        "count": 12,
+        "bytes": 2334426
       },
       "1.7": {
         "count": 22,
-        "bytes": 5506449
+        "bytes": 5184822
       },
       "1.8": {
-        "count": 53,
-        "bytes": 13456990
+        "count": 50,
+        "bytes": 12695955
       },
       "1.9": {
-        "count": 34,
-        "bytes": 8204794
+        "count": 37,
+        "bytes": 8930658
       },
       "2.0": {
-        "count": 23,
-        "bytes": 5376616
+        "count": 26,
+        "bytes": 6321588
       },
       "2.1": {
-        "count": 11,
-        "bytes": 2511733
+        "count": 7,
+        "bytes": 1597014
       },
       "2.2": {
-        "count": 11,
-        "bytes": 2336585
+        "count": 14,
+        "bytes": 3323771
       },
       "2.3": {
-        "count": 15,
-        "bytes": 3633884
+        "count": 9,
+        "bytes": 2285009
       },
       "2.4": {
-        "count": 4,
-        "bytes": 1048576
+        "count": 5,
+        "bytes": 1310720
       },
       "2.5": {
-        "count": 9,
-        "bytes": 2327494
+        "count": 10,
+        "bytes": 2589638
       },
       "2.6": {
-        "count": 2,
-        "bytes": 524288
+        "count": 3,
+        "bytes": 786432
       },
       "2.7": {
         "count": 1,
@@ -1358,8 +1314,8 @@
         "bytes": 524288
       },
       "3.0": {
-        "count": 1,
-        "bytes": 262144
+        "count": 4,
+        "bytes": 849402
       },
       "3.2": {
         "count": 1,
@@ -1369,21 +1325,21 @@
         "count": 1,
         "bytes": 262144
       },
-      "4.1": {
-        "count": 1,
-        "bytes": 187555
+      "4.0": {
+        "count": 2,
+        "bytes": 449567
       },
-      "4.4": {
+      "4.1": {
+        "count": 2,
+        "bytes": 448409
+      },
+      "4.5": {
         "count": 1,
-        "bytes": 187446
+        "bytes": 186988
       },
       "4.8": {
         "count": 1,
         "bytes": 187393
-      },
-      "5.0": {
-        "count": 1,
-        "bytes": 187800
       },
       "5.1": {
         "count": 1,
@@ -1405,9 +1361,9 @@
         "count": 1,
         "bytes": 187259
       },
-      "5.8": {
+      "5.9": {
         "count": 1,
-        "bytes": 187577
+        "bytes": 187509
       },
       "6.7": {
         "count": 1,
@@ -1424,80 +1380,88 @@
       "8.3": {
         "count": 1,
         "bytes": 188759
+      },
+      "13.7": {
+        "count": 1,
+        "bytes": 207641
       }
     }
   },
   "19.0": {
-    "count": 487,
-    "bytes": 238776091,
+    "count": 479,
+    "bytes": 237278064,
     "compression_ratio": {
       "1.6": {
-        "count": 2,
-        "bytes": 912056
+        "count": 1,
+        "bytes": 524288
       },
       "1.7": {
-        "count": 24,
-        "bytes": 12133985
+        "count": 26,
+        "bytes": 13174202
       },
       "1.8": {
-        "count": 127,
-        "bytes": 63649967
+        "count": 123,
+        "bytes": 61818445
       },
       "1.9": {
-        "count": 98,
-        "bytes": 47970217
+        "count": 99,
+        "bytes": 49175937
       },
       "2.0": {
-        "count": 32,
-        "bytes": 14867459
+        "count": 37,
+        "bytes": 17477125
       },
       "2.1": {
         "count": 28,
-        "bytes": 14041022
+        "bytes": 13987423
       },
       "2.2": {
-        "count": 25,
-        "bytes": 12946174
+        "count": 32,
+        "bytes": 16601734
       },
       "2.3": {
-        "count": 21,
-        "bytes": 10694221
+        "count": 15,
+        "bytes": 7817026
       },
       "2.4": {
-        "count": 22,
-        "bytes": 11328393
+        "count": 20,
+        "bytes": 10279817
       },
       "2.5": {
         "count": 22,
-        "bytes": 11296182
+        "bytes": 11302051
       },
       "2.6": {
-        "count": 11,
-        "bytes": 5753116
+        "count": 13,
+        "bytes": 6792009
       },
       "2.7": {
-        "count": 8,
-        "bytes": 4040614
+        "count": 7,
+        "bytes": 3518663
       },
       "2.8": {
-        "count": 4,
-        "bytes": 2087960
+        "count": 5,
+        "bytes": 2610018
       },
       "2.9": {
-        "count": 3,
-        "bytes": 1557134
+        "count": 4,
+        "bytes": 2081422
       },
       "3.0": {
         "count": 3,
         "bytes": 1569670
       },
       "3.2": {
-        "count": 3,
-        "bytes": 1443371
+        "count": 2,
+        "bytes": 1033756
       },
       "3.3": {
         "count": 3,
         "bytes": 1534955
+      },
+      "3.5": {
+        "count": 1,
+        "bytes": 524288
       },
       "3.8": {
         "count": 1,
@@ -1508,76 +1472,60 @@
         "bytes": 1047824
       },
       "4.1": {
-        "count": 2,
-        "bytes": 611228
+        "count": 3,
+        "bytes": 885096
+      },
+      "4.2": {
+        "count": 1,
+        "bytes": 273439
       },
       "4.3": {
-        "count": 3,
-        "bytes": 850809
+        "count": 1,
+        "bytes": 280362
       },
       "4.4": {
-        "count": 2,
-        "bytes": 648612
+        "count": 1,
+        "bytes": 346136
       },
       "4.6": {
         "count": 3,
         "bytes": 1023764
       },
       "4.7": {
-        "count": 2,
-        "bytes": 720381
+        "count": 3,
+        "bytes": 1230894
       },
       "4.8": {
         "count": 1,
         "bytes": 398824
       },
-      "5.0": {
-        "count": 1,
-        "bytes": 326753
-      },
-      "5.3": {
-        "count": 1,
-        "bytes": 432423
-      },
       "5.4": {
-        "count": 2,
-        "bytes": 690365
+        "count": 1,
+        "bytes": 333142
       },
       "5.6": {
         "count": 2,
-        "bytes": 898899
+        "bytes": 694679
       },
       "5.7": {
         "count": 1,
         "bytes": 379828
       },
       "5.8": {
-        "count": 3,
-        "bytes": 1345522
-      },
-      "5.9": {
-        "count": 1,
-        "bytes": 501197
-      },
-      "6.1": {
         "count": 2,
-        "bytes": 796950
+        "bytes": 908830
       },
       "6.2": {
         "count": 4,
         "bytes": 1587228
       },
       "6.3": {
-        "count": 5,
-        "bytes": 2147801
-      },
-      "6.4": {
-        "count": 1,
-        "bytes": 410022
+        "count": 3,
+        "bytes": 1317661
       },
       "6.5": {
-        "count": 2,
-        "bytes": 885469
+        "count": 1,
+        "bytes": 431106
       },
       "6.6": {
         "count": 1,
@@ -1591,31 +1539,27 @@
         "count": 1,
         "bytes": 484229
       },
-      "7.2": {
-        "count": 1,
-        "bytes": 448284
-      },
       "7.3": {
         "count": 1,
         "bytes": 443916
       },
       "7.6": {
-        "count": 1,
-        "bytes": 464389
+        "count": 2,
+        "bytes": 982491
       },
       "7.9": {
         "count": 1,
         "bytes": 478784
       },
       "8.2": {
-        "count": 3,
-        "bytes": 1429596
+        "count": 1,
+        "bytes": 430504
       }
     }
   },
   "20.0": {
-    "count": 2411,
-    "bytes": 2487454122,
+    "count": 2378,
+    "bytes": 2454917985,
     "compression_ratio": {
       "1.1": {
         "count": 1,
@@ -1626,8 +1570,8 @@
         "bytes": 2078738
       },
       "1.3": {
-        "count": 4,
-        "bytes": 4174480
+        "count": 6,
+        "bytes": 6257126
       },
       "1.4": {
         "count": 2,
@@ -1635,127 +1579,127 @@
       },
       "1.5": {
         "count": 7,
-        "bytes": 7320084
+        "bytes": 7320090
       },
       "1.6": {
-        "count": 27,
-        "bytes": 28154951
+        "count": 30,
+        "bytes": 30960918
       },
       "1.7": {
         "count": 77,
-        "bytes": 79864524
+        "bytes": 79374685
       },
       "1.8": {
-        "count": 174,
-        "bytes": 176407437
+        "count": 173,
+        "bytes": 177166785
       },
       "1.9": {
-        "count": 229,
-        "bytes": 234448678
+        "count": 233,
+        "bytes": 238646725
       },
       "2.0": {
-        "count": 291,
-        "bytes": 303204723
+        "count": 289,
+        "bytes": 301282004
       },
       "2.1": {
-        "count": 233,
-        "bytes": 242930972
+        "count": 239,
+        "bytes": 249498438
       },
       "2.2": {
-        "count": 222,
-        "bytes": 231953481
+        "count": 211,
+        "bytes": 220356205
       },
       "2.3": {
-        "count": 217,
-        "bytes": 226385780
+        "count": 216,
+        "bytes": 224943693
       },
       "2.4": {
-        "count": 204,
-        "bytes": 212839178
+        "count": 216,
+        "bytes": 224956577
       },
       "2.5": {
-        "count": 170,
-        "bytes": 177476397
+        "count": 160,
+        "bytes": 166686594
       },
       "2.6": {
-        "count": 81,
-        "bytes": 83396946
+        "count": 78,
+        "bytes": 80132148
       },
       "2.7": {
-        "count": 50,
-        "bytes": 48602172
+        "count": 46,
+        "bytes": 44835455
       },
       "2.8": {
-        "count": 39,
-        "bytes": 39943085
+        "count": 37,
+        "bytes": 37451448
       },
       "2.9": {
-        "count": 25,
-        "bytes": 25788104
+        "count": 30,
+        "bytes": 31005610
       },
       "3.0": {
-        "count": 21,
-        "bytes": 21939219
+        "count": 18,
+        "bytes": 18814123
       },
       "3.1": {
-        "count": 20,
-        "bytes": 20890462
+        "count": 18,
+        "bytes": 18789044
       },
       "3.2": {
-        "count": 11,
-        "bytes": 11492181
+        "count": 12,
+        "bytes": 12537476
       },
       "3.3": {
-        "count": 15,
-        "bytes": 15659877
+        "count": 11,
+        "bytes": 11479602
       },
       "3.4": {
-        "count": 14,
-        "bytes": 14573274
+        "count": 12,
+        "bytes": 12511913
       },
       "3.5": {
         "count": 11,
-        "bytes": 11499769
+        "bytes": 11501502
       },
       "3.6": {
         "count": 16,
-        "bytes": 16724895
+        "bytes": 16728193
       },
       "3.7": {
-        "count": 8,
-        "bytes": 8361324
+        "count": 7,
+        "bytes": 7315872
       },
       "3.8": {
-        "count": 14,
-        "bytes": 14137588
+        "count": 10,
+        "bytes": 9957070
       },
       "3.9": {
-        "count": 17,
-        "bytes": 17729302
+        "count": 20,
+        "bytes": 20864825
       },
       "4.0": {
-        "count": 21,
-        "bytes": 21501226
+        "count": 17,
+        "bytes": 17335229
       },
       "4.1": {
-        "count": 11,
-        "bytes": 11470673
+        "count": 9,
+        "bytes": 9391444
       },
       "4.2": {
-        "count": 3,
-        "bytes": 3121211
+        "count": 6,
+        "bytes": 6237897
       },
       "4.3": {
-        "count": 4,
-        "bytes": 4177340
+        "count": 5,
+        "bytes": 5220236
       },
       "4.4": {
-        "count": 7,
-        "bytes": 7306298
+        "count": 5,
+        "bytes": 5216918
       },
       "4.5": {
-        "count": 5,
-        "bytes": 5226481
+        "count": 4,
+        "bytes": 4182200
       },
       "4.6": {
         "count": 7,
@@ -1771,35 +1715,35 @@
       },
       "4.9": {
         "count": 10,
-        "bytes": 9869703
+        "bytes": 9860590
       },
       "5.0": {
-        "count": 10,
-        "bytes": 10371010
+        "count": 9,
+        "bytes": 9337267
       },
       "5.1": {
-        "count": 5,
-        "bytes": 5000730
+        "count": 4,
+        "bytes": 3966060
       },
       "5.2": {
-        "count": 3,
-        "bytes": 3089840
+        "count": 2,
+        "bytes": 2059756
       },
       "5.3": {
-        "count": 2,
-        "bytes": 2066874
+        "count": 3,
+        "bytes": 3111924
       },
       "5.4": {
         "count": 4,
         "bytes": 4158524
       },
       "5.5": {
-        "count": 3,
-        "bytes": 3109952
+        "count": 2,
+        "bytes": 2079703
       },
       "5.6": {
-        "count": 4,
-        "bytes": 4145221
+        "count": 3,
+        "bytes": 3115168
       },
       "5.7": {
         "count": 2,
@@ -1822,20 +1766,20 @@
         "bytes": 3632466
       },
       "6.2": {
-        "count": 2,
-        "bytes": 2057035
+        "count": 1,
+        "bytes": 1028366
       },
       "6.3": {
         "count": 3,
         "bytes": 3107266
       },
       "6.4": {
-        "count": 1,
-        "bytes": 1043150
+        "count": 3,
+        "bytes": 3104059
       },
       "6.5": {
-        "count": 3,
-        "bytes": 3105249
+        "count": 5,
+        "bytes": 5196796
       },
       "6.6": {
         "count": 1,
@@ -1846,36 +1790,36 @@
         "bytes": 1027714
       },
       "6.8": {
-        "count": 5,
-        "bytes": 4691845
+        "count": 1,
+        "bytes": 1044922
       },
       "7.1": {
-        "count": 3,
-        "bytes": 3134420
-      },
-      "7.2": {
         "count": 2,
-        "bytes": 1582953
+        "bytes": 2089819
+      },
+      "7.3": {
+        "count": 2,
+        "bytes": 2088968
       },
       "7.4": {
-        "count": 4,
-        "bytes": 4177706
+        "count": 1,
+        "bytes": 1044435
       },
       "7.5": {
-        "count": 6,
-        "bytes": 5777878
+        "count": 5,
+        "bytes": 5225724
       },
       "7.7": {
         "count": 2,
         "bytes": 1597489
       },
       "7.8": {
-        "count": 5,
-        "bytes": 3408099
+        "count": 4,
+        "bytes": 2690343
       },
       "7.9": {
-        "count": 1,
-        "bytes": 1043381
+        "count": 2,
+        "bytes": 2082997
       },
       "8.1": {
         "count": 2,
@@ -1886,8 +1830,8 @@
         "bytes": 1653120
       },
       "8.3": {
-        "count": 2,
-        "bytes": 1084239
+        "count": 3,
+        "bytes": 1649782
       },
       "8.4": {
         "count": 2,
@@ -1918,40 +1862,36 @@
         "bytes": 1042176
       },
       "12.2": {
-        "count": 2,
-        "bytes": 2084063
+        "count": 1,
+        "bytes": 1042065
+      },
+      "12.3": {
+        "count": 1,
+        "bytes": 1041547
       },
       "12.6": {
         "count": 2,
         "bytes": 2084319
       },
       "12.7": {
-        "count": 1,
-        "bytes": 1041648
+        "count": 2,
+        "bytes": 2083259
       },
       "12.8": {
-        "count": 3,
-        "bytes": 3126289
-      },
-      "12.9": {
-        "count": 1,
-        "bytes": 1042184
+        "count": 2,
+        "bytes": 2084142
       },
       "13.1": {
-        "count": 2,
-        "bytes": 1682630
+        "count": 3,
+        "bytes": 2723954
       },
       "13.2": {
-        "count": 2,
-        "bytes": 2083669
-      },
-      "13.4": {
         "count": 1,
-        "bytes": 1042146
+        "bytes": 1041629
       },
       "13.5": {
-        "count": 1,
-        "bytes": 1041711
+        "count": 2,
+        "bytes": 2083364
       },
       "13.6": {
         "count": 1,
@@ -1961,9 +1901,9 @@
         "count": 1,
         "bytes": 1042265
       },
-      "14.1": {
+      "13.8": {
         "count": 1,
-        "bytes": 1042456
+        "bytes": 1041480
       },
       "14.2": {
         "count": 1,
@@ -1978,8 +1918,8 @@
         "bytes": 1041694
       },
       "15.1": {
-        "count": 1,
-        "bytes": 1041758
+        "count": 2,
+        "bytes": 2082076
       },
       "15.2": {
         "count": 1,
@@ -1989,37 +1929,31 @@
         "count": 1,
         "bytes": 1041810
       },
-      "15.7": {
-        "count": 1,
-        "bytes": 1042163
-      },
       "15.8": {
         "count": 2,
-        "bytes": 2084135
-      },
-      "16.1": {
-        "count": 1,
-        "bytes": 1042211
+        "bytes": 2083505
       },
       "16.3": {
-        "count": 2,
-        "bytes": 2084533
+        "count": 1,
+        "bytes": 1042073
       },
       "16.5": {
         "count": 1,
-        "bytes": 1042011
-      },
-      "17.1": {
-        "count": 1,
-        "bytes": 1041621
+        "bytes": 1041722
       },
       "18.6": {
         "count": 1,
         "bytes": 961224
-      },
-      "19.6": {
+      }
+    }
+  },
+  "23.0": {
+    "count": 1,
+    "bytes": 4905703,
+    "compression_ratio": {
+      "5.1": {
         "count": 1,
-        "bytes": 635052
+        "bytes": 4905703
       }
     }
   }
