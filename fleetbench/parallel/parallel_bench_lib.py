@@ -464,7 +464,7 @@ class ParallelBench:
     # counter for each benchmark.
     aggregations = {}
     for counter in self.perf_counters:
-      aggregations[counter] = pd.NamedAgg(column=counter, aggfunc=np.mean)
+      aggregations[counter] = pd.NamedAgg(column=counter, aggfunc="mean")
 
     perf_counters_results = (
         perf_counters_results.groupby("Benchmark").agg(**aggregations).round(3)
