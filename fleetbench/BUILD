@@ -1,5 +1,7 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@fleetbench_pip_deps//:requirements.bzl", "requirement")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@rules_python//python:py_test.bzl", "py_test")
 
