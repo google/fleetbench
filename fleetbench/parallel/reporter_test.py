@@ -392,7 +392,8 @@ class ReportedTest(absltest.TestCase):
     os.makedirs(run_0_dir)
     input_content = (
         '{"context": {"key": "value"}, "benchmarks": [{"name": "benchmark_1",'
-        ' "metric_1": 10, "cycles": 100}]}'
+        ' "Count": 1, "real_time": 10, "cpu_time": 10  , "metric_1": 10,'
+        ' "cycles": 100}]}'
     )
     with open(os.path.join(run_0_dir, "results.json"), "w") as f:
       f.write(input_content)

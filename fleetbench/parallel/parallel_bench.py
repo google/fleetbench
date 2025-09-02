@@ -210,6 +210,9 @@ def main(argv: Sequence[str]) -> None:
   if len(argv) > 1:
     raise app.UsageError("Too many command-line arguments.")
 
+  # Sets the logging threshold to INFO.
+  logging.set_stderrthreshold(logging.INFO)
+
   shutil.rmtree(_TEMP_ROOT.value, ignore_errors=True)
   os.makedirs(_TEMP_ROOT.value, exist_ok=True)
 

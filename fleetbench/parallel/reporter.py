@@ -314,18 +314,25 @@ def GenerateFinalReport(
     # we simply copy the single run report to the final report.
     input_file = os.path.join(output_dir, "run_0", "results.json")
     if os.path.exists(input_file):
-      with open(input_file, "r") as infile, open(output_file, "w") as outfile:
-        outfile.write(infile.read())
+      with open(input_file, "r") as infile:
+        content = infile.read()
+      with open(output_file, "w") as outfile:
+        outfile.write(content)
+
+      # load the data from the content so we can print the summary.
+      json_data = json.loads(content)
+      data = json_data.get("benchmarks", [])  # Safely get the benchmark data
+
     else:
       logging.warning(
           "Warning: results.json not found in %s",
           os.path.join(output_dir, "run_0"),
       )
-    return
-
-  context = AggregateFinalContext(context_list)
-  data = AggregateFinalData(data_list)
-  _SaveFile(output_file, data, context)
+      return
+  else:
+    context = AggregateFinalContext(context_list)
+    data = AggregateFinalData(data_list)
+    _SaveFile(output_file, data, context)
 
   df = pd.DataFrame(data)
   selected_columns = [
