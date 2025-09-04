@@ -353,8 +353,13 @@ class ParallelBench:
 
       self.utilization_samples.append((pd.Timestamp.now(), total_utilization))
 
+      # Avoid biasing towards lower-numbered CPUs by randomizing the order here.
+      # That way CPUs with the same utilization will be randomly selected.
+      cpu_util_items = list(utilization_per_cpu.items())
+      np.random.shuffle(cpu_util_items)
+
       least_busy_cpus = collections.OrderedDict(
-          sorted(utilization_per_cpu.items(), key=lambda item: item[1])
+          sorted(cpu_util_items, key=lambda item: item[1])
       )
 
       # E.g. we are at 50% utilization, target is 70%.
