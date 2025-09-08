@@ -644,7 +644,7 @@ class HotBenchmarkRegisterer {
   HotBenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterHotBenchmarks);
     DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_SWISSMAP_InsertHit_Hot.*::absl::flat_hash_set.*64.*set_size:64.*"
+        "BM_SWISSMAP_InsertMiss_Hot.*::absl::flat_hash_set.*64.*set_size:64.*"
         "density:0");
   }
 };
