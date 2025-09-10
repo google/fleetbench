@@ -1,7 +1,7 @@
 #Benchmark name, weight
 BM_PROTO_Arena,1
-"BM_SWISSMAP_InsertHit_Hot<::absl::flat_hash_set, 64>/set_size:64/density:0",1
-"BM_SWISSMAP_InsertHit_Cold<::absl::flat_hash_set, 64>/set_size:64/density:0",1
+"BM_SWISSMAP_InsertMiss_Hot<::absl::flat_hash_set, 64>/set_size:64/density:0",1
+"BM_SWISSMAP_InsertMiss_Cold<::absl::flat_hash_set, 64>/set_size:64/density:0",1
 BM_LIBC_Memcpy_Fleet_L1,1
 BM_LIBC_Memcpy_Fleet_Cold,1
 BM_LIBC_Memset_Fleet_L1,1
