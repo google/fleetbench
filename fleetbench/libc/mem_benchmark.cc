@@ -66,12 +66,13 @@ static constexpr float kComparisonEqualProbability = 0.4;
 static constexpr size_t kCacheLineSize = 64;
 
 // Maps the default benchmarks to their minimum iteration counts.
+// TODO: Double check the iteration counts.
 absl::NoDestructor<absl::flat_hash_map<std::string, benchmark::IterationCount>>
-    kDefaultBenchmarks({{"BM_LIBC_Bcmp_Fleet_L1", 800'000'000},
-                        {"BM_LIBC_Memcmp_Fleet_L1", 1'000'000'000},
-                        {"BM_LIBC_Memcpy_Fleet_L1", 5'000'000'000},
-                        {"BM_LIBC_Memmove_Fleet_L1", 2'000'000'000},
-                        {"BM_LIBC_Memset_Fleet_L1", 10'000'000'000},
+    kDefaultBenchmarks({{"BM_LIBC_Bcmp_Fleet_LLC", 800'000'000},
+                        {"BM_LIBC_Memcmp_Fleet_LLC", 1'000'000'000},
+                        {"BM_LIBC_Memcpy_Fleet_LLC", 5'000'000'000},
+                        {"BM_LIBC_Memmove_Fleet_LLC", 2'000'000'000},
+                        {"BM_LIBC_Memset_Fleet_LLC", 10'000'000'000},
                         {"BM_LIBC_Bcmp_Fleet_Cold", 200'000'000},
                         {"BM_LIBC_Memcmp_Fleet_Cold", 500'000'000},
                         {"BM_LIBC_Memcpy_Fleet_Cold", 1'000'000'000},
@@ -79,18 +80,18 @@ absl::NoDestructor<absl::flat_hash_map<std::string, benchmark::IterationCount>>
                         {"BM_LIBC_Memset_Fleet_Cold", 3'000'000'000}});
 
 // Returns the sum of the size_bytes elements.
-size_t ComputeTotalNumBytes(const BM_Mem_Parameters &parameters) {
+size_t ComputeTotalNumBytes(const BM_Mem_Parameters& parameters) {
   return std::accumulate(parameters.size_bytes.begin(),
                          parameters.size_bytes.end(), size_t{0});
 }
 
-void MemcpyFunction(benchmark::State &state,
-                    const BM_Mem_Parameters &parameters,
+void MemcpyFunction(benchmark::State& state,
+                    const BM_Mem_Parameters& parameters,
                     const size_t buffer_size) {
   size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
-  char *dst = buffers.dst();
-  char *src = buffers.src();
+  char* dst = buffers.dst();
+  char* src = buffers.src();
   int64_t warmup = 10;
   // Run benchmark and call memcpy function
   while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
@@ -111,12 +112,12 @@ void MemcpyFunction(benchmark::State &state,
   }
 }
 
-void MemmoveFunction(benchmark::State &state,
-                     const BM_Mem_Parameters &parameters,
+void MemmoveFunction(benchmark::State& state,
+                     const BM_Mem_Parameters& parameters,
                      const size_t buffer_size) {
   size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
-  char *buffer = buffers.src();
+  char* buffer = buffers.src();
   int64_t warmup = 10;
   // Run benchmark and call memmove function
   while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
@@ -130,12 +131,12 @@ void MemmoveFunction(benchmark::State &state,
   }
 }
 
-template <int (*cmp)(const void *, const void *, size_t)>
-void CmpFunction(benchmark::State &state, const BM_Mem_Parameters &parameters,
+template <int (*cmp)(const void*, const void*, size_t)>
+void CmpFunction(benchmark::State& state, const BM_Mem_Parameters& parameters,
                  const size_t buffer_size) {
   size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
-  char *buffer = buffers.src();
+  char* buffer = buffers.src();
   int64_t warmup = 10;
   // Run benchmark and call cmp function
   while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
@@ -153,12 +154,12 @@ void CmpFunction(benchmark::State &state, const BM_Mem_Parameters &parameters,
   }
 }
 
-void MemsetFunction(benchmark::State &state,
-                    const BM_Mem_Parameters &parameters,
+void MemsetFunction(benchmark::State& state,
+                    const BM_Mem_Parameters& parameters,
                     const size_t buffer_size) {
   size_t batch_size = ComputeTotalNumBytes(parameters);
   MemoryBuffers buffers(buffer_size);
-  char *dst = buffers.dst();
+  char* dst = buffers.dst();
   int64_t warmup = 10;
   // Run benchmark and call memset function
   while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
@@ -180,7 +181,7 @@ static std::vector<std::filesystem::path> GetDistributionFiles(
 }
 
 std::vector<int32_t> SampleSizeBytes(
-    const absl::btree_map<int, double> &memory_size_distribution,
+    const absl::btree_map<int, double>& memory_size_distribution,
     const size_t max_size, const size_t n_samples) {
   // Expected number of bytes for the specified number of samples.
   double expected_bytes_tmp = 0.0;
@@ -196,7 +197,7 @@ std::vector<int32_t> SampleSizeBytes(
   std::vector<int32_t> size_bytes(n_samples);
   double cur_percentage_sum = 0.0;
   int n_parameters = 0;
-  for (auto const &[size, percentage] : memory_size_distribution) {
+  for (auto const& [size, percentage] : memory_size_distribution) {
     // cur_percentage_sum stores the relative frequency for an input <= size
     cur_percentage_sum += percentage;
     while (n_samples * cur_percentage_sum / percentage_sum - n_parameters >
@@ -249,7 +250,7 @@ std::vector<int32_t> SampleSizeBytes(
 // The function returns a mismatch_pos vector with the same size as size_bytes
 // that contains a suitable mismatch_pos for each element of size_bytes.
 std::vector<int32_t> SampleMismatchPosition(
-    const std::vector<int32_t> &size_bytes) {
+    const std::vector<int32_t>& size_bytes) {
   std::vector<int32_t> mismatch_positions;
   for (int32_t cur_size : size_bytes) {
     int32_t mismatch_position = 0;
@@ -270,7 +271,7 @@ std::vector<int32_t> SampleMismatchPosition(
 // (i.e., that is far enough away from the left and right end of the buffer).
 // Moves all blocks that are accessed by a mem operation of the given size to
 // the end of the lru list (in random order).
-static int32_t GetNextOffset(std::deque<int32_t> &blocks_lru,
+static int32_t GetNextOffset(std::deque<int32_t>& blocks_lru,
                              int32_t size_bytes, int32_t block_offset,
                              int32_t buffer_size, int32_t left_margin = 0,
                              int32_t right_margin = 0) {
@@ -315,8 +316,8 @@ static bool CheckOverlap(int32_t src_offset, int32_t dst_offset,
 std::pair<int32_t, int32_t> GetNextSrcDstOffsetWithOverlap(
     const double overlap_probability, const size_t buffer_size,
     const int32_t cur_size, const int32_t src_block_offset,
-    const int32_t dst_block_offset, std::deque<int32_t> &src_blocks_lru,
-    std::deque<int32_t> &dst_blocks_lru) {
+    const int32_t dst_block_offset, std::deque<int32_t>& src_blocks_lru,
+    std::deque<int32_t>& dst_blocks_lru) {
   // The memmove and compare functions allow the src and dst buffers to
   // overlap. To reproduce this behavior, we will use the same buffer
   // for src and dst. We want to exercise three configurations:
@@ -350,14 +351,14 @@ std::pair<int32_t, int32_t> GetNextSrcDstOffsetWithOverlap(
 }
 
 static void BM_Memory(
-    benchmark::State &state,
-    const absl::btree_map<int, double> &memory_size_distribution,
+    benchmark::State& state,
+    const absl::btree_map<int, double>& memory_size_distribution,
     const double overlap_probability,
-    const absl::btree_map<int, double> &alignment_distribution,
+    const absl::btree_map<int, double>& alignment_distribution,
     size_t buffer_count,
-    void (*memory_call)(benchmark::State &, const BM_Mem_Parameters &,
+    void (*memory_call)(benchmark::State&, const BM_Mem_Parameters&,
                         const size_t),
-    const size_t cache_size, const std::string &distribution_name) {
+    const size_t cache_size, const std::string& distribution_name) {
   // Max buffer size that can be stored in current cache.
   const size_t buffer_size = cache_size / buffer_count;
 
@@ -510,7 +511,7 @@ static void BM_Memory(
 void RegisterBenchmarks() {
   using operation_entry =
       std::tuple<std::string, size_t,
-                 void (*)(benchmark::State &, const BM_Mem_Parameters &,
+                 void (*)(benchmark::State&, const BM_Mem_Parameters&,
                           const size_t)>;
   auto memory_operations = {
       operation_entry("Memcpy", kMemcpyBufferCount, &MemcpyFunction),
@@ -542,20 +543,20 @@ void RegisterBenchmarks() {
       << "L3 size larger than expected";
 
   auto memory_benchmark = fleetbench::libc::BM_Memory;
-  for (const auto &[distribution_file_prefix, buffer_counter, memory_function] :
+  for (const auto& [distribution_file_prefix, buffer_counter, memory_function] :
        memory_operations) {
-    const auto &files = GetDistributionFiles(distribution_file_prefix);
+    const auto& files = GetDistributionFiles(distribution_file_prefix);
     std::string suffix_name = "";
-    for (const auto &file : files) {
+    for (const auto& file : files) {
       auto distribution_name = file.filename().string();
       distribution_name.erase(distribution_name.find(".csv"));
 
       const auto [memory_size_distribution, overlap_probability,
                   alignment_distribution] = ReadMemDistributionFile(file);
-      for (const auto &[cache_name, cache_size] : cache_resident_info) {
+      for (const auto& [cache_name, cache_size] : cache_resident_info) {
         std::string benchmark_name =
             absl::StrCat("BM_LIBC_", distribution_name, "_", cache_name);
-        benchmark::internal::Benchmark *benchmark =
+        benchmark::internal::Benchmark* benchmark =
             benchmark::RegisterBenchmark(
                 benchmark_name, memory_benchmark, memory_size_distribution,
                 overlap_probability, alignment_distribution, buffer_counter,
@@ -576,7 +577,7 @@ class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
-    for (const auto &[benchmark_name, _] : *kDefaultBenchmarks) {
+    for (const auto& [benchmark_name, _] : *kDefaultBenchmarks) {
       DynamicRegistrar::Get()->AddDefaultFilter(benchmark_name);
     }
   }

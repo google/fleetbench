@@ -2,15 +2,15 @@
 BM_PROTO_Arena,1
 "BM_SWISSMAP_InsertMiss_Hot<::absl::flat_hash_set, 64>/set_size:64/density:0",1
 "BM_SWISSMAP_InsertMiss_Cold<::absl::flat_hash_set, 64>/set_size:64/density:0",1
-BM_LIBC_Memcpy_Fleet_L1,1
+BM_LIBC_Memcpy_Fleet_LLC,1
 BM_LIBC_Memcpy_Fleet_Cold,1
-BM_LIBC_Memset_Fleet_L1,1
+BM_LIBC_Memset_Fleet_LLC,1
 BM_LIBC_Memset_Fleet_Cold,1
-BM_LIBC_Memmove_Fleet_L1,1
+BM_LIBC_Memmove_Fleet_LLC,1
 BM_LIBC_Memmove_Fleet_Cold,1
-BM_LIBC_Memcmp_Fleet_L1,1
+BM_LIBC_Memcmp_Fleet_LLC,1
 BM_LIBC_Memcmp_Fleet_Cold,1
-BM_LIBC_Bcmp_Fleet_L1,1
+BM_LIBC_Bcmp_Fleet_LLC,1
 BM_LIBC_Bcmp_Fleet_Cold,1
 BM_TCMALLOC_5/real_time/threads:1,1
 BM_HASHING_Computecrc32c_Fleet_cold,1
