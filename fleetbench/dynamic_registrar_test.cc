@@ -33,5 +33,28 @@ TEST(DynamicRegistrar, CallbackRunsOnlyOnce) {
   DynamicRegistrar::Get()->Run();
 }
 
+TEST(DynamicRegistrar, DefaultFilters) {
+  DynamicRegistrar registrar;
+  EXPECT_EQ(registrar.GetDefaultFilter(ThreadingMode::kSingleThreaded), "");
+  EXPECT_EQ(registrar.GetDefaultFilter(ThreadingMode::kMultiThreaded), "");
+
+  registrar.AddDefaultFilter("filter1", ThreadingMode::kSingleThreaded);
+  EXPECT_EQ(registrar.GetDefaultFilter(ThreadingMode::kSingleThreaded),
+            "filter1");
+  EXPECT_EQ(registrar.GetDefaultFilter(ThreadingMode::kMultiThreaded), "");
+
+  registrar.AddDefaultFilter("filter2", ThreadingMode::kMultiThreaded);
+  EXPECT_EQ(registrar.GetDefaultFilter(ThreadingMode::kSingleThreaded),
+            "filter1");
+  EXPECT_EQ(registrar.GetDefaultFilter(ThreadingMode::kMultiThreaded),
+            "filter2");
+
+  registrar.AddDefaultFilter("filter3", ThreadingMode::kBoth);
+  EXPECT_EQ(registrar.GetDefaultFilter(ThreadingMode::kSingleThreaded),
+            "filter1|filter3");
+  EXPECT_EQ(registrar.GetDefaultFilter(ThreadingMode::kMultiThreaded),
+            "filter2|filter3");
+}
+
 }  // namespace
 }  // namespace fleetbench

@@ -21,6 +21,12 @@
 
 namespace fleetbench {
 
+enum class ThreadingMode {
+  kSingleThreaded,
+  kMultiThreaded,
+  kBoth,
+};
+
 #define REGISTER_BENCHMARK(n) benchmark::RegisterBenchmark(#n, n)
 #define REGISTER_BENCHMARK_TEMPLATE(n, ...) \
   benchmark::RegisterBenchmark(#n "<" #__VA_ARGS__ ">", n<__VA_ARGS__>)
@@ -45,15 +51,17 @@ class DynamicRegistrar {
 
   // Used by fleetbench main() as the default benchmark filter if the
   // --benchmark_filter flag is not set. The returned filter is the disjunction
-  // of all filters that were added by calls to AddDefaultFilter.
-  std::string GetDefaultFilter() const { return default_filter_; }
+  // of all filters that were added by calls to AddDefaultFilter for the given
+  // `ThreadingMode`.
+  std::string GetDefaultFilter(ThreadingMode mode) const;
 
-  // Adds an additional benchmark filter.
-  void AddDefaultFilter(std::string filter);
+  void AddDefaultFilter(std::string filter,
+                        ThreadingMode mode = ThreadingMode::kBoth);
 
  private:
   std::vector<std::function<void()>> callbacks_;
-  std::string default_filter_;
+  std::string default_single_threaded_filter_;
+  std::string default_multi_threaded_filter_;
 };
 }  // namespace fleetbench
 

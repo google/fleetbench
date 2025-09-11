@@ -129,11 +129,17 @@ int main(int argc, char* argv[]) {
 
   CheckMemoryLimit();
 
-  if (benchmark::GetBenchmarkFilter().empty() ||
-      benchmark::GetBenchmarkFilter() == "default") {
-    // --benchmark_filter flag not set
+  const std::string benchmark_filter = benchmark::GetBenchmarkFilter();
+  if (benchmark_filter.empty() || benchmark_filter == "default" ||
+      benchmark_filter == "single") {
+    // --benchmark_filter flag not set, set to default or "single"
     benchmark::SetBenchmarkFilter(
-        fleetbench::DynamicRegistrar::Get()->GetDefaultFilter());
+        fleetbench::DynamicRegistrar::Get()->GetDefaultFilter(
+            fleetbench::ThreadingMode::kSingleThreaded));
+  } else if (benchmark_filter == "multi") {
+    benchmark::SetBenchmarkFilter(
+        fleetbench::DynamicRegistrar::Get()->GetDefaultFilter(
+            fleetbench::ThreadingMode::kMultiThreaded));
   }
   fleetbench::DynamicRegistrar::Get()->Run();
 

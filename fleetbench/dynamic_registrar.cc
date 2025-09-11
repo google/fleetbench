@@ -36,11 +36,27 @@ void DynamicRegistrar::Run() {
   callbacks_.clear();
 }
 
-void DynamicRegistrar::AddDefaultFilter(std::string filter) {
-  if (!default_filter_.empty()) {
-    default_filter_.append("|");
+void DynamicRegistrar::AddDefaultFilter(std::string filter,
+                                        ThreadingMode mode) {
+  if (mode == ThreadingMode::kSingleThreaded || mode == ThreadingMode::kBoth) {
+    if (!default_single_threaded_filter_.empty()) {
+      default_single_threaded_filter_.push_back('|');
+    }
+    default_single_threaded_filter_.append(filter);
   }
-  default_filter_.append(filter);
+  if (mode == ThreadingMode::kMultiThreaded || mode == ThreadingMode::kBoth) {
+    if (!default_multi_threaded_filter_.empty()) {
+      default_multi_threaded_filter_.push_back('|');
+    }
+    default_multi_threaded_filter_.append(filter);
+  }
+}
+
+std::string DynamicRegistrar::GetDefaultFilter(ThreadingMode mode) const {
+  if (mode == ThreadingMode::kSingleThreaded) {
+    return default_single_threaded_filter_;
+  }
+  return default_multi_threaded_filter_;
 }
 
 }  // namespace fleetbench
