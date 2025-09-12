@@ -71,7 +71,9 @@ def GetSubBenchmarks(benchmark_path: str, workload: str = "") -> list[str]:
   """
   cmd = [benchmark_path, "--benchmark_list_tests"]
 
-  if workload == "all":
+  if not workload:
+    cmd += ["--benchmark_filter=multi"]
+  elif workload == "all":
     cmd += ["--benchmark_filter=all"]
   elif workload:
     cmd += [
