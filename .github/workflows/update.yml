@@ -10,16 +10,22 @@ jobs:
     permissions:
       contents: write
     steps:
-        - uses: actions/checkout@v2
-        - uses: anothrNick/github-tag-action@1.64.0 
-          id: set_release_tag
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
-            WITH_V: true
-            DEFAULT_BUMP: patch
-            INITIAL_VERSION: 2.0.1
-        - uses: marvinpinto/action-automatic-releases@v1.2.1
-          with:
-            repo_token: "${{ secrets.GITHUB_TOKEN }}"
-            prerelease: true
-            automatic_release_tag: ${{ steps.set_release_tag.outputs.new_tag }}
+      # Update checkout version and add fetch-depth
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anothrNick/github-tag-action@1.64.0
+        id: set_release_tag
+        env:
+          # Use Fleetbench PAT secret
+          GITHUB_TOKEN: ${{ secrets.FLEETBENCH_PAT }} 
+          WITH_V: true
+          DEFAULT_BUMP: patch
+          INITIAL_VERSION: 2.0.1
+          
+      - uses: marvinpinto/action-automatic-releases@v1.2.1
+        with:
+          repo_token: "${{ secrets.FLEETBENCH_PAT }}"
+          prerelease: true
+          automatic_release_tag: ${{ steps.set_release_tag.outputs.new_tag }}
