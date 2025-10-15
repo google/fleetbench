@@ -70,6 +70,7 @@ class ProtoLifecycle {
   uint32_t working_set_size_;
   std::string s_;
   std::vector<int> indices_;
+  google::protobuf::Arena* arena_ = nullptr;
 
   Message<Message0> message0_;
   Message<Message1> message1_;
