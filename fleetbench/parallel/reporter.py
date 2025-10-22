@@ -269,6 +269,7 @@ def SaveBenchmarkResults(
           "Iterations_std": "iterations_std",
       }
   )
+  df = df.fillna("NaN")
   data = df.reset_index().to_dict(orient="records")
 
   context = AggregateContext(output_dir)

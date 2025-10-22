@@ -320,6 +320,51 @@ class ReportedTest(absltest.TestCase):
     }
     self.assertEqual(remapped_data, expected_remapped_data)
 
+  def test_save_benchmark_results_handles_nan(self):
+    df = pd.DataFrame({
+        "Benchmark": ["BM_Test1", "BM_Test2"],
+        "Mean_Wall_Time": [10.0, 20.0],
+        "Mean_CPU_Time": [11.0, 21.0],
+        "Mean_Iterations": [100, 200],
+        "Wall_Time_std": [1.0, math.nan],
+        "CPU_Time_std": [1.1, math.nan],
+        "Iterations_std": [10.0, math.nan],
+        "cycles": [1000, math.nan],
+        "instructions": [500, 600],
+    }).set_index("Benchmark")
+
+    reporter.SaveBenchmarkResults(self.test_dir.full_path, df)
+    file_name = os.path.join(self.test_dir, "results.json")
+    self.assertTrue(os.path.exists(file_name))
+    with open(file_name, "r") as json_file:
+      data = json.load(json_file)
+
+    expected_benchmarks = [
+        {
+            "name": "BM_Test1",
+            "real_time": 10.0,
+            "cpu_time": 11.0,
+            "iterations": 100,
+            "real_time_std": 1.0,
+            "cpu_time_std": 1.1,
+            "iterations_std": 10.0,
+            "cycles": 1000,
+            "instructions": 500,
+        },
+        {
+            "name": "BM_Test2",
+            "real_time": 20.0,
+            "cpu_time": 21.0,
+            "iterations": 200,
+            "real_time_std": "NaN",
+            "cpu_time_std": "NaN",
+            "iterations_std": "NaN",
+            "cycles": "NaN",
+            "instructions": 600,
+        },
+    ]
+    self.assertEqual(data["benchmarks"], expected_benchmarks)
+
   def test_generate_final_report_multiple_repetitions(self):
     output_dir = self.create_tempdir()
     context_list = [{"key": "value1"}, {"key": "value2"}]
