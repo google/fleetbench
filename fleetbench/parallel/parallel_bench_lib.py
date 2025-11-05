@@ -35,24 +35,6 @@ from fleetbench.parallel import weights
 from fleetbench.parallel import worker
 
 
-def _SetExtraBenchmarkFlags(
-    benchmark_perf_counters: list[str],
-    benchmark_repetitions: int,
-    benchmark_min_time: str,
-) -> list[str]:
-  """Set extra benchmark flags."""
-  benchmark_flags = []
-  if benchmark_perf_counters:
-    perf_counters_str = ",".join(benchmark_perf_counters)
-    benchmark_flags.append(f"--benchmark_perf_counters={perf_counters_str}")
-  if benchmark_min_time:
-    benchmark_flags.append(f"--benchmark_min_time={benchmark_min_time}")
-  if benchmark_repetitions:
-    benchmark_flags.append(f"--benchmark_repetitions={benchmark_repetitions}")
-
-  return benchmark_flags
-
-
 @dataclasses.dataclass
 class BenchmarkMetrics:
   # per benchmark run total duration
@@ -177,8 +159,9 @@ class ParallelBench:
 
     logging.info("Initializing benchmarks and worker threads...")
 
-    benchmark_flags = _SetExtraBenchmarkFlags(
-        self.perf_counters, benchmark_repetitions, benchmark_min_time
+    benchmark_flags = self._SetExtraBenchmarkFlags(
+        benchmark_repetitions,
+        benchmark_min_time,
     )
 
     if benchmark_flags:
@@ -303,6 +286,23 @@ class ParallelBench:
       probabilities = np.array(self.target_ratios) / np.sum(self.target_ratios)
 
     return probabilities
+
+  def _SetExtraBenchmarkFlags(
+      self,
+      benchmark_repetitions: int,
+      benchmark_min_time: str,
+  ) -> list[str]:
+    """Set extra benchmark flags."""
+    benchmark_flags = []
+    if self.perf_counters:
+      perf_counters_str = ",".join(self.perf_counters)
+      benchmark_flags.append(f"--benchmark_perf_counters={perf_counters_str}")
+    if benchmark_min_time:
+      benchmark_flags.append(f"--benchmark_min_time={benchmark_min_time}")
+    if benchmark_repetitions:
+      benchmark_flags.append(f"--benchmark_repetitions={benchmark_repetitions}")
+
+    return benchmark_flags
 
   def _SelectNextBenchmarks(self, count: int) -> list[bm.Benchmark]:
     """Randomly choose some benchmarks to run."""

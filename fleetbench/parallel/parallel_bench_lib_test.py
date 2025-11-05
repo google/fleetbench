@@ -17,6 +17,7 @@ import os
 import shutil
 from unittest import mock
 
+from absl import flags
 from absl.testing import absltest
 from absl.testing import flagsaver
 from absl.testing import parameterized
@@ -30,30 +31,25 @@ from fleetbench.parallel import result
 from fleetbench.parallel import run
 from fleetbench.parallel import weights
 
+FLAGS = flags.FLAGS
+
 
 class ParallelBenchTest(parameterized.TestCase):
 
   def setUp(self):
     super().setUp()
+    self.temp_dir = self.create_tempdir()
     self.pb = parallel_bench_lib.ParallelBench(
         cpus=[0, 1],
         cpu_affinity=False,
         utilization=0.5,
         duration=0.1,
         repetitions=1,
-        temp_parent_root=absltest.get_default_test_tmpdir(),
+        temp_parent_root=self.temp_dir.full_path,
         keep_raw_data=True,
         benchmark_perf_counters="",
         benchmark_threads={},
     )
-
-  def tearDown(self):
-    super().tearDown()
-    for name in os.listdir(self.pb.temp_parent_root):
-      if name.startswith("run_"):
-        shutil.rmtree(os.path.join(self.pb.temp_parent_root, name))
-      else:
-        os.remove(os.path.join(self.pb.temp_parent_root, name))
 
   @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
   @mock.patch.object(run.Run, "Execute", autospec=True)
@@ -62,9 +58,7 @@ class ParallelBenchTest(parameterized.TestCase):
   @mock.patch.object(
       reporter, "SaveBenchmarkResults", autospec=True, return_value=(None, None)
   )
-  @flagsaver.flagsaver(
-      benchmark_dir=absltest.get_default_test_tmpdir(),
-  )
+  @flagsaver.flagsaver
   def testRun(
       self,
       mock_save_benchmark_results,
@@ -73,6 +67,7 @@ class ParallelBenchTest(parameterized.TestCase):
       mock_execute,
       mock_get_subbenchmarks,
   ):
+    FLAGS.benchmark_dir = self.temp_dir.full_path
     mock_get_subbenchmarks.return_value = ["BM_Test1", "BM_Test2"]
     mock_execute.return_value = result.Result(
         benchmark="fake_bench (BM_Test1)",
@@ -83,9 +78,7 @@ class ParallelBenchTest(parameterized.TestCase):
         bm_cpu_time=0.01,
         result="fake_result",
     )
-    self.create_tempfile(
-        os.path.join(absltest.get_default_test_tmpdir(), "fake_bench")
-    )
+    self.create_tempfile(os.path.join(self.temp_dir.full_path, "fake_bench"))
 
     def fake_utilization(unused_cpus):
       # Return 0% for the first call, then 55% for the rest.
@@ -102,7 +95,7 @@ class ParallelBenchTest(parameterized.TestCase):
         utilization=0.5,
         duration=0.1,
         repetitions=1,
-        temp_parent_root=absltest.get_default_test_tmpdir(),
+        temp_parent_root=self.temp_dir.full_path,
         keep_raw_data=True,
         benchmark_perf_counters="",
         benchmark_threads={},
@@ -116,6 +109,7 @@ class ParallelBenchTest(parameterized.TestCase):
     )
     self.pb.Run()
     mock_execute.assert_called_once()
+    mock_save_benchmark_results.assert_called_once()
 
   @mock.patch.object(parallel_bench_lib.ParallelBench, "_PreRun", autospec=True)
   @mock.patch.object(
@@ -166,9 +160,9 @@ class ParallelBenchTest(parameterized.TestCase):
     self.assertEqual(args[3], 2)
 
   def test_set_extra_benchmark_flags(self):
+    self.pb.perf_counters = ["instructions"]
     self.assertEqual(
-        parallel_bench_lib._SetExtraBenchmarkFlags(
-            benchmark_perf_counters=["instructions"],
+        self.pb._SetExtraBenchmarkFlags(
             benchmark_repetitions=10,
             benchmark_min_time="10s",
         ),
@@ -179,9 +173,10 @@ class ParallelBenchTest(parameterized.TestCase):
         ],
     )
 
+    self.pb.perf_counters = ["instructions", "cycles"]
+
     self.assertEqual(
-        parallel_bench_lib._SetExtraBenchmarkFlags(
-            benchmark_perf_counters=["instructions", "cycles"],
+        self.pb._SetExtraBenchmarkFlags(
             benchmark_repetitions=0,
             benchmark_min_time="",
         ),
@@ -197,9 +192,7 @@ class ParallelBenchTest(parameterized.TestCase):
   @mock.patch.object(
       reporter, "SaveBenchmarkResults", autospec=True, return_value=(None, None)
   )
-  @flagsaver.flagsaver(
-      benchmark_dir=absltest.get_default_test_tmpdir(),
-  )
+  @flagsaver.flagsaver
   def testRunThreads(
       self,
       mock_save_benchmark_results,
@@ -208,6 +201,7 @@ class ParallelBenchTest(parameterized.TestCase):
       mock_execute,
       mock_get_subbenchmarks,
   ):
+    FLAGS.benchmark_dir = self.temp_dir.full_path
     mock_get_subbenchmarks.return_value = ["BM_Test1"]
     mock_execute.return_value = result.Result(
         benchmark="fake_bench (BM_Test1)",
@@ -218,9 +212,7 @@ class ParallelBenchTest(parameterized.TestCase):
         bm_cpu_time=0.01,
         result="fake_result",
     )
-    self.create_tempfile(
-        os.path.join(absltest.get_default_test_tmpdir(), "fake_bench")
-    )
+    self.create_tempfile(os.path.join(self.temp_dir.full_path, "fake_bench"))
 
     def fake_utilization(unused_cpus):
       # Return 0% for the first call, then 55% for the rest.
@@ -237,7 +229,7 @@ class ParallelBenchTest(parameterized.TestCase):
         utilization=0.5,
         duration=0.1,
         repetitions=1,
-        temp_parent_root=absltest.get_default_test_tmpdir(),
+        temp_parent_root=self.temp_dir.full_path,
         keep_raw_data=True,
         benchmark_perf_counters="",
         benchmark_threads={"BM_Test1": 2},
@@ -251,6 +243,7 @@ class ParallelBenchTest(parameterized.TestCase):
     )
     self.pb.Run()
     mock_execute.assert_called_once()
+    mock_save_benchmark_results.assert_called_once()
 
   def test_convert_to_dataframe(self):
     # First entries are fake durations, the second entries are real durations.

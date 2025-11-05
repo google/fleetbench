@@ -123,6 +123,7 @@ py_test(
         ":result",
         ":run",
         ":weights",
+        "@com_google_absl_py//absl/flags",
         "@com_google_absl_py//absl/testing:absltest",
         "@com_google_absl_py//absl/testing:flagsaver",
         "@com_google_absl_py//absl/testing:parameterized",
