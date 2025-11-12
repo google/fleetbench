@@ -141,5 +141,9 @@ bool FindInCommandLine(absl::string_view s, bool exact_match = false);
 // `/iterations:x` when explicit iteration counts are used.
 bool UseExplicitIterationCounts();
 
+// Adds the effective cache sizes to the benchmark context if the cache sizes
+// are specified by the corresponding flags.
+void AddEffectiveCacheSizeToContextIfSpecified();
+
 }  // namespace fleetbench
 #endif  // THIRD_PARTY_FLEETBENCH_COMMON_COMMON_H_

@@ -268,20 +268,24 @@ bool UseExplicitIterationCounts() {
          !FindInCommandLine("--benchmark_list_tests");
 }
 
+void AddEffectiveCacheSizeToContextIfSpecified() {
+  if (absl::GetFlag(FLAGS_L1_data_size).has_value() ||
+      absl::GetFlag(FLAGS_L2_size).has_value() ||
+      absl::GetFlag(FLAGS_L3_size).has_value()) {
+    benchmark::AddCustomContext("Effective L1 Data size [KiB]",
+                                absl::StrCat(GetCacheSize(1, "Data") / 1024));
+    benchmark::AddCustomContext("Effective L2 size [KiB]",
+                                absl::StrCat(GetCacheSize(2) / 1024));
+    benchmark::AddCustomContext("Effective L3 size [KiB]",
+                                absl::StrCat(GetCacheSize(3) / 1024));
+  }
+}
+
 bool FleetbenchReporter::ReportContext(
     const benchmark::BenchmarkReporter::Context& context) {
   reporter_->SetOutputStream(&this->GetOutputStream());
   reporter_->SetErrorStream(&this->GetErrorStream());
   bool result = reporter_->ReportContext(context);
-  if (absl::GetFlag(FLAGS_L1_data_size).has_value() ||
-      absl::GetFlag(FLAGS_L2_size).has_value() ||
-      absl::GetFlag(FLAGS_L3_size).has_value()) {
-    auto& err = this->GetErrorStream();
-    err << "Effective CPU Cache Sizes:\n";
-    err << "  L1 Data " << GetCacheSize(1, "Data") / 1024 << " KiB\n";
-    err << "  L2 " << GetCacheSize(2) / 1024 << " KiB\n";
-    err << "  L3 " << GetCacheSize(3) / 1024 << " KiB\n";
-  }
   return result;
 }
 
