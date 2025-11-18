@@ -451,7 +451,11 @@ class ParallelBench:
       file_path = os.path.join(self.temp_root, filename)
       with open(file_path, "r") as f:
         file_content = f.read()
-        benchmark_result = json.loads(file_content)["benchmarks"][0]
+        try:
+          benchmark_result = json.loads(file_content)["benchmarks"][0]
+        except (json.JSONDecodeError, KeyError, IndexError):
+          logging.exception("Failed to parse benchmark result in %s", file_path)
+          continue
 
       entry = {
           "Benchmark": benchmark_result["name"],
