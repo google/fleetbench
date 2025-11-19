@@ -49,6 +49,9 @@ class ParallelBenchTest(parameterized.TestCase):
         keep_raw_data=True,
         benchmark_perf_counters="",
         benchmark_threads={},
+        l1_data_size=None,
+        l2_size=None,
+        l3_size=None,
     )
 
   @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
@@ -99,6 +102,9 @@ class ParallelBenchTest(parameterized.TestCase):
         keep_raw_data=True,
         benchmark_perf_counters="",
         benchmark_threads={},
+        l1_data_size=None,
+        l2_size=None,
+        l3_size=None,
     )
     self.pb.SetWeights(
         benchmark_target="fake_bench",
@@ -174,6 +180,9 @@ class ParallelBenchTest(parameterized.TestCase):
     )
 
     self.pb.perf_counters = ["instructions", "cycles"]
+    self.pb.l1_data_size = 1024
+    self.pb.l2_size = 2048
+    self.pb.l3_size = 4096
 
     self.assertEqual(
         self.pb._SetExtraBenchmarkFlags(
@@ -182,6 +191,9 @@ class ParallelBenchTest(parameterized.TestCase):
         ),
         [
             "--benchmark_perf_counters=instructions,cycles",
+            "--L1_data_size=1024",
+            "--L2_size=2048",
+            "--L3_size=4096",
         ],
     )
 
@@ -233,6 +245,9 @@ class ParallelBenchTest(parameterized.TestCase):
         keep_raw_data=True,
         benchmark_perf_counters="",
         benchmark_threads={"BM_Test1": 2},
+        l1_data_size=None,
+        l2_size=None,
+        l3_size=None,
     )
     self.pb.SetWeights(
         benchmark_target="fake_bench",

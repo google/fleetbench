@@ -98,6 +98,27 @@ _BENCHMARK_MIN_TIME = flags.DEFINE_string(
     "Minimum time to run each benchmark. Applied to all benchmarks.",
 )
 
+_L1_DATA_SIZE = flags.DEFINE_integer(
+    "L1_data_size",
+    None,
+    "Size of the L1 data cache in bytes. Applied to all benchmarks. Determined"
+    " automatically if the flag is not specified.",
+)
+
+_L2_SIZE = flags.DEFINE_integer(
+    "L2_size",
+    None,
+    "Size of the L2 cache in bytes. Applied to all benchmarks. Determined"
+    " automatically if the flag is not specified.",
+)
+
+_L3_SIZE = flags.DEFINE_integer(
+    "L3_size",
+    None,
+    "Size of the L3 cache in bytes. Applied to all benchmarks. Determined"
+    " automatically if the flag is not specified.",
+)
+
 _UTILIZATION = flags.DEFINE_float(
     "utilization",
     0.75,
@@ -242,6 +263,9 @@ def main(argv: Sequence[str]) -> None:
       keep_raw_data=_KEEP_RAW_DATA.value,
       benchmark_perf_counters=_BENCHMARK_PERF_COUNTERS.value,
       benchmark_threads=_ParseBenchmarkThreads(_CUSTOM_BENCHMARK_THREADS.value),
+      l1_data_size=_L1_DATA_SIZE.value,
+      l2_size=_L2_SIZE.value,
+      l3_size=_L3_SIZE.value,
   )
 
   bench.SetWeights(

@@ -78,6 +78,9 @@ class ParallelBench:
     first_run: Boolean indicating if this is the first run. We use this to
       determine if we can randomly select benchmarks or if we need to run all
       benchmarks at least once.
+    l1_data_size: Size of the L1 data cache.
+    l2_size: Size of the L2 cache.
+    l3_size: Size of the L3 cache.
   """
 
   def __init__(
@@ -91,6 +94,9 @@ class ParallelBench:
       keep_raw_data: bool,
       benchmark_perf_counters: str,
       benchmark_threads: dict[str, int],
+      l1_data_size: int | None,
+      l2_size: int | None,
+      l3_size: int | None,
   ):
     """Initialize the parallel benchmark runner."""
 
@@ -118,6 +124,9 @@ class ParallelBench:
     self.utilization_samples: list[tuple[pd.Timestamp, float]] = []
     self.target_ratios: list[float] = []
     self.first_run = True
+    self.l1_data_size = l1_data_size
+    self.l2_size = l2_size
+    self.l3_size = l3_size
 
   def SetWeights(
       self,
@@ -301,6 +310,13 @@ class ParallelBench:
       benchmark_flags.append(f"--benchmark_min_time={benchmark_min_time}")
     if benchmark_repetitions:
       benchmark_flags.append(f"--benchmark_repetitions={benchmark_repetitions}")
+
+    if self.l1_data_size is not None:
+      benchmark_flags.append(f"--L1_data_size={self.l1_data_size}")
+    if self.l2_size is not None:
+      benchmark_flags.append(f"--L2_size={self.l2_size}")
+    if self.l3_size is not None:
+      benchmark_flags.append(f"--L3_size={self.l3_size}")
 
     return benchmark_flags
 
