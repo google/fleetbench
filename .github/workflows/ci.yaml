@@ -37,6 +37,7 @@ jobs:
 
       - name: Build
         run: |
+          bazel run //:requirements.update
           bazel build -c ${{ matrix.config }} ${{ matrix.compiler.flags }} //...
       - name: Test
         run: |
