@@ -136,6 +136,7 @@ cc_test(
     data = [":corpus"],
     linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
+    visibility = ["//platforms/kperf/benchmarks/fleetbench:__pkg__"],
     deps = [
         ":compression_benchmark_lib",
         "//fleetbench:benchmark_main",

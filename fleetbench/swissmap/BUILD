@@ -43,6 +43,7 @@ cc_test(
     linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
     tags = ["manual"],
+    visibility = ["//platforms/kperf/benchmarks/fleetbench:__pkg__"],
     deps = [
         ":swissmap_benchmark_lib",
         "//fleetbench:benchmark_main",

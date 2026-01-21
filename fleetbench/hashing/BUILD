@@ -27,6 +27,7 @@ cc_test(
     name = "hashing_benchmark",
     linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
+    visibility = ["//platforms/kperf/benchmarks/fleetbench:__pkg__"],
     deps = [
         ":hashing_benchmark_lib",
         "//fleetbench:benchmark_main",
