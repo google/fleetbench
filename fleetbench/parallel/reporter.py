@@ -343,6 +343,8 @@ def GenerateFinalReport(
       "cpu_time",
   ]
 
-  selected_columns.extend(perf_counters)
+  for counter in perf_counters:
+    if counter in df:
+      selected_columns.append(counter)
 
   print(df[selected_columns].to_string(index=False))
