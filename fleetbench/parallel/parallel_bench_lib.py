@@ -81,6 +81,7 @@ class ParallelBench:
     l1_data_size: Size of the L1 data cache.
     l2_size: Size of the L2 cache.
     l3_size: Size of the L3 cache.
+    command_prefix: Prefix to add to the benchmark command.
   """
 
   def __init__(
@@ -97,6 +98,7 @@ class ParallelBench:
       l1_data_size: int | None,
       l2_size: int | None,
       l3_size: int | None,
+      command_prefix: str = "",
   ):
     """Initialize the parallel benchmark runner."""
 
@@ -127,6 +129,7 @@ class ParallelBench:
     self.l1_data_size = l1_data_size
     self.l2_size = l2_size
     self.l3_size = l3_size
+    self.command_prefix = command_prefix
 
   def SetWeights(
       self,
@@ -397,6 +400,7 @@ class ParallelBench:
         r = run.Run(
             benchmark=benchmark,
             out_file=path,
+            command_prefix=self.command_prefix,
         )
         required_n_threads = self.benchmark_threads.get(
             benchmark.BenchmarkName(), 1

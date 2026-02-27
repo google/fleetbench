@@ -52,10 +52,11 @@ class ParallelBenchTest(parameterized.TestCase):
         l1_data_size=None,
         l2_size=None,
         l3_size=None,
+        command_prefix="",
     )
 
   @mock.patch.object(bm, "GetSubBenchmarks", autospec=True)
-  @mock.patch.object(run.Run, "Execute", autospec=True)
+  @mock.patch.object(run, "Run", autospec=True)
   @mock.patch.object(cpu, "Utilization", autospec=True)
   @mock.patch.object(reporter, "GenerateBenchmarkReport", autospec=True)
   @mock.patch.object(
@@ -67,12 +68,12 @@ class ParallelBenchTest(parameterized.TestCase):
       mock_save_benchmark_results,
       mock_generate_benchmark_report,
       mock_utilization,
-      mock_execute,
+      mock_run_cls,
       mock_get_subbenchmarks,
   ):
     FLAGS.benchmark_dir = self.temp_dir.full_path
     mock_get_subbenchmarks.return_value = ["BM_Test1", "BM_Test2"]
-    mock_execute.return_value = result.Result(
+    mock_run_cls.return_value.Execute.return_value = result.Result(
         benchmark="fake_bench (BM_Test1)",
         rc=0,
         stdout="fake_stdout",
@@ -105,6 +106,7 @@ class ParallelBenchTest(parameterized.TestCase):
         l1_data_size=None,
         l2_size=None,
         l3_size=None,
+        command_prefix="taskset -c 0 ",
     )
     self.pb.SetWeights(
         benchmark_target="fake_bench",
@@ -114,7 +116,9 @@ class ParallelBenchTest(parameterized.TestCase):
         custom_benchmark_weights=None,
     )
     self.pb.Run()
-    mock_execute.assert_called_once()
+    mock_run_cls.assert_called_once()
+    _, kwargs = mock_run_cls.call_args
+    self.assertEqual(kwargs["command_prefix"], "taskset -c 0 ")
     mock_save_benchmark_results.assert_called_once()
 
   @mock.patch.object(parallel_bench_lib.ParallelBench, "_PreRun", autospec=True)
@@ -248,6 +252,7 @@ class ParallelBenchTest(parameterized.TestCase):
         l1_data_size=None,
         l2_size=None,
         l3_size=None,
+        command_prefix="",
     )
     self.pb.SetWeights(
         benchmark_target="fake_bench",

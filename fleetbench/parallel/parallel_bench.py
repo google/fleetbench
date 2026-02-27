@@ -41,6 +41,13 @@ _TEMP_ROOT = flags.DEFINE_string(
     "temp_dir", "/tmp/parallel_bench", "Temp directory to use."
 )
 
+_COMMAND_PREFIX = flags.DEFINE_string(
+    "command_prefix",
+    "",
+    "Prefix string to prepend to the benchmark command (e.g., 'taskset -c 0 ' "
+    "or 'echo 0 > /sys/fs/resctrl/ablation/tasks && ').",
+)
+
 _DURATION = flags.DEFINE_integer("duration", 60, "Minimum duration in seconds.")
 
 _BENCHMARK_TARGET = flags.DEFINE_string(
@@ -266,6 +273,7 @@ def main(argv: Sequence[str]) -> None:
       l1_data_size=_L1_DATA_SIZE.value,
       l2_size=_L2_SIZE.value,
       l3_size=_L3_SIZE.value,
+      command_prefix=_COMMAND_PREFIX.value,
   )
 
   bench.SetWeights(

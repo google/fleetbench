@@ -97,6 +97,42 @@ class RunTest(absltest.TestCase):
     self.assertEqual(result.rc, 1)
     self.assertEqual(result.stderr, "something bad happened")
 
+  @mock.patch.object(subprocess, "run", autospec=True)
+  @flagsaver.flagsaver(
+      benchmark_dir=absltest.get_default_test_tmpdir(),
+  )
+  def testRunWithCommandPrefix(self, mock_run):
+    output_file = self.create_tempfile()
+
+    data = {
+        "benchmarks": [
+            {"cpu_time": 12.345, "real_time": 12.3, "iterations": 10}
+        ]
+    }
+    json_object = json.dumps(data, indent=4)
+    with open(output_file.full_path, "w") as f:
+      f.write(json_object)
+    mock_run.return_value.returncode = 0
+    self.create_tempfile(
+        file_path=os.path.join(
+            absltest.get_default_test_tmpdir(), "fake_benchmark"
+        ),
+    )
+    r = run.Run(
+        benchmark=bm.Benchmark(
+            name="fake_benchmark", benchmark_filter="BM_Test"
+        ),
+        out_file=output_file.full_path,
+        command_prefix="taskset -c 0 ",
+    )
+    r.Execute()
+    mock_run.assert_called_once()
+    args, _ = mock_run.call_args
+    command = args[0]
+    self.assertEqual(command[0], "bash")
+    self.assertEqual(command[1], "-c")
+    self.assertStartsWith(command[2], "taskset -c 0 ")
+
 
 if __name__ == "__main__":
   absltest.main()

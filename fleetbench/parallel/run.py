@@ -15,6 +15,7 @@
 """Runs a single benchmark and collects the results and metadata."""
 
 import json
+import shlex
 import subprocess
 import time
 
@@ -27,13 +28,21 @@ from fleetbench.parallel import result
 class Run:
   """Represents a single run of a benchmark."""
 
-  def __init__(self, benchmark: bm.Benchmark, out_file: str):
+  def __init__(
+      self, benchmark: bm.Benchmark, out_file: str, command_prefix: str = ""
+  ):
     self.benchmark = benchmark
     self.out_file = out_file
+    self.command_prefix = command_prefix
 
   def Execute(self) -> result.Result:
     """Runs the benchmark and returns the result."""
     command = self._CommandLine()
+    if self.command_prefix:
+      shell_command = self.command_prefix + " ".join(
+          shlex.quote(c) for c in command
+      )
+      command = ["bash", "-c", shell_command]
     logging.debug("running %s", command)
     try:
       start = time.time()
