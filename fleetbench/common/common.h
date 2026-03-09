@@ -30,6 +30,16 @@
 ABSL_DECLARE_FLAG(bool, fixed_seed);
 ABSL_DECLARE_FLAG(std::optional<int>, seed);
 
+#define FLEETBENCH_PRAGMA(x) _Pragma(#x)
+
+#if defined(__clang__)
+#define FLEETBENCH_UNROLL_LOOP(x) FLEETBENCH_PRAGMA(unroll x)
+#elif defined(__GNUC__)
+#define FLEETBENCH_UNROLL_LOOP(x) FLEETBENCH_PRAGMA(GCC unroll x)
+#else
+#define FLEETBENCH_UNROLL_LOOP(x)
+#endif
+
 namespace fleetbench {
 
 // Wrapper around a random number generator.

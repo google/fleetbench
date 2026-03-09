@@ -60,6 +60,7 @@ static void BM_SWISSMAP_FindMiss_Hot(benchmark::State& state) {
     for (auto& set : sets) {
       for (size_t i = 0; i != keys_per_set; ++i) {
         uint32_t key = RandomNonexistent();
+        FLEETBENCH_UNROLL_LOOP(8)
         for (size_t j = 0; j != kOpsPerKey; ++j) {
           DoNotOptimize(set);
           DoNotOptimize(key);
@@ -95,6 +96,7 @@ static void BM_SWISSMAP_InsertMiss_Hot(benchmark::State& state) {
 
   while (state.KeepRunningBatch(sets.size() * keys_per_set)) {
     for (auto& set : sets) {
+      FLEETBENCH_UNROLL_LOOP(8)
       for (uint32_t key : keys) {
         DoNotOptimize(set);
         DoNotOptimize(key);
@@ -143,6 +145,7 @@ void LookupHit_Hot(benchmark::State& state, Lookup lookup) {
       state.KeepRunningBatch(sets.size() * sets.front().size() * kOpsPerKey)) {
     for (auto& set : sets) {
       for (uint32_t key : set) {
+        FLEETBENCH_UNROLL_LOOP(8)
         for (size_t i = 0; i != kOpsPerKey; ++i) {
           lookup(&set, key);
         }
@@ -204,8 +207,10 @@ static void BM_SWISSMAP_Iterate_Hot(benchmark::State& state) {
   alignas(Value<kValueSizeT>) char data[kValueSizeT];
   while (state.KeepRunningBatch(sets.size() * sets.front().size() *
                                 kRepetitions)) {
+    FLEETBENCH_UNROLL_LOOP(8)
     for (const auto& set : sets) {
       for (size_t i = 0; i != kRepetitions; ++i) {
+        FLEETBENCH_UNROLL_LOOP(8)
         for (const auto& elem : set) {
           memcpy(data, &elem, kValueSizeT);
           DoNotOptimize(data);
@@ -262,6 +267,7 @@ static void BM_SWISSMAP_EraseInsert_Hot(benchmark::State& state) {
   }
 
   while (state.KeepRunningBatch(keys_size_effective)) {
+    FLEETBENCH_UNROLL_LOOP(8)
     for (size_t i = 0; i != keys_size_effective; ++i) {
       DoNotOptimize(s);
       auto erase_result = s.erase(keys[i]);
@@ -305,6 +311,7 @@ static void BM_SWISSMAP_InsertManyOrdered_Hot(benchmark::State& state) {
     for (size_t i = 0; i != sets.size(); ++i) {
       for (size_t j = 0; j != kRepetitions; ++j) {
         sets[i].erase(sets[i].begin(), sets[i].end());
+        FLEETBENCH_UNROLL_LOOP(8)
         for (uint32_t key : keys[i]) {
           auto res = sets[i].insert(key);
           DoNotOptimize(res);
@@ -333,6 +340,7 @@ static void RunInsertManyUnordered_Hot(benchmark::State& state,
       state.ResumeTiming();
       for (size_t j = 0; j != kRepetitions; ++j) {
         auto& s = empty_set_getter();
+        FLEETBENCH_UNROLL_LOOP(8)
         for (uint32_t key : keys) {
           auto res = s.insert(key);
           DoNotOptimize(res);
