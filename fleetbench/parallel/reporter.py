@@ -28,8 +28,6 @@ import pandas as pd
 ContextInfo: TypeAlias = dict[str, Any]
 BenchmarkRuntimeInfo: TypeAlias = dict[str, Any]
 
-
-# TODO: b/408469060 - combine these two functions?
 def AggregateContext(input_dir: str) -> dict[str, Any]:
   """Iterates through all run files and aggregates "context" data.
 
@@ -254,8 +252,6 @@ def SaveBenchmarkResults(
 
   # Convert DataFrame to a list of dictionaries (one for each row)
   # Rename the column "Benchmark" to "Name"
-  # TODO: This only works for open source benchmark version. If there
-  # is need to support internal version, we need to change the column name.
 
   # We use "Benchmark" column as the index, and rename it to "name"
   df.index.name = "name"

@@ -1,10 +1,5 @@
 # Benchmark Characteristics
 
-<!--*
-# Document freshness: For more information, see go/fresh-source.
-freshness: { owner: 'liyuying' reviewed: '2025-08-10' }
-*-->
-
 This page summarizes some key performance characteristics of the benchmarks.
 
 [TOC]
