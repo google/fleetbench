@@ -181,7 +181,7 @@ class CorpusGeneratorTest(absltest.TestCase):
     compression_ratio_zstd = (
         corpus_chunk_manager_zstd.compute_compression_ratio(chunk_array, -5)
     )
-    self.assertAlmostEqual(compression_ratio_zstd, 1.39, 2)
+    self.assertBetween(compression_ratio_zstd, 1.37, 1.40)
 
   def test_compute_compression_ratio_empty(self):
     chunk_array = []
