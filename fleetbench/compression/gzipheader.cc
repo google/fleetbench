@@ -24,6 +24,7 @@
 #include "absl/log/check.h"
 #include "zlib.h"  // for Z_DEFAULT_COMPRESSION
 
+namespace zlib_classic {
 const uint8_t GZipHeader::magic[] = {0x1f, 0x8b};
 
 // ----------------------------------------------------------------------
@@ -185,3 +186,5 @@ GZipHeader::Status GZipHeader::ReadMore(const char* inbuf, int inbuf_len,
     return INCOMPLETE_HEADER;
   }
 }
+
+}  // namespace zlib_classic

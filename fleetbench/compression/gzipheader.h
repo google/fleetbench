@@ -31,6 +31,7 @@
 #define THIRD_PARTY_ZLIB_GZIPHEADER_H__
 #include <stdint.h>
 
+namespace zlib_classic {
 
 class GZipHeader {
  public:
@@ -103,5 +104,7 @@ class GZipHeader {
   uint8_t flags_;  // the flags byte of the header ("FLG" in the RFC)
   uint16_t extra_length_;  // how much of the "extra field" we have yet to read
 };
+
+}  // namespace zlib_classic
 
 #endif  // THIRD_PARTY_ZLIB_GZIPHEADER_H__

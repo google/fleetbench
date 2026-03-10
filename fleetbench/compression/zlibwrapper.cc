@@ -55,6 +55,8 @@
 ABSL_FLAG(bool, flexible_with_gzip_footer, false,
           "Allow some illegal cases with gzip footer");
 
+namespace zlib_classic {
+
 // Initialize the ZLib class
 ZLib::ZLib()
     : comp_init_(false), uncomp_init_(false), gzip_header_(new GZipHeader) {
@@ -842,3 +844,5 @@ bool ZLib::HasGzipHeader(const char* source, int sourceLen) {
   const char* ptr = nullptr;
   return gzh.ReadMore(source, sourceLen, &ptr) == GZipHeader::COMPLETE_HEADER;
 }
+
+}  // namespace zlib_classic

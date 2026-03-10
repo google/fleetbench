@@ -13,6 +13,7 @@ cc_library(
         "@ZSTD//:zstdlib",
         "@brotli//:brotlidec",
         "@brotli//:brotlienc",
+        "@chromium_zlib//:zlib",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings",
         "@snappy",

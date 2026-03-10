@@ -21,6 +21,7 @@
 #include "c/include/brotli/decode.h"
 #include "c/include/brotli/encode.h"
 #include "snappy.h"
+#include "zlib.h"
 #include "fleetbench/compression/zlibwrapper.h"
 #include "zstd.h"
 
@@ -84,14 +85,14 @@ ZLibCompressor::ZLibCompressor(int compression_level, int window_log)
 
 size_t ZLibCompressor::Compress(const absl::string_view input,
                                 std::string* output) {
-  ZLib zlib;
+  zlib_classic::ZLib zlib;
   zlib.SetCompressionLevel(compression_level_);
   zlib.SetCompressionWindowSizeInBits(window_log_);
   // We use a gzip header, so that we can get the size of the uncompressed data
   // in Decompress().
   zlib.SetGzipHeaderMode();
 
-  auto compressed_length = ZLib::MinCompressbufSize(input.size());
+  auto compressed_length = zlib_classic::ZLib::MinCompressbufSize(input.size());
   output->resize(compressed_length);
   int status =
       zlib.Compress(reinterpret_cast<Bytef*>(&(*output)[0]), &compressed_length,
@@ -104,7 +105,7 @@ size_t ZLibCompressor::Compress(const absl::string_view input,
 
 bool ZLibCompressor::Decompress(const absl::string_view input,
                                 std::string* output) {
-  ZLib zlib;
+  zlib_classic::ZLib zlib;
   zlib.SetCompressionWindowSizeInBits(window_log_);
   zlib.SetGzipHeaderMode();
 

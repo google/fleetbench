@@ -20,6 +20,8 @@
 
 #include "zlib.h"
 
+namespace zlib_classic {
+
 class GZipHeader;
 
 class ZLib {
@@ -300,5 +302,7 @@ class ZLib {
   // These are used only with chunked compression.
   bool first_chunk_;  // true if we need to emit headers with this chunk
 };
+
+}  // namespace zlib_classic
 
 #endif  // _ZLIB_WRAPPER_H_
