@@ -23,39 +23,12 @@
 #include "fleetbench/rpc/protos/P9/response/Message0.pb.h"
 
 namespace fleetbench::rpc::P9::response::Message0 {
-inline void Message0_Set_1(Message0* message, std::string* s) {
-  message->set_f_1(0x20e0);
-  message->set_f_0(s->substr(0, 9));
-}
-inline void Message0_Set_2(Message0* message, std::string* s) {
-  message->set_f_1(0x612f1);
-}
-inline void Message0_Set_3(Message0* message, std::string* s) {
-  message->set_f_1(0x36a2);
-}
-inline void Message0_Set_4(Message0* message, std::string* s) {
-  message->set_f_0(s->substr(0, 54));
-}
+void Message0_Set_1(Message0* message, std::string* s);
+void Message0_Set_2(Message0* message, std::string* s);
+void Message0_Set_3(Message0* message, std::string* s);
+void Message0_Set_4(Message0* message, std::string* s);
 const int kMessage0MaxProtoSetters = 4;
-inline void Message0_Set(const int i, Message0* message, std::string* s) {
-  CHECK(i < kMessage0MaxProtoSetters) << "Invalid i";
-  switch (i) {
-    case 0:
-      Message0_Set_1(message, s);
-      break;
-    case 1:
-      Message0_Set_2(message, s);
-      break;
-    case 2:
-      Message0_Set_3(message, s);
-      break;
-    case 3:
-      Message0_Set_4(message, s);
-      break;
-    default:
-      break;
-  }
-}
+void Message0_Set(const int i, Message0* message, std::string* s);
 }  // namespace fleetbench::rpc::P9::response::Message0
 
 #endif  // THIRD_PARTY_FLEETBENCH_RPC_PROTOS_P9_RESPONSE_ACCESS_MESSAGE0_H_

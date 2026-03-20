@@ -23,38 +23,12 @@
 #include "fleetbench/rpc/protos/P9/response/Message2.pb.h"
 
 namespace fleetbench::rpc::P9::response::Message2 {
-inline void Message2_Set_1(Message2* message, std::string* s) {
-  (void)message;  // Suppresses clang-tidy.
-}
-inline void Message2_Set_2(Message2* message, std::string* s) {
-  message->set_f_0(0xa7a8ba51);
-}
-inline void Message2_Set_3(Message2* message, std::string* s) {
-  message->set_f_0(0x133dd8);
-}
-inline void Message2_Set_4(Message2* message, std::string* s) {
-  (void)message;  // Suppresses clang-tidy.
-}
+void Message2_Set_1(Message2* message, std::string* s);
+void Message2_Set_2(Message2* message, std::string* s);
+void Message2_Set_3(Message2* message, std::string* s);
+void Message2_Set_4(Message2* message, std::string* s);
 const int kMessage2MaxProtoSetters = 4;
-inline void Message2_Set(const int i, Message2* message, std::string* s) {
-  CHECK(i < kMessage2MaxProtoSetters) << "Invalid i";
-  switch (i) {
-    case 0:
-      Message2_Set_1(message, s);
-      break;
-    case 1:
-      Message2_Set_2(message, s);
-      break;
-    case 2:
-      Message2_Set_3(message, s);
-      break;
-    case 3:
-      Message2_Set_4(message, s);
-      break;
-    default:
-      break;
-  }
-}
+void Message2_Set(const int i, Message2* message, std::string* s);
 }  // namespace fleetbench::rpc::P9::response::Message2
 
 #endif  // THIRD_PARTY_FLEETBENCH_RPC_PROTOS_P9_RESPONSE_ACCESS_MESSAGE2_H_

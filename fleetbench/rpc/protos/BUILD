@@ -56,6 +56,7 @@ TYPES = [
 
 [cc_library(
     name = "{}_{}_Message".format(prog, typ),
+    srcs = ["{}/{}/access_message{}.cc".format(prog, typ, id) for id in IDS],
     hdrs = ["{}{}Message.h".format(
         prog,
         typ.capitalize(),

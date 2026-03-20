@@ -23,47 +23,12 @@
 #include "fleetbench/rpc/protos/P5/request/Message0.pb.h"
 
 namespace fleetbench::rpc::P5::request::Message0 {
-inline void Message0_Set_1(Message0* message, std::string* s) {
-  (void)message;  // Suppresses clang-tidy.
-}
-inline void Message0_Set_2(Message0* message, std::string* s) {
-  Message0::M1* v0 = message->mutable_f_3();
-  (void)v0;  // Suppresses clang-tidy.
-  Message0::M2* v1 = message->mutable_f_4();
-  Message0::M2::M3* v2 = v1->mutable_f_2();
-  v2->set_f_0(Message0::M2::M3::E1_CONST_2);
-  v1->set_f_0(false);
-}
-inline void Message0_Set_3(Message0* message, std::string* s) {
-  message->set_f_1(false);
-  Message0::M1* v0 = message->mutable_f_3();
-  v0->set_f_0(s->substr(0, 17));
-}
-inline void Message0_Set_4(Message0* message, std::string* s) {
-  Message0::M2* v0 = message->mutable_f_4();
-  v0->set_f_0(true);
-  message->set_f_1(false);
-}
+void Message0_Set_1(Message0* message, std::string* s);
+void Message0_Set_2(Message0* message, std::string* s);
+void Message0_Set_3(Message0* message, std::string* s);
+void Message0_Set_4(Message0* message, std::string* s);
 const int kMessage0MaxProtoSetters = 4;
-inline void Message0_Set(const int i, Message0* message, std::string* s) {
-  CHECK(i < kMessage0MaxProtoSetters) << "Invalid i";
-  switch (i) {
-    case 0:
-      Message0_Set_1(message, s);
-      break;
-    case 1:
-      Message0_Set_2(message, s);
-      break;
-    case 2:
-      Message0_Set_3(message, s);
-      break;
-    case 3:
-      Message0_Set_4(message, s);
-      break;
-    default:
-      break;
-  }
-}
+void Message0_Set(const int i, Message0* message, std::string* s);
 }  // namespace fleetbench::rpc::P5::request::Message0
 
 #endif  // THIRD_PARTY_FLEETBENCH_RPC_PROTOS_P5_REQUEST_ACCESS_MESSAGE0_H_
