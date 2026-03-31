@@ -17,7 +17,10 @@ cc_library(
     data = glob(
         ["distributions/**"],
     ),
-    visibility = ["//fleetbench:__pkg__"],
+    visibility = [
+        "//fleetbench:__pkg__",
+        "//perftools/gwp/drprofile/tcg:__pkg__",
+    ],
     deps = [
         ":utils",
         "//fleetbench:dynamic_registrar",

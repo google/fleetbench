@@ -11,7 +11,10 @@ cc_library(
         "generated_cord_benchmarks.cc",
         "generated_cord_benchmarks.h",
     ],
-    visibility = ["//fleetbench:__pkg__"],
+    visibility = [
+        "//fleetbench:__pkg__",
+        "//perftools/gwp/drprofile/tcg:__pkg__",
+    ],
     deps = [
         "//fleetbench:dynamic_registrar",
         "//fleetbench/common",

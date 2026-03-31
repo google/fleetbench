@@ -188,7 +188,10 @@ cc_library(
     name = "rpc_benchmark_lib",
     testonly = True,
     srcs = ["rpcperf_benchmark.cc"],
-    visibility = ["//fleetbench:__pkg__"],
+    visibility = [
+        "//fleetbench:__pkg__",
+        "//perftools/gwp/drprofile/tcg:__pkg__",
+    ],
     deps = [
         ":grpc_client",
         ":grpc_server",

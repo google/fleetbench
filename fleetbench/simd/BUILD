@@ -26,7 +26,10 @@ cc_library(
     srcs = if_clang([
         "simd_benchmark.cc",
     ]),
-    visibility = ["//fleetbench:__pkg__"],
+    visibility = [
+        "//fleetbench:__pkg__",
+        "//perftools/gwp/drprofile/tcg:__pkg__",
+    ],
     deps = if_clang([
         "@com_google_research_scann//scann/hashes/internal:lut16_args",
         "@com_google_research_scann//scann/hashes/internal:lut16_interface",

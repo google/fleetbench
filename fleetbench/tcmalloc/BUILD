@@ -47,7 +47,10 @@ cc_library(
     ],
     copts = TCMALLOC_DEFAULT_COPTS,
     data = glob(["distributions/**"]),
-    visibility = ["//fleetbench:__pkg__"],
+    visibility = [
+        "//fleetbench:__pkg__",
+        "//perftools/gwp/drprofile/tcg:__pkg__",
+    ],
     deps = [
         ":empirical",
         "//fleetbench:benchmark_main",

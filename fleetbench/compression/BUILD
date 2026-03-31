@@ -90,14 +90,20 @@ genrule(
     srcs = [":generate_data"],
     outs = ["corpus.zip"],
     cmd = "zip -q -r $(OUTS) $(SRCS)",
-    visibility = ["//fleetbench:__pkg__"],
+    visibility = [
+        "//fleetbench:__pkg__",
+        "//perftools/gwp/drprofile/tcg:__pkg__",
+    ],
 )
 
 cc_library(
     name = "compression_benchmark_lib",
     testonly = True,
     srcs = ["compression_benchmark.cc"],
-    visibility = ["//fleetbench:__pkg__"],
+    visibility = [
+        "//fleetbench:__pkg__",
+        "//perftools/gwp/drprofile/tcg:__pkg__",
+    ],
     deps = [
         ":algorithms",
         ":compression_parameter",

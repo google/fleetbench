@@ -52,7 +52,10 @@ cc_library(
         "lifecycle.cc",
     ],
     hdrs = ["lifecycle.h"],
-    visibility = ["//fleetbench:__pkg__"],
+    visibility = [
+        "//fleetbench:__pkg__",
+        "//perftools/gwp/drprofile/tcg:__pkg__",
+    ],
     deps = [
         ":Message%d_cc_proto" % id
         for id in range(0, NUM_MESSAGES)

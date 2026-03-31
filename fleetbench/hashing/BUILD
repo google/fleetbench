@@ -8,7 +8,10 @@ cc_library(
     testonly = True,
     srcs = ["hashing_benchmark.cc"],
     data = glob(["distributions/**"]),
-    visibility = ["//fleetbench:__pkg__"],
+    visibility = [
+        "//fleetbench:__pkg__",
+        "//perftools/gwp/drprofile/tcg:__pkg__",
+    ],
     deps = [
         "//fleetbench:dynamic_registrar",
         "//fleetbench/common",
