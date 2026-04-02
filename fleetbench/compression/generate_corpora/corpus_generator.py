@@ -473,12 +473,12 @@ class CorpusChunkManager:
     max_ratio = self.max_ratio_lookup[parameters]
     if target_compression_ratio > max_ratio:
       logging.debug(
-          "Fail to generate corpus, reach max compression ratio. Max ratio from"
-          " dataset is %f, whereas sampled ratio is %f",
-          max_ratio,
+          "Sampled ratio %f exceeds max ratio %f from dataset. Capping at max"
+          " ratio.",
           target_compression_ratio,
+          max_ratio,
       )
-      return None
+      target_compression_ratio = max_ratio
 
     output_chunks_array = self.create_chunk_array(
         target_call_size, target_compression_ratio, parameters
