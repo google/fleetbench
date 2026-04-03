@@ -32,6 +32,7 @@ bazel_dep(name = "snappy", version = "1.2.1")
 bazel_dep(name = "highway", version = "1.2.0", repo_name = "com_google_highway")
 bazel_dep(name = "grpc", version = "1.74.0", repo_name = "com_github_grpc_grpc")
 bazel_dep(name = "libpfm", version = "4.11.0")
+bazel_dep(name = "re2", version = "2025-11-05.bcr.1")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
