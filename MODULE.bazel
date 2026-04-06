@@ -53,10 +53,13 @@ use_repo(pip, "fleetbench_pip_deps")
 
 # Flate
 http_archive(
-    name = "chromium_zlib",  # 2023-08-11
+    name = "chromium_zlib",  # 2026-02-17
     build_file = "//fleetbench/compression:zlib.BUILD",
-    # sha256 is not stable for googlesource.com
-    urls = ["https://chromium.googlesource.com/chromium/src/third_party/zlib/+archive/f5fd0ad2663e239a31184ad4c9919991dda16f46.tar.gz"],
+    sha256 = "8e2657298e19e4df9d97591531a7dc5b764ca00a4c4debbb92d9cc0a9936d81a",
+    urls = [
+        "https://storage.googleapis.com/tensorstore-bazel-mirror/chromium.googlesource.com/chromium/src/third_party/zlib/+archive/7eda07b1e067ef3fd7eea0419c88b5af45c9a776.tar.gz",
+        "https://chromium.googlesource.com/chromium/src/third_party/zlib/+archive/7eda07b1e067ef3fd7eea0419c88b5af45c9a776.tar.gz",
+    ],
 )
 
 http_archive(
