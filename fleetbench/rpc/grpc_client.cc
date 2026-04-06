@@ -135,7 +135,7 @@ GRPCClient::GRPCClient(const GRPCClientOptions& opts,
   for (int j = 0; j < opts_.max_outstanding_rpcs; ++j) {
     for (auto& sb : stub_bufs_) {
       if (keep_running_()) {
-        absl::MutexLock l(&inflight_rpcs_mtx_);
+        absl::MutexLock l(inflight_rpcs_mtx_);
         SendOneRPC(&sb);
         inflight_rpcs_count_++;
       }
@@ -146,11 +146,11 @@ GRPCClient::GRPCClient(const GRPCClientOptions& opts,
 void GRPCClient::Wait() {
   inflight_rpcs_mtx_.LockWhen(absl::Condition(
       +[](uint64_t* count) { return *count == 0; }, &inflight_rpcs_count_));
-  inflight_rpcs_mtx_.Unlock();
+  inflight_rpcs_mtx_.unlock();
 }
 
 void GRPCClient::MarkRPCStreamDone() {
-  absl::MutexLock l(&inflight_rpcs_mtx_);
+  absl::MutexLock l(inflight_rpcs_mtx_);
   --inflight_rpcs_count_;
 }
 

@@ -46,14 +46,14 @@ RPCCounters::~RPCCounters() {
 }
 
 void RPCCounters::ClientRPCComplete(double latency, bool is_ok) {
-  absl::MutexLock l(&mtx_);
+  absl::MutexLock l(mtx_);
   ++client_queries_;
   if (!is_ok) ++client_errors_;
   client_latency_.push_back(latency);
 }
 
 void RPCCounters::ServerRPCComplete() {
-  absl::MutexLock l(&mtx_);
+  absl::MutexLock l(mtx_);
   ++server_queries_;
 }
 

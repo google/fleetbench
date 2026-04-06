@@ -61,7 +61,7 @@ void BM_Rpc(benchmark::State &state, absl::string_view program) {
           /*connections_per_peer=*/1, /*logstats_output_path=*/"",
           /*req_delay_us_dist=*/"", /*program=*/program,
           /*keep_running=*/[&state, &keep_running_mtx]() {
-            absl::MutexLock l(&keep_running_mtx);
+            absl::MutexLock l(keep_running_mtx);
             return state.KeepRunning();
           });
 
