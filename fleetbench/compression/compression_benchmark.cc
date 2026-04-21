@@ -54,15 +54,7 @@ struct DefaultBenchmarkEntry {
 // and minimum iteration counts.
 absl::NoDestructor<absl::flat_hash_map<std::string, DefaultBenchmarkEntry>>
     kDefaultBenchmarks(
-        {{"BM_COMPRESSION_Brotli_COMPRESS_Fleet",
-          DefaultBenchmarkEntry{2, 18, 50'000'000}},
-         {"BM_COMPRESSION_Brotli_DECOMPRESS_Fleet",
-          DefaultBenchmarkEntry{2, 18, 100'000'000}},
-         {"BM_COMPRESSION_Flate_COMPRESS_Fleet",
-          DefaultBenchmarkEntry{6, 15, 20'000'000}},
-         {"BM_COMPRESSION_Flate_DECOMPRESS_Fleet",
-          DefaultBenchmarkEntry{6, 15, 300'000'000}},
-         {"BM_COMPRESSION_Snappy_COMPRESS_Fleet",
+        {{"BM_COMPRESSION_Snappy_COMPRESS_Fleet",
           DefaultBenchmarkEntry{std::nullopt, std::nullopt, 400'000'000}},
          {"BM_COMPRESSION_Snappy_DECOMPRESS_Fleet",
           DefaultBenchmarkEntry{std::nullopt, std::nullopt, 1'000'000'000}},
