@@ -83,4 +83,6 @@ build:westmere --copt='-mpclmul'
 build:westmere --copt='-mprefer-vector-width=128'
 build:westmere --copt='-msse4.2'
 
-build:arm --copt='-mtune=generic'
+build:arm --copt='-march=armv8-a'
+build:arm --copt='-mcpu=neoverse-n1'
+build:arm --copt='-mtune=neoverse-v2'
