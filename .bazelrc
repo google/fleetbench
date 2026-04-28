@@ -42,6 +42,12 @@ build --copt='-funsigned-char'
 build --copt='-fno-strict-aliasing'
 build --copt='-fno-omit-frame-pointer'
 
+# Some of our dependencies use declarations that are deprecated in other
+# projects. Since these warnings are noisy, aren't relevant to us as
+# consumers, and will usually be fixed by an update, disable them.
+build --copt='-Wno-deprecated-declarations'
+build --host_copt='-Wno-deprecated-declarations'
+
 # Compile for the native architecture. This can be overridden with
 # --config=haswell, --config=westmere or --copt=-march=xyz
 build --copt='-march=native'
