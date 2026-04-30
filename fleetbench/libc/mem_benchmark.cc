@@ -43,6 +43,9 @@
 
 namespace fleetbench {
 namespace libc {
+
+enum class MemoryOp { kMemcpy, kMemmove, kMemset, kCmp };
+
 // Number of needed buffer of memory operators.
 static constexpr size_t kMemcpyBufferCount = 2;
 static constexpr size_t kMemmoveBufferCount = 1;
@@ -54,6 +57,13 @@ static constexpr float kComparisonEqualProbability = 0.4;
 
 // 64 bytes is a common size for cache lines.
 static constexpr size_t kCacheLineSize = 64;
+
+// The number of iterations for the inner loop for the 'mixed' benchmarks,
+// which combine hot and cold memory accesses.
+static constexpr int kMixedBenchmarkRepetitions = 10;
+
+// The size of the buffer for the 'mixed' benchmarks.
+static constexpr int kMixedBenchmarkBufferSize = 1024 * 1024 * 1024;
 
 // Maps the default benchmarks to their minimum iteration counts.
 // TODO: Double check the iteration counts.
@@ -75,10 +85,11 @@ size_t ComputeTotalNumBytes(const BM_Mem_Parameters& parameters) {
                          parameters.size_bytes.end(), size_t{0});
 }
 
+template <int kRep>
 void MemcpyFunction(benchmark::State& state,
                     const BM_Mem_Parameters& parameters,
                     const size_t buffer_size) {
-  size_t batch_size = ComputeTotalNumBytes(parameters);
+  size_t batch_size = ComputeTotalNumBytes(parameters) * kRep;
   MemoryBuffers buffers(buffer_size);
   char* dst = buffers.dst();
   char* src = buffers.src();
@@ -94,18 +105,22 @@ void MemcpyFunction(benchmark::State& state,
     // different iterations.
     FLEETBENCH_UNROLL_LOOP(8)
     for (int i = 0, size = parameters.size_bytes.size(); i < size; i++) {
-      auto res =
-          memcpy(dst + parameters.dst_offset[i], src + parameters.src_offset[i],
-                 parameters.size_bytes[i]);
-      benchmark::DoNotOptimize(res);
+      FLEETBENCH_UNROLL_LOOP(kRep)
+      for (int j = 0; j < kRep; j++) {
+        auto res =
+            memcpy(dst + parameters.dst_offset[i],
+                   src + parameters.src_offset[i], parameters.size_bytes[i]);
+        benchmark::DoNotOptimize(res);
+      }
     }
   }
 }
 
+template <int kRep>
 void MemmoveFunction(benchmark::State& state,
                      const BM_Mem_Parameters& parameters,
                      const size_t buffer_size) {
-  size_t batch_size = ComputeTotalNumBytes(parameters);
+  size_t batch_size = ComputeTotalNumBytes(parameters) * kRep;
   MemoryBuffers buffers(buffer_size);
   char* buffer = buffers.src();
   int64_t warmup = 10;
@@ -113,18 +128,21 @@ void MemmoveFunction(benchmark::State& state,
   while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
     FLEETBENCH_UNROLL_LOOP(8)
     for (int i = 0, size = parameters.size_bytes.size(); i < size; i++) {
-      auto res =
-          memmove(buffer + parameters.dst_offset[i],
-                  buffer + parameters.src_offset[i], parameters.size_bytes[i]);
-      benchmark::DoNotOptimize(res);
+      FLEETBENCH_UNROLL_LOOP(kRep)
+      for (int j = 0; j < kRep; j++) {
+        auto res = memmove(buffer + parameters.dst_offset[i],
+                           buffer + parameters.src_offset[i],
+                           parameters.size_bytes[i]);
+        benchmark::DoNotOptimize(res);
+      }
     }
   }
 }
 
-template <int (*cmp)(const void*, const void*, size_t)>
+template <int (*cmp)(const void*, const void*, size_t), int kRep>
 void CmpFunction(benchmark::State& state, const BM_Mem_Parameters& parameters,
                  const size_t buffer_size) {
-  size_t batch_size = ComputeTotalNumBytes(parameters);
+  size_t batch_size = ComputeTotalNumBytes(parameters) * kRep;
   MemoryBuffers buffers(buffer_size);
   char* buffer = buffers.src();
   int64_t warmup = 10;
@@ -134,20 +152,24 @@ void CmpFunction(benchmark::State& state, const BM_Mem_Parameters& parameters,
     for (int i = 0, size = parameters.size_bytes.size(); i < size; i++) {
       MemoryBuffers::mark(buffer, parameters.dst_offset[i],
                           parameters.mismatch_pos[i]);
-      auto res =
-          cmp(buffer + parameters.dst_offset[i],
-              buffer + parameters.src_offset[i], parameters.size_bytes[i]);
-      benchmark::DoNotOptimize(res);
+      FLEETBENCH_UNROLL_LOOP(kRep)
+      for (int j = 0; j < kRep; j++) {
+        auto res =
+            cmp(buffer + parameters.dst_offset[i],
+                buffer + parameters.src_offset[i], parameters.size_bytes[i]);
+        benchmark::DoNotOptimize(res);
+      }
       MemoryBuffers::reset(buffer, parameters.dst_offset[i],
                            parameters.mismatch_pos[i]);
     }
   }
 }
 
+template <int kRep>
 void MemsetFunction(benchmark::State& state,
                     const BM_Mem_Parameters& parameters,
                     const size_t buffer_size) {
-  size_t batch_size = ComputeTotalNumBytes(parameters);
+  size_t batch_size = ComputeTotalNumBytes(parameters) * kRep;
   MemoryBuffers buffers(buffer_size);
   char* dst = buffers.dst();
   int64_t warmup = 10;
@@ -155,9 +177,12 @@ void MemsetFunction(benchmark::State& state,
   while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
     FLEETBENCH_UNROLL_LOOP(8)
     for (int i = 0, size = parameters.size_bytes.size(); i < size; i++) {
-      auto res = memset(dst + parameters.dst_offset[i],
-                        parameters.memset_value[i], parameters.size_bytes[i]);
-      benchmark::DoNotOptimize(res);
+      FLEETBENCH_UNROLL_LOOP(kRep)
+      for (int j = 0; j < kRep; j++) {
+        auto res = memset(dst + parameters.dst_offset[i],
+                          parameters.memset_value[i], parameters.size_bytes[i]);
+        benchmark::DoNotOptimize(res);
+      }
     }
   }
 }
@@ -345,7 +370,7 @@ static void BM_Memory(
     const absl::btree_map<int, double>& memory_size_distribution,
     const double overlap_probability,
     const absl::btree_map<int, double>& alignment_distribution,
-    size_t buffer_count,
+    size_t buffer_count, MemoryOp op,
     void (*memory_call)(benchmark::State&, const BM_Mem_Parameters&,
                         const size_t),
     const size_t cache_size, const std::string& distribution_name) {
@@ -355,8 +380,7 @@ static void BM_Memory(
   size_t distribution_max_size = memory_size_distribution.rbegin()->first;
   // Limit to sizes that fit in the buffer.
   size_t max_size = std::min(distribution_max_size, buffer_size / 2);
-  if (memory_call == &MemmoveFunction || memory_call == &CmpFunction<memcmp> ||
-      memory_call == &CmpFunction<bcmp>) {
+  if (op == MemoryOp::kMemmove || op == MemoryOp::kCmp) {
     // Memmove and memcmp/bcmp need larger buffers to allow for differents kinds
     // of overlap between src and dst. In particular, a maximum size of
     // `(buffer_size / 3) - kCacheLineSize` guarantees that for any valid
@@ -444,27 +468,24 @@ static void BM_Memory(
          dst_alignment)
         << dst_alignment;
 
-    if (memory_call == &MemcpyFunction) {
+    if (op == MemoryOp::kMemcpy) {
       parameters.src_offset.push_back(GetNextOffset(
           src_blocks_lru, cur_size, src_block_offset, buffer_size));
       parameters.dst_offset.push_back(GetNextOffset(
           dst_blocks_lru, cur_size, dst_block_offset, buffer_size));
-    } else if (memory_call == &MemsetFunction) {
+    } else if (op == MemoryOp::kMemset) {
       parameters.dst_offset.push_back(GetNextOffset(
           dst_blocks_lru, cur_size, dst_block_offset, buffer_size));
       parameters.memset_value.push_back(
           absl::Uniform<unsigned char>(GetRNG(), 0, 0xFF));
-    } else if (memory_call == &MemmoveFunction ||
-               memory_call == &CmpFunction<memcmp> ||
-               memory_call == &CmpFunction<bcmp>) {
+    } else if (op == MemoryOp::kMemmove || op == MemoryOp::kCmp) {
       const auto [src_offset, dst_offset] = GetNextSrcDstOffsetWithOverlap(
           overlap_probability, buffer_size, cur_size, src_block_offset,
           dst_block_offset, src_blocks_lru, dst_blocks_lru);
       parameters.src_offset.push_back(src_offset);
       parameters.dst_offset.push_back(dst_offset);
 
-      if (memory_call == &CmpFunction<memcmp> ||
-          memory_call == &CmpFunction<bcmp>) {
+      if (op == MemoryOp::kCmp) {
         parameters.mismatch_pos.push_back(
             mismatch_pos[i % mismatch_pos.size()]);
       }
@@ -472,13 +493,12 @@ static void BM_Memory(
   }
 
   CHECK_EQ(parameters.size_bytes.size(), parameters.dst_offset.size());
-  if (memory_call == &MemsetFunction) {
+  if (op == MemoryOp::kMemset) {
     CHECK_EQ(parameters.size_bytes.size(), parameters.memset_value.size());
   } else {
     CHECK_EQ(parameters.size_bytes.size(), parameters.src_offset.size());
   }
-  if (memory_call == &CmpFunction<memcmp> ||
-      memory_call == &CmpFunction<bcmp>) {
+  if (op == MemoryOp::kCmp) {
     CHECK_EQ(parameters.size_bytes.size(), parameters.mismatch_pos.size());
   }
 
@@ -499,16 +519,32 @@ static void BM_Memory(
 }
 
 void RegisterBenchmarks() {
-  using operation_entry =
-      std::tuple<std::string, size_t,
-                 void (*)(benchmark::State&, const BM_Mem_Parameters&,
-                          const size_t)>;
+  struct OperationEntry {
+    std::string distribution_file_prefix;
+    size_t buffer_count;
+    MemoryOp op;
+    void (*memory_function_normal)(benchmark::State&, const BM_Mem_Parameters&,
+                                   size_t);
+    void (*memory_function_mixed)(benchmark::State&, const BM_Mem_Parameters&,
+                                  size_t);
+  };
+
   auto memory_operations = {
-      operation_entry("Memcpy", kMemcpyBufferCount, &MemcpyFunction),
-      operation_entry("Memmove", kMemmoveBufferCount, &MemmoveFunction),
-      operation_entry("Memcmp", kCmpBufferCount, &CmpFunction<memcmp>),
-      operation_entry("Bcmp", kCmpBufferCount, &CmpFunction<bcmp>),
-      operation_entry("Memset", kMemsetBufferCount, &MemsetFunction),
+      OperationEntry{"Memcpy", kMemcpyBufferCount, MemoryOp::kMemcpy,
+                     &MemcpyFunction<1>,
+                     &MemcpyFunction<kMixedBenchmarkRepetitions>},
+      OperationEntry{"Memmove", kMemmoveBufferCount, MemoryOp::kMemmove,
+                     &MemmoveFunction<1>,
+                     &MemmoveFunction<kMixedBenchmarkRepetitions>},
+      OperationEntry{"Memcmp", kCmpBufferCount, MemoryOp::kCmp,
+                     &CmpFunction<memcmp, 1>,
+                     &CmpFunction<memcmp, kMixedBenchmarkRepetitions>},
+      OperationEntry{"Bcmp", kCmpBufferCount, MemoryOp::kCmp,
+                     &CmpFunction<bcmp, 1>,
+                     &CmpFunction<bcmp, kMixedBenchmarkRepetitions>},
+      OperationEntry{"Memset", kMemsetBufferCount, MemoryOp::kMemset,
+                     &MemsetFunction<1>,
+                     &MemsetFunction<kMixedBenchmarkRepetitions>},
   };
   // For a benchmark whose data should be resident in cache level x, we use a
   // buffer of size CacheSize(x)/2. This is usually significantly larger than
@@ -524,6 +560,7 @@ void RegisterBenchmarks() {
       std::make_pair("L2", GetCacheSize(2) / 2),
       std::make_pair("LLC", GetCacheSize(3) / 2),
       std::make_pair("Cold", 2 * GetCacheSize(3)),
+      std::make_pair("Mixed", kMixedBenchmarkBufferSize),
   };
 
   // The maximum size of a memory operation.
@@ -532,10 +569,13 @@ void RegisterBenchmarks() {
                                 mem_distribution_max - kCacheLineSize - 1)
       << "L3 size larger than expected";
 
+  CHECK_LE(2 * GetCacheSize(3), kMixedBenchmarkBufferSize)
+      << "The buffer size for the mixed benchmarks should be at least 2x the "
+         "L3 cache size.";
+
   auto memory_benchmark = fleetbench::libc::BM_Memory;
-  for (const auto& [distribution_file_prefix, buffer_counter, memory_function] :
-       memory_operations) {
-    const auto& files = GetDistributionFiles(distribution_file_prefix);
+  for (const auto& op_entry : memory_operations) {
+    const auto& files = GetDistributionFiles(op_entry.distribution_file_prefix);
     std::string suffix_name = "";
     for (const auto& file : files) {
       auto distribution_name = file.filename().string();
@@ -546,11 +586,15 @@ void RegisterBenchmarks() {
       for (const auto& [cache_name, cache_size] : cache_resident_info) {
         std::string benchmark_name =
             absl::StrCat("BM_LIBC_", distribution_name, "_", cache_name);
+        auto& memory_function = strcmp(cache_name, "Mixed") == 0
+                                    ? op_entry.memory_function_mixed
+                                    : op_entry.memory_function_normal;
         benchmark::internal::Benchmark* benchmark =
             benchmark::RegisterBenchmark(
                 benchmark_name, memory_benchmark, memory_size_distribution,
-                overlap_probability, alignment_distribution, buffer_counter,
-                memory_function, cache_size, suffix_name);
+                overlap_probability, alignment_distribution,
+                op_entry.buffer_count, op_entry.op, memory_function, cache_size,
+                suffix_name);
         // Use the default minimum iteration count if possible.
         if (UseExplicitIterationCounts()) {
           auto it = kDefaultBenchmarks->find(benchmark_name);
