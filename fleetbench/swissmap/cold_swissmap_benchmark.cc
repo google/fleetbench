@@ -33,7 +33,8 @@ using ::benchmark::DoNotOptimize;
 
 // Helper function used to implement two similar benchmarks that the given input
 // key is NOT present in the set.
-template <template <class...> class SetT, size_t kValueSizeT, bool kLookup>
+template <template <class...> class SetT, size_t kValueSizeT, bool kLookup,
+          bool kIncludeHotAccesses>
 static void FindMiss_Cold(benchmark::State& state) {
   using Set = SetT<Value<kValueSizeT>, Hash, Eq>;
 
@@ -52,7 +53,10 @@ static void FindMiss_Cold(benchmark::State& state) {
   std::conditional_t<kLookup, std::vector<Set>&, std::vector<Set>> sets =
       cached_sets;
 
+  Set hot_set;
+
   int warmup = 5;
+  int cold_access_counter = 0;
   while (true) {
     for (uint32_t key : keys) {
       if (--warmup < 0 && !state.KeepRunningBatch(sets.size())) return;
@@ -65,6 +69,23 @@ static void FindMiss_Cold(benchmark::State& state) {
         } else {
           auto res = set.insert(key);
           DoNotOptimize(res);
+        }
+
+        if constexpr (kIncludeHotAccesses) {
+          if ((cold_access_counter++) % 32 == 0) {
+            for (uint32_t hot_key : keys) {
+              if (kLookup) {
+                auto res = hot_set.find(hot_key);
+                DoNotOptimize(res);
+              } else {
+                auto res = hot_set.insert(hot_key);
+                DoNotOptimize(res);
+              }
+            }
+            if (!kLookup) {
+              hot_set.clear();
+            }
+          }
         }
       }
       if (!kLookup) {
@@ -86,7 +107,8 @@ static void FindMiss_Cold(benchmark::State& state) {
 // assert(set.find(key) == set.end());
 template <template <class...> class SetT, size_t kValueSizeT>
 static void BM_SWISSMAP_FindMiss_Cold(benchmark::State& state) {
-  return FindMiss_Cold<SetT, kValueSizeT, /*kLookup=*/true>(state);
+  return FindMiss_Cold<SetT, kValueSizeT, /*kLookup=*/true,
+                       /*kIncludeHotAccesses=*/false>(state);
 }
 
 // Measures the time it takes to `insert` an existent element.
@@ -94,7 +116,18 @@ static void BM_SWISSMAP_FindMiss_Cold(benchmark::State& state) {
 //  assert(set.insert(key).second);
 template <template <class...> class SetT, size_t kValueSizeT>
 static void BM_SWISSMAP_InsertMiss_Cold(benchmark::State& state) {
-  return FindMiss_Cold<SetT, kValueSizeT, /*kLookup=*/false>(state);
+  return FindMiss_Cold<SetT, kValueSizeT, /*kLookup=*/false,
+                       /*kIncludeHotAccesses=*/false>(state);
+}
+
+// Measures the time it takes to `insert` an existent element.
+// Performs both hot and cold accesses.
+//
+//  assert(set.insert(key).second);
+template <template <class...> class SetT, size_t kValueSizeT>
+static void BM_SWISSMAP_InsertMiss(benchmark::State& state) {
+  return FindMiss_Cold<SetT, kValueSizeT, /*kLookup=*/false,
+                       /*kIncludeHotAccesses=*/true>(state);
 }
 
 // Helper function used to implement two similar benchmarks defined below that
@@ -354,6 +387,8 @@ void RegisterColdBenchmarks() {
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_FindMiss_Cold, 64);
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_InsertMiss_Cold, 4);
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_InsertMiss_Cold, 64);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_InsertMiss, 4);
+  ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_InsertMiss, 64);
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_FindHit_Cold, 4);
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_FindHit_Cold, 64);
   ADD_SWISSMAP_BENCHMARKS_TO_LIST(benchmarks, BM_SWISSMAP_InsertHit_Cold, 4);
