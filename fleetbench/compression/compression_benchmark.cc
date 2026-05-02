@@ -133,6 +133,18 @@ class CompressionCorpus {
       zip_fclose(file);
       corpora.push_back(std::move(content));
     }
+
+    // Increase the size of the Snappy corpora list to make it non-L2 cache
+    // resident.
+    if (absl::StartsWith(dir_path, "Snappy_")) {
+      int original_size = corpora.size();
+      corpora.reserve(original_size * 3);
+      for (int j = 0; j < 2; j++) {
+        for (int i = 0; i < original_size; i++) {
+          corpora.push_back(corpora[i]);
+        }
+      }
+    }
     return corpora;
   }
 
