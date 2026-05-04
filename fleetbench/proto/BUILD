@@ -5,7 +5,7 @@ load("@rules_cc//cc:cc_test.bzl", "cc_test")
 
 package(default_visibility = ["//visibility:private"])
 
-NUM_MESSAGES = 10
+NUM_MESSAGES = 20
 
 [proto_library(
     name = "Message%d_proto" % id,

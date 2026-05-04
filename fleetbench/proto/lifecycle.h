@@ -23,6 +23,16 @@
 
 #include "fleetbench/proto/Message0.pb.h"
 #include "fleetbench/proto/Message1.pb.h"
+#include "fleetbench/proto/Message10.pb.h"
+#include "fleetbench/proto/Message11.pb.h"
+#include "fleetbench/proto/Message12.pb.h"
+#include "fleetbench/proto/Message13.pb.h"
+#include "fleetbench/proto/Message14.pb.h"
+#include "fleetbench/proto/Message15.pb.h"
+#include "fleetbench/proto/Message16.pb.h"
+#include "fleetbench/proto/Message17.pb.h"
+#include "fleetbench/proto/Message18.pb.h"
+#include "fleetbench/proto/Message19.pb.h"
 #include "fleetbench/proto/Message2.pb.h"
 #include "fleetbench/proto/Message3.pb.h"
 #include "fleetbench/proto/Message4.pb.h"
@@ -82,6 +92,16 @@ class ProtoLifecycle {
   Message<Message7> message7_;
   Message<Message8> message8_;
   Message<Message9> message9_;
+  Message<Message10> message10_;
+  Message<Message11> message11_;
+  Message<Message12> message12_;
+  Message<Message13> message13_;
+  Message<Message14> message14_;
+  Message<Message15> message15_;
+  Message<Message16> message16_;
+  Message<Message17> message17_;
+  Message<Message18> message18_;
+  Message<Message19> message19_;
 };
 
 }  // namespace fleetbench::proto
