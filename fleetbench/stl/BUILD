@@ -18,6 +18,7 @@ cc_library(
     deps = [
         "//fleetbench:dynamic_registrar",
         "//fleetbench/common",
+        "@com_google_absl//absl/random",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:cord",
         "@com_google_benchmark//:benchmark",

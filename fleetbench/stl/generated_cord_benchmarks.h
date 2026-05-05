@@ -26,32 +26,32 @@
 struct CordBenchmark {
   std::string name;
   std::string label;
-  void (*benchmark_code)(std::vector<absl::Cord>&);
-  std::vector<absl::Cord> (*benchmark_setup)();
+  void (*benchmark_code)(std::vector<std::vector<absl::Cord>>&);
+  std::vector<std::vector<absl::Cord>> (*benchmark_setup)();
 };
 
-std::vector<absl::Cord> CordBenchmarkFleetSetup();
-void CordBenchmarkFleet(std::vector<absl::Cord>& cords);
-std::vector<absl::Cord> CordBenchmark0Setup();
-void CordBenchmark0(std::vector<absl::Cord>& cords);
-std::vector<absl::Cord> CordBenchmark1Setup();
-void CordBenchmark1(std::vector<absl::Cord>& cords);
-std::vector<absl::Cord> CordBenchmark2Setup();
-void CordBenchmark2(std::vector<absl::Cord>& cords);
-std::vector<absl::Cord> CordBenchmark3Setup();
-void CordBenchmark3(std::vector<absl::Cord>& cords);
-std::vector<absl::Cord> CordBenchmark4Setup();
-void CordBenchmark4(std::vector<absl::Cord>& cords);
-std::vector<absl::Cord> CordBenchmark5Setup();
-void CordBenchmark5(std::vector<absl::Cord>& cords);
-std::vector<absl::Cord> CordBenchmark6Setup();
-void CordBenchmark6(std::vector<absl::Cord>& cords);
-std::vector<absl::Cord> CordBenchmark7Setup();
-void CordBenchmark7(std::vector<absl::Cord>& cords);
-std::vector<absl::Cord> CordBenchmark8Setup();
-void CordBenchmark8(std::vector<absl::Cord>& cords);
-std::vector<absl::Cord> CordBenchmark9Setup();
-void CordBenchmark9(std::vector<absl::Cord>& cords);
+std::vector<std::vector<absl::Cord>> CordBenchmarkFleetSetup();
+void CordBenchmarkFleet(std::vector<std::vector<absl::Cord>>& cords);
+std::vector<std::vector<absl::Cord>> CordBenchmark0Setup();
+void CordBenchmark0(std::vector<std::vector<absl::Cord>>& cords);
+std::vector<std::vector<absl::Cord>> CordBenchmark1Setup();
+void CordBenchmark1(std::vector<std::vector<absl::Cord>>& cords);
+std::vector<std::vector<absl::Cord>> CordBenchmark2Setup();
+void CordBenchmark2(std::vector<std::vector<absl::Cord>>& cords);
+std::vector<std::vector<absl::Cord>> CordBenchmark3Setup();
+void CordBenchmark3(std::vector<std::vector<absl::Cord>>& cords);
+std::vector<std::vector<absl::Cord>> CordBenchmark4Setup();
+void CordBenchmark4(std::vector<std::vector<absl::Cord>>& cords);
+std::vector<std::vector<absl::Cord>> CordBenchmark5Setup();
+void CordBenchmark5(std::vector<std::vector<absl::Cord>>& cords);
+std::vector<std::vector<absl::Cord>> CordBenchmark6Setup();
+void CordBenchmark6(std::vector<std::vector<absl::Cord>>& cords);
+std::vector<std::vector<absl::Cord>> CordBenchmark7Setup();
+void CordBenchmark7(std::vector<std::vector<absl::Cord>>& cords);
+std::vector<std::vector<absl::Cord>> CordBenchmark8Setup();
+void CordBenchmark8(std::vector<std::vector<absl::Cord>>& cords);
+std::vector<std::vector<absl::Cord>> CordBenchmark9Setup();
+void CordBenchmark9(std::vector<std::vector<absl::Cord>>& cords);
 std::vector<CordBenchmark> GetBenchmarks() {
   return {
       CordBenchmark{//

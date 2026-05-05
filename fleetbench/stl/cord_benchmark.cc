@@ -23,10 +23,11 @@
 
 namespace fleetbench::stl {
 
-static void BM_Cord(benchmark::State &state,
-                    void (*benchmark_code)(std::vector<absl::Cord> &),
-                    std::vector<absl::Cord> (*benchmark_setup)(),
-                    const std::string &label) {
+static void BM_Cord(
+    benchmark::State& state,
+    void (*benchmark_code)(std::vector<std::vector<absl::Cord>>&),
+    std::vector<std::vector<absl::Cord>> (*benchmark_setup)(),
+    const std::string& label) {
   auto cords = benchmark_setup();
   for (auto _ : state) {
     benchmark_code(cords);
