@@ -85,6 +85,13 @@ size_t ComputeTotalNumBytes(const BM_Mem_Parameters& parameters) {
                          parameters.size_bytes.end(), size_t{0});
 }
 
+int64_t GetNumberOfWarmupIterations(const size_t batch_size) {
+  // Limit the number of warmup runs to 10, or until we have touched at least
+  // 1 GB of memory, whichever is smaller.
+  return std::min<int64_t>(
+      10, std::max<int64_t>(1, (1024 * 1024 * 1024 / batch_size)));
+}
+
 template <int kRep>
 void MemcpyFunction(benchmark::State& state,
                     const BM_Mem_Parameters& parameters,
@@ -93,7 +100,7 @@ void MemcpyFunction(benchmark::State& state,
   MemoryBuffers buffers(buffer_size);
   char* dst = buffers.dst();
   char* src = buffers.src();
-  int64_t warmup = 10;
+  int64_t warmup = GetNumberOfWarmupIterations(batch_size);
   // Run benchmark and call memcpy function
   while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
     // The libc memory benchmarks have some sensitivity to the alignment of the
@@ -123,7 +130,7 @@ void MemmoveFunction(benchmark::State& state,
   size_t batch_size = ComputeTotalNumBytes(parameters) * kRep;
   MemoryBuffers buffers(buffer_size);
   char* buffer = buffers.src();
-  int64_t warmup = 10;
+  int64_t warmup = GetNumberOfWarmupIterations(batch_size);
   // Run benchmark and call memmove function
   while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
     FLEETBENCH_UNROLL_LOOP(8)
@@ -145,7 +152,7 @@ void CmpFunction(benchmark::State& state, const BM_Mem_Parameters& parameters,
   size_t batch_size = ComputeTotalNumBytes(parameters) * kRep;
   MemoryBuffers buffers(buffer_size);
   char* buffer = buffers.src();
-  int64_t warmup = 10;
+  int64_t warmup = GetNumberOfWarmupIterations(batch_size);
   // Run benchmark and call cmp function
   while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
     FLEETBENCH_UNROLL_LOOP(8)
@@ -172,7 +179,7 @@ void MemsetFunction(benchmark::State& state,
   size_t batch_size = ComputeTotalNumBytes(parameters) * kRep;
   MemoryBuffers buffers(buffer_size);
   char* dst = buffers.dst();
-  int64_t warmup = 10;
+  int64_t warmup = GetNumberOfWarmupIterations(batch_size);
   // Run benchmark and call memset function
   while ((warmup-- > 0) || state.KeepRunningBatch(batch_size)) {
     FLEETBENCH_UNROLL_LOOP(8)
