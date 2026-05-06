@@ -21,7 +21,6 @@
 #include <numeric>
 #include <random>
 #include <string>
-#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -61,10 +60,12 @@ struct BM_Hashing_Parameters {
   bool hot;
 };
 
+template <int kRep>
 void ExtendCrc32cFunction(benchmark::State& state,
                           BM_Hashing_Parameters& parameters) {
   size_t batch_size = std::accumulate(parameters.str_lengths.begin(),
-                                      parameters.str_lengths.end(), 0);
+                                      parameters.str_lengths.end(), 0) *
+                      kRep;
   absl::crc32c_t v0{0};
   size_t start = 0;
   int64_t warmup = 1000;
@@ -89,16 +90,21 @@ void ExtendCrc32cFunction(benchmark::State& state,
       // ExtendCrc32cInternal. ExtendCrc32c is also currently the only function
       // in the codebase that calls ExtendCrc32cInternal; thus, the callregz
       // data for ExtendCrc32cInternal does not contain inputs with size <= 64.
-      auto res = absl::ExtendCrc32c(v0, buf);
-      benchmark::DoNotOptimize(res);
+      FLEETBENCH_UNROLL_LOOP(kRep)
+      for (int j = 0; j < kRep; j++) {
+        auto res = absl::ExtendCrc32c(v0, buf);
+        benchmark::DoNotOptimize(res);
+      }
     }
   }
 }
 
+template <int kRep>
 void ComputeCrc32cFunction(benchmark::State& state,
                            BM_Hashing_Parameters& parameters) {
   size_t batch_size = std::accumulate(parameters.str_lengths.begin(),
-                                      parameters.str_lengths.end(), 0);
+                                      parameters.str_lengths.end(), 0) *
+                      kRep;
   size_t start = 0;
   int64_t warmup = 1000;
   // Run benchmark and call ComputeCrc32c
@@ -115,16 +121,21 @@ void ComputeCrc32cFunction(benchmark::State& state,
         // prevent prefetching
         start += l + 4096;
       }
-      auto res = absl::ComputeCrc32c(buf);
-      benchmark::DoNotOptimize(res);
+      FLEETBENCH_UNROLL_LOOP(kRep)
+      for (int j = 0; j < kRep; j++) {
+        auto res = absl::ComputeCrc32c(buf);
+        benchmark::DoNotOptimize(res);
+      }
     }
   }
 }
 
+template <int kRep>
 void CombineContiguousFunction(benchmark::State& state,
                                BM_Hashing_Parameters& parameters) {
   size_t batch_size = std::accumulate(parameters.str_lengths.begin(),
-                                      parameters.str_lengths.end(), 0);
+                                      parameters.str_lengths.end(), 0) *
+                      kRep;
   size_t start = 0;
   int64_t warmup = 10000;
   // Run benchmark and call combine_contiguous
@@ -154,8 +165,11 @@ void CombineContiguousFunction(benchmark::State& state,
       // distribution of call sizes to combine_contiguous() more similar to that
       // of the fleet, where a significant percentage of absl::Hash cycles is
       // spent on hashing strings.
-      auto res = absl::Hash<absl::string_view>{}(buf);
-      benchmark::DoNotOptimize(res);
+      FLEETBENCH_UNROLL_LOOP(kRep)
+      for (int j = 0; j < kRep; j++) {
+        auto res = absl::Hash<absl::string_view>{}(buf);
+        benchmark::DoNotOptimize(res);
+      }
     }
   }
 }
@@ -227,25 +241,27 @@ static void BM_Hashing(
 }
 
 void RegisterBenchmarks() {
-  using operation_entry =
-      std::tuple<std::string, std::string,
-                 void (*)(benchmark::State&, BM_Hashing_Parameters&)>;
+  struct OperationEntry {
+    std::string function_name;
+    std::string distribution_file_prefix;
+    void (*hash_function_normal)(benchmark::State&, BM_Hashing_Parameters&);
+    void (*hash_function_mixed)(benchmark::State&, BM_Hashing_Parameters&);
+  };
   auto hash_operations = {
-      operation_entry("ExtendCrc32c", "Extendcrc32cinternal",
-                      &ExtendCrc32cFunction),
-      operation_entry("ComputeCrc32c", "Computecrc32c", &ComputeCrc32cFunction),
-      operation_entry("combine_contiguous", "Combine_contiguous",
-                      &CombineContiguousFunction),
+      OperationEntry{"ExtendCrc32c", "Extendcrc32cinternal",
+                     &ExtendCrc32cFunction<1>, &ExtendCrc32cFunction<10>},
+      OperationEntry{"ComputeCrc32c", "Computecrc32c",
+                     &ComputeCrc32cFunction<1>, &ComputeCrc32cFunction<20>},
+      OperationEntry{"combine_contiguous", "Combine_contiguous",
+                     &CombineContiguousFunction<1>,
+                     &CombineContiguousFunction<30>},
   };
-  auto cache_resident_info = {
-      std::make_pair("hot", true),
-      std::make_pair("cold", false),
-  };
+  std::pair<absl::string_view, bool> cache_resident_info[] = {
+      {"hot", true}, {"cold", false}, {"Mixed", false}};
 
-  for (const auto& [function_name, distribution_file_prefix, hash_function] :
-       hash_operations) {
+  for (const auto& op_entry : hash_operations) {
     std::string suffix_name = "";
-    const auto files = GetDistributionFiles(distribution_file_prefix);
+    const auto files = GetDistributionFiles(op_entry.distribution_file_prefix);
     for (const auto& file : files) {
       auto application = file.filename().string();
       application.erase(application.find(".csv"));
@@ -253,9 +269,12 @@ void RegisterBenchmarks() {
       const absl::btree_map<int, double> hashing_size_distribution =
           ReadDistributionFile(file);
 
-      for (const auto& [hot_str, hot] : cache_resident_info) {
+      for (const auto& [info_str, hot] : cache_resident_info) {
         std::string benchmark_name =
-            absl::StrCat("BM_HASHING_", application, "_", hot_str);
+            absl::StrCat("BM_HASHING_", application, "_", info_str);
+        auto hash_function = (info_str == "Mixed")
+                                 ? op_entry.hash_function_mixed
+                                 : op_entry.hash_function_normal;
         benchmark::internal::Benchmark* benchmark =
             benchmark::RegisterBenchmark(benchmark_name, BM_Hashing,
                                          hashing_size_distribution,
