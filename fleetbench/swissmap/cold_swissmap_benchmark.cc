@@ -454,7 +454,7 @@ class ColdBenchmarkRegisterer {
   ColdBenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterColdBenchmarks);
     DynamicRegistrar::Get()->AddDefaultFilter(
-        "BM_SWISSMAP_InsertMiss_Cold.*::absl::flat_hash_set.*64.*set_size:64.*"
+        "BM_SWISSMAP_InsertMiss<.*::absl::flat_hash_set.*64.*set_size:64.*"
         "density:0");
   }
 };

@@ -68,16 +68,11 @@ static constexpr int kMixedBenchmarkBufferSize = 1024 * 1024 * 1024;
 // Maps the default benchmarks to their minimum iteration counts.
 // TODO: Double check the iteration counts.
 absl::NoDestructor<absl::flat_hash_map<std::string, benchmark::IterationCount>>
-    kDefaultBenchmarks({{"BM_LIBC_Bcmp_Fleet_LLC", 800'000'000},
-                        {"BM_LIBC_Memcmp_Fleet_LLC", 1'000'000'000},
-                        {"BM_LIBC_Memcpy_Fleet_LLC", 5'000'000'000},
-                        {"BM_LIBC_Memmove_Fleet_LLC", 2'000'000'000},
-                        {"BM_LIBC_Memset_Fleet_LLC", 10'000'000'000},
-                        {"BM_LIBC_Bcmp_Fleet_Cold", 200'000'000},
-                        {"BM_LIBC_Memcmp_Fleet_Cold", 500'000'000},
-                        {"BM_LIBC_Memcpy_Fleet_Cold", 1'000'000'000},
-                        {"BM_LIBC_Memmove_Fleet_Cold", 500'000'000},
-                        {"BM_LIBC_Memset_Fleet_Cold", 3'000'000'000}});
+    kDefaultBenchmarks({{"BM_LIBC_Bcmp_Fleet_Mixed", 200'000'000},
+                        {"BM_LIBC_Memcmp_Fleet_Mixed", 500'000'000},
+                        {"BM_LIBC_Memcpy_Fleet_Mixed", 1'000'000'000},
+                        {"BM_LIBC_Memmove_Fleet_Mixed", 500'000'000},
+                        {"BM_LIBC_Memset_Fleet_Mixed", 3'000'000'000}});
 
 // Returns the sum of the size_bytes elements.
 size_t ComputeTotalNumBytes(const BM_Mem_Parameters& parameters) {

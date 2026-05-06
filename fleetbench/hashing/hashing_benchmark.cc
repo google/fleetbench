@@ -47,12 +47,9 @@ using CacheInfo = benchmark::CPUInfo::CacheInfo;
 // TODO: Double check the iteration counts.
 absl::NoDestructor<absl::flat_hash_map<std::string, benchmark::IterationCount>>
     kDefaultBenchmarks(
-        {{"BM_HASHING_Extendcrc32cinternal_Fleet_hot", 2'000'000'000},
-         {"BM_HASHING_Computecrc32c_Fleet_hot", 1'000'000'000},
-         {"BM_HASHING_Combine_contiguous_Fleet_hot", 500'000'000},
-         {"BM_HASHING_Extendcrc32cinternal_Fleet_cold", 2'000'000'000},
-         {"BM_HASHING_Computecrc32c_Fleet_cold", 1'000'000'000},
-         {"BM_HASHING_Combine_contiguous_Fleet_cold", 500'000'000}});
+        {{"BM_HASHING_Extendcrc32cinternal_Fleet_Mixed", 2'000'000'000},
+         {"BM_HASHING_Computecrc32c_Fleet_Mixed", 1'000'000'000},
+         {"BM_HASHING_Combine_contiguous_Fleet_Mixed", 500'000'000}});
 
 struct BM_Hashing_Parameters {
   std::vector<int> str_lengths;
