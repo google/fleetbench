@@ -1,4 +1,5 @@
 load("@fleetbench_pip_deps//:requirements.bzl", "requirement")
+load("@rules_python//python:py_test.bzl", "py_test")
 
 package(default_visibility = ["//fleetbench:__subpackages__"])
 
