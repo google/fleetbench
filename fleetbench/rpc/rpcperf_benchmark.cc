@@ -53,6 +53,7 @@ void BM_Rpc(benchmark::State &state, absl::string_view program) {
       absl::StrCat("localhost:", selected_ports[0])};
 
   absl::Mutex keep_running_mtx;
+  int warmup = 1000;
   std::unique_ptr<fleetbench::rpc::GRPCClient> client =
       fleetbench::rpc::CreateAndStartClient(
           /*max_outstanding_rpcs=*/1, /*compress=*/false,
@@ -60,8 +61,12 @@ void BM_Rpc(benchmark::State &state, absl::string_view program) {
           /*peers=*/peers, /*max_peers=*/-1,
           /*connections_per_peer=*/1, /*logstats_output_path=*/"",
           /*req_delay_us_dist=*/"", /*program=*/program,
-          /*keep_running=*/[&state, &keep_running_mtx]() {
+          /*keep_running=*/[&state, &keep_running_mtx, &warmup]() {
             absl::MutexLock l(keep_running_mtx);
+            if (warmup > 0) {
+              --warmup;
+              return true;
+            }
             return state.KeepRunning();
           });
 
