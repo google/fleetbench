@@ -160,7 +160,7 @@ _CUSTOM_BENCHMARK_WEIGHTS = flags.DEFINE_multi_string(
 
 _CUSTOM_BENCHMARK_THREADS = flags.DEFINE_multi_string(
     "benchmark_threads",
-    [],
+    ["BM_RPC_Fleet/process_time:2"],
     "Number of threads to use for selected benchmarks. The input should be in"
     " the format of <benchmark_name|benchmark_filter>:<n_threads>. Benchmarks"
     " for which no thread count is specified will use one thread by default.",
