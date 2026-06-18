@@ -116,6 +116,12 @@ TEST(RandomTest, Seed) {
   EXPECT_EQ(random1, random2);
 }
 
+TEST(RandomTest, GetThreadLocalRNG) {
+  auto& rng1 = GetThreadLocalRNG();
+  auto& rng2 = GetThreadLocalRNG();
+  EXPECT_EQ(&rng1, &rng2);
+}
+
 TEST(DeathTest, SeedFlags) {
   ASSERT_DEATH(
       {

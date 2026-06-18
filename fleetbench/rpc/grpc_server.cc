@@ -17,6 +17,7 @@
 #include <chrono>  // NOLINT
 #include <cstddef>
 #include <memory>
+#include <random>
 #include <utility>
 
 #include "absl/log/check.h"
@@ -103,7 +104,7 @@ void GRPCServer::Start(absl::string_view filepath,
 }
 
 const fleetbench::rpc::ResponseMessage& GRPCServer::Buffer() const {
-  return message_buffers_[GetRNG()() % message_buffers_.size()];
+  return message_buffers_[GetThreadLocalRNG()() % message_buffers_.size()];
 }
 
 void GRPCServer::Delay() {

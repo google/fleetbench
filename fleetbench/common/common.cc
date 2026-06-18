@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "tools/cpp/runfiles/runfiles.h"
+#include "absl/base/const_init.h"
 #include "absl/container/btree_map.h"
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
@@ -35,6 +36,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "absl/synchronization/mutex.h"
 #include "benchmark/benchmark.h"
 
 #include "absl/log/log.h"
@@ -87,6 +89,15 @@ void Random::Reset() {
   if (fixed_seed_) {
     rng_.seed(seed_);
   }
+}
+
+std::default_random_engine& GetThreadLocalRNG() {
+  static absl::Mutex mutex(absl::kConstInit);
+  thread_local std::default_random_engine local_rng = [&]() {
+    absl::MutexLock l(mutex);
+    return std::default_random_engine(GetRNG()());
+  }();
+  return local_rng;
 }
 
 std::vector<std::filesystem::path> GetMatchingFiles(absl::string_view dir,

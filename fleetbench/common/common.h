@@ -62,6 +62,10 @@ class Random {
 
 inline std::default_random_engine& GetRNG() { return Random::instance().rng(); }
 
+// Returns a thread-local random engine, seeded from GetRNG().
+// This is thread-safe.
+std::default_random_engine& GetThreadLocalRNG();
+
 // Returns a sorted list of the files in directory 'dir' whose filenames start
 // with 'prefix'.
 std::vector<std::filesystem::path> GetMatchingFiles(absl::string_view dir,
