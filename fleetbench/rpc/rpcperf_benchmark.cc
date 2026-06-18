@@ -54,6 +54,7 @@ void BM_Rpc(benchmark::State &state, absl::string_view program) {
 
   absl::Mutex keep_running_mtx;
   int warmup = 1000;
+  bool finished = false;
   std::unique_ptr<fleetbench::rpc::GRPCClient> client =
       fleetbench::rpc::CreateAndStartClient(
           /*max_outstanding_rpcs=*/1, /*compress=*/false,
@@ -61,13 +62,21 @@ void BM_Rpc(benchmark::State &state, absl::string_view program) {
           /*peers=*/peers, /*max_peers=*/-1,
           /*connections_per_peer=*/1, /*logstats_output_path=*/"",
           /*req_delay_us_dist=*/"", /*program=*/program,
-          /*keep_running=*/[&state, &keep_running_mtx, &warmup]() {
+          /*keep_running=*/
+          [&state, &keep_running_mtx, &warmup, &finished]() {
             absl::MutexLock l(keep_running_mtx);
+            if (finished) {
+              return false;
+            }
             if (warmup > 0) {
               --warmup;
               return true;
             }
-            return state.KeepRunning();
+            if (!state.KeepRunning()) {
+              finished = true;
+              return false;
+            }
+            return true;
           });
 
   fleetbench::rpc::Wait(std::move(server), std::move(client));
