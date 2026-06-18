@@ -57,7 +57,7 @@ void BM_Rpc(benchmark::State &state, absl::string_view program) {
   bool finished = false;
   std::unique_ptr<fleetbench::rpc::GRPCClient> client =
       fleetbench::rpc::CreateAndStartClient(
-          /*max_outstanding_rpcs=*/1, /*compress=*/false,
+          /*max_outstanding_rpcs=*/10, /*compress=*/false,
           /*checksum=*/false, /*skip_loopback=*/false,
           /*peers=*/peers, /*max_peers=*/-1,
           /*connections_per_peer=*/1, /*logstats_output_path=*/"",

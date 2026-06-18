@@ -69,14 +69,15 @@ class PerfCallback final
 // NOTE: similar to fleetbench/proto/lifecycle.h
 const int kMaxValueStringSize = 1 << 20;
 
+const int kNumMessageBuffers = 1 << 20;
+
 }  // namespace
 
 GRPCServer::GRPCServer(const GRPCServerOptions& opts, DelayProcess delay_type,
                        std::unique_ptr<RandomDistribution> delay_dist,
                        absl::string_view program)
     : opts_(opts),
-      message_buffers_(fleetbench::rpc::kMaxMessagesPerProgram *
-                       fleetbench::rpc::kMaxSettersPerMessage),
+      message_buffers_(kNumMessageBuffers),
       s_(kMaxValueStringSize, 'a'),
       delay_type_(delay_type),
       delay_dist_(std::move(delay_dist)),
