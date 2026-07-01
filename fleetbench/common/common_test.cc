@@ -127,7 +127,7 @@ TEST(DeathTest, SeedFlags) {
       {
         absl::SetFlag(&FLAGS_fixed_seed, false);
         absl::SetFlag(&FLAGS_seed, 1);
-        GetRNG()();
+        static_cast<void>(GetRNG()());
       },
       "--seed requires --fixed_seed=true");
 }
