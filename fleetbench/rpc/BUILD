@@ -213,6 +213,7 @@ cc_test(
     args = ["--grpc_experiments=-work_serializer_dispatch"],
     linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
+    visibility = ["//devtools/crosstool/perflab/benchmarks:__pkg__"],
     deps = [
         ":rpc_benchmark_lib",
         "//fleetbench:benchmark_main",
