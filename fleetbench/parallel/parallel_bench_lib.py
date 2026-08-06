@@ -154,7 +154,7 @@ class ParallelBench:
       )
     else:
       self.benchmarks = bm.GetDefaultBenchmarks(
-          benchmark_target, benchmark_filter
+          benchmark_target, benchmark_filter  # pyrefly: ignore[bad-argument-type]
       )
     # Gets the number of workloads and num of benchmark for each workload
     self.benchmark_weights = weights.GetBenchmarkWeights(
@@ -446,10 +446,10 @@ class ParallelBench:
             continue
           self.runtimes[r.benchmark].append(
               BenchmarkMetrics(
-                  total_duration=r.duration,
-                  per_iteration_wall_time=r.bm_wall_time,
-                  per_iteration_cpu_time=r.bm_cpu_time,
-                  per_bm_run_iteration=r.iteration,
+                  total_duration=r.duration,  # pyrefly: ignore[bad-argument-type]
+                  per_iteration_wall_time=r.bm_wall_time,  # pyrefly: ignore[bad-argument-type]
+                  per_iteration_cpu_time=r.bm_cpu_time,  # pyrefly: ignore[bad-argument-type]
+                  per_bm_run_iteration=r.iteration,  # pyrefly: ignore[bad-argument-type]
               )
           )
 
@@ -597,10 +597,10 @@ class ParallelBench:
         for r in results:
           self.runtimes[r.benchmark].append(
               BenchmarkMetrics(
-                  total_duration=r.duration,
-                  per_iteration_wall_time=r.bm_wall_time,
-                  per_iteration_cpu_time=r.bm_cpu_time,
-                  per_bm_run_iteration=r.iteration,
+                  total_duration=r.duration,  # pyrefly: ignore[bad-argument-type]
+                  per_iteration_wall_time=r.bm_wall_time,  # pyrefly: ignore[bad-argument-type]
+                  per_iteration_cpu_time=r.bm_cpu_time,  # pyrefly: ignore[bad-argument-type]
+                  per_bm_run_iteration=r.iteration,  # pyrefly: ignore[bad-argument-type]
               )
           )
 

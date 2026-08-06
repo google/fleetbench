@@ -73,7 +73,7 @@ class Worker(threading.Thread):
     if self._in_use_as_extra_worker:
       return False
     try:
-      self._command_q.put_nowait(RunAndExtraWorkers(run, extra_workers))
+      self._command_q.put_nowait(RunAndExtraWorkers(run, extra_workers))  # pyrefly: ignore[bad-argument-type]
       return True
     except queue.Full:
       return False

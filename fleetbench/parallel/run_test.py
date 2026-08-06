@@ -57,7 +57,7 @@ class RunTest(absltest.TestCase):
     mock_run.assert_called_once()
     self.assertEqual(result.result, json_object)
     self.assertEqual(result.benchmark, "fake_benchmark (BM_Test)")
-    self.assertGreater(result.duration, 0)
+    self.assertGreater(result.duration, 0)  # pyrefly: ignore[no-matching-overload]
     self.assertEqual(result.bm_cpu_time, 12.345)
     self.assertEqual(result.bm_wall_time, 12.3)
     self.assertEqual(result.iteration, 10)

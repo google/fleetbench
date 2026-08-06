@@ -159,9 +159,9 @@ def GetBenchmarkWeights(
 
     # Calculate the weight for each benchmark
     benchmark_weights = {}
-    for benchmarks in workload_benchmark.values():
+    for benchmarks in workload_benchmark.values():  # pyrefly: ignore[bad-assignment]
       for benchmark in benchmarks:
-        benchmark_weights[benchmark.BenchmarkName()] = 1 / len(benchmarks)
+        benchmark_weights[benchmark.BenchmarkName()] = 1 / len(benchmarks)  # pyrefly: ignore[missing-attribute]
 
     # Update the benchmark weights with the custom weights if provided.
     if custom_weights:

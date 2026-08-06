@@ -169,7 +169,7 @@ class CorpusChunkManager:
             collections.defaultdict(list)
         )
 
-        self.max_ratio_lookup[parameters] = 0.0
+        self.max_ratio_lookup[parameters] = 0.0  # pyrefly: ignore[unsupported-operation]
 
     # Iterate all corpus and collect compression parameters for each chunk
     chunk_id = 0
@@ -201,10 +201,10 @@ class CorpusChunkManager:
           # where the compression parameters are keys.
           for parameters in compression_parameters_list:
             if self.algorithm == "Snappy":
-              compressed_data = self.compress_function(data)
+              compressed_data = self.compress_function(data)  # pyrefly: ignore[missing-argument]
             elif self.algorithm == "Brotli":
-              compressed_data = self.compress_function(
-                  data, quality=parameters.compression_level
+              compressed_data = self.compress_function(  # pyrefly: ignore[missing-argument]
+                  data, quality=parameters.compression_level  # pyrefly: ignore[unexpected-keyword]
               )
             else:
               compressed_data = self.compress_function(
@@ -218,7 +218,7 @@ class CorpusChunkManager:
             truncated_ratio = int(compression_ratio * 10.0) / 10.0
 
             # Update max compression ratio
-            self.max_ratio_lookup[parameters] = max(
+            self.max_ratio_lookup[parameters] = max(  # pyrefly: ignore[bad-specialization, unsupported-operation]
                 truncated_ratio,
                 self.max_ratio_lookup[parameters],
             )
@@ -237,8 +237,8 @@ class CorpusChunkManager:
         # Create an empty list with length determined by max_ratio. We assume
         # min compression ratio is 0.0 here to avoid index conversion.
         max_ratio = self.max_ratio_lookup[parameters]
-        lookup_table[parameters] = [
-            [] for x in range(0, int(max_ratio * 10) + 1)
+        lookup_table[parameters] = [  # pyrefly: ignore[unsupported-operation]
+            [] for x in range(0, int(max_ratio * 10) + 1)  # pyrefly: ignore[unsupported-operation]
         ]
 
         # Generate a lookup table that with a given set of parameters
@@ -265,14 +265,14 @@ class CorpusChunkManager:
       uncompressed_data += chunk.data
 
     if self.algorithm == "Snappy":
-      compressed_data = self.compress_function(uncompressed_data)
+      compressed_data = self.compress_function(uncompressed_data)  # pyrefly: ignore[missing-argument]
     elif self.algorithm == "Brotli":
-      compressed_data = self.compress_function(
-          uncompressed_data, quality=compression_level
+      compressed_data = self.compress_function(  # pyrefly: ignore[missing-argument]
+          uncompressed_data, quality=compression_level  # pyrefly: ignore[unexpected-keyword]
       )
     else:
       compressed_data = self.compress_function(
-          uncompressed_data, compression_level
+          uncompressed_data, compression_level  # pyrefly: ignore[bad-argument-type]
       )
 
     compression_ratio = len(uncompressed_data) / len(compressed_data)
@@ -495,10 +495,10 @@ class CorpusChunkManager:
     random.shuffle(list(result))
 
     if self.algorithm == "Snappy":
-      compressed_data = self.compress_function(result)
+      compressed_data = self.compress_function(result)  # pyrefly: ignore[missing-argument]
     elif self.algorithm == "Brotli":
-      compressed_data = self.compress_function(
-          result, quality=parameters.compression_level
+      compressed_data = self.compress_function(  # pyrefly: ignore[missing-argument]
+          result, quality=parameters.compression_level  # pyrefly: ignore[unexpected-keyword]
       )
     else:
       compressed_data = self.compress_function(
