@@ -241,7 +241,8 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
       sim_threads[thread_idx]->total_bytes_allocated() - bytes_warm_up;
   size_t allocations =
       sim_threads[thread_idx]->load_allocations() - allocations_warm_up;
-  double bytes_per_allocation = bytes / allocations;
+  double bytes_per_allocation =
+      allocations > 0 ? static_cast<double>(bytes) / allocations : 0.0;
 
   // Bytes and allocations per second is most useful for applications.
   state.counters["RateBytes"] = benchmark::Counter(
@@ -263,21 +264,28 @@ static void BM_TCMalloc_Empirical_Driver(benchmark::State& state) {
   size_t released = GetProp("tcmalloc.pageheap_unmapped_bytes");
   size_t waste = GetProp("tcmalloc.external_fragmentation_bytes");
   size_t central = waste - local - pageheap;
+  size_t metadata = GetProp("tcmalloc.metadata_bytes");
 
-  state.counters["AllocatedBytes"] = benchmark::Counter(
-      in_use, benchmark::Counter::kDefaults, benchmark::Counter::OneK::kIs1024);
-  state.counters["WasteTotal"] = benchmark::Counter(
-      waste, benchmark::Counter::kDefaults, benchmark::Counter::OneK::kIs1024);
-  state.counters["WasteLocal"] = benchmark::Counter(
-      local, benchmark::Counter::kDefaults, benchmark::Counter::OneK::kIs1024);
+  state.counters["AllocatedBytes"] =
+      benchmark::Counter(in_use, benchmark::Counter::kAvgThreads,
+                         benchmark::Counter::OneK::kIs1024);
+  state.counters["MetadataBytes"] =
+      benchmark::Counter(metadata, benchmark::Counter::kAvgThreads,
+                         benchmark::Counter::OneK::kIs1024);
+  state.counters["WasteTotal"] =
+      benchmark::Counter(waste, benchmark::Counter::kAvgThreads,
+                         benchmark::Counter::OneK::kIs1024);
+  state.counters["WasteLocal"] =
+      benchmark::Counter(local, benchmark::Counter::kAvgThreads,
+                         benchmark::Counter::OneK::kIs1024);
   state.counters["WasteCentral"] =
-      benchmark::Counter(central, benchmark::Counter::kDefaults,
+      benchmark::Counter(central, benchmark::Counter::kAvgThreads,
                          benchmark::Counter::OneK::kIs1024);
   state.counters["WastePageheap"] =
-      benchmark::Counter(pageheap, benchmark::Counter::kDefaults,
+      benchmark::Counter(pageheap, benchmark::Counter::kAvgThreads,
                          benchmark::Counter::OneK::kIs1024);
   state.counters["SpaceReleased"] =
-      benchmark::Counter(released, benchmark::Counter::kDefaults,
+      benchmark::Counter(released, benchmark::Counter::kAvgThreads,
                          benchmark::Counter::OneK::kIs1024);
 }
 
