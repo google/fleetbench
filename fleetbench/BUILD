@@ -96,7 +96,6 @@ cc_test(
         "//fleetbench/libc:mem_benchmark_lib",
         "//fleetbench/proto:proto_benchmark_lib",
         "//fleetbench/rpc:rpc_benchmark_lib",
-        "//fleetbench/simd:simd_library",
         "//fleetbench/stl:cord_benchmark_lib",
         "//fleetbench/swissmap:swissmap_benchmark_lib",
         "//fleetbench/tcmalloc:empirical_driver_lib",
@@ -170,4 +169,5 @@ compile_pip_requirements(
     extra_args = ["--allow-unsafe"],
     requirements_in = "requirements.in",
     requirements_txt = "requirements.txt",
+    tags = ["manual"],
 )
