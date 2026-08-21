@@ -159,8 +159,8 @@ Here's a breakdown:
 
     *   `WORKLOAD_WEIGHTED`: Based on expected aggregate runtime of benchmarks
         within a workload.
-    *   `BM_WEIGHTED`: Based on the expected runtime of individual benchmarks.
-    *   `DCTAX_WEIGHTED`: We provide a templated
+    *   `BM_WEIGHTED`: Based on the expected runtime of individual
+        benchmarks. *   `DCTAX_WEIGHTED`: We provide a templated
         [weights.csv](https://github.com/google/fleetbench/blob/main/fleetbench/parallel/weights.csv)
         for this strategy. Please adjust the file at your interest. With this
         strategy, the aggregated runtime for each benchmark will be proportional
