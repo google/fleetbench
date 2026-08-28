@@ -88,6 +88,7 @@ cc_test(
     data = ["//fleetbench/compression:corpus"],
     linkstatic = 1,
     malloc = "@com_google_tcmalloc//tcmalloc",
+    stamp = -1,
     tags = ["manual"],
     deps = [
         ":benchmark_main",
