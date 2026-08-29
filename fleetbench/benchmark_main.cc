@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
   benchmark::Initialize(&argc, argv);
   absl::ParseCommandLine(argc, argv);
   absl::InitializeLog();
-  static auto* background ABSL_ATTRIBUTE_UNUSED =
+  static auto* background [[maybe_unused]] =
     tcmalloc::MallocExtension::NeedsProcessBackgroundActions() ?
     new std::thread([]() {
       tcmalloc::MallocExtension::ProcessBackgroundActions();
