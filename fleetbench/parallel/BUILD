@@ -57,6 +57,7 @@ py_library(
         ":benchmark",
         ":cpu",
         ":reporter",
+        ":result",
         ":run",
         ":weights",
         ":worker",

@@ -61,16 +61,16 @@ class Run:
 
     with open(self.out_file, "r") as f:
       benchmark_output = f.read()
-    benchmark_cpu_time, benchmark_wall_time, iteration = (
+    benchmark_cpu_times, benchmark_wall_times, iterations = (
         self._GetBenchmarkRuntime(benchmark_output)
     )
     return result.Result(
         benchmark=self.benchmark.Name(),
         rc=proc.returncode,
         duration=end - start,
-        bm_wall_time=benchmark_wall_time,
-        bm_cpu_time=benchmark_cpu_time,
-        iteration=iteration,
+        bm_wall_times=benchmark_wall_times,
+        bm_cpu_times=benchmark_cpu_times,
+        iterations=iterations,
         result=benchmark_output,
         stdout=proc.stdout,
         stderr=proc.stderr,
@@ -84,10 +84,14 @@ class Run:
 
   def _GetBenchmarkRuntime(
       self, benchmark_output: str
-  ) -> tuple[float, float, int]:
+  ) -> tuple[list[float], list[float], list[int]]:
+    """Extracts CPU times, wall times, and iteration counts from output."""
     data = json.loads(benchmark_output)
+    benchmarks = [
+        b for b in data["benchmarks"] if b.get("run_type") != "aggregate"
+    ]
     return (
-        data["benchmarks"][0]["cpu_time"],
-        data["benchmarks"][0]["real_time"],
-        data["benchmarks"][0]["iterations"],
+        [b["cpu_time"] for b in benchmarks],
+        [b["real_time"] for b in benchmarks],
+        [b["iterations"] for b in benchmarks],
     )

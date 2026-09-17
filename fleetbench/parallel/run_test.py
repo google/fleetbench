@@ -58,9 +58,72 @@ class RunTest(absltest.TestCase):
     self.assertEqual(result.result, json_object)
     self.assertEqual(result.benchmark, "fake_benchmark (BM_Test)")
     self.assertGreater(result.duration, 0)  # pyrefly: ignore[no-matching-overload]
-    self.assertEqual(result.bm_cpu_time, 12.345)
-    self.assertEqual(result.bm_wall_time, 12.3)
-    self.assertEqual(result.iteration, 10)
+    self.assertEqual(result.bm_cpu_times, [12.345])
+    self.assertEqual(result.bm_wall_times, [12.3])
+    self.assertEqual(result.iterations, [10])
+    self.assertEqual(result.rc, 0)
+
+  @mock.patch.object(subprocess, "run", autospec=True)
+  @flagsaver.flagsaver(
+      benchmark_dir=absltest.get_default_test_tmpdir(),
+  )
+  def testRunMultipleRepetitions(self, mock_run):
+    output_file = self.create_tempfile()
+
+    data = {
+        "benchmarks": [
+            {
+                "name": "BM_Test",
+                "run_type": "iteration",
+                "cpu_time": 10.0,
+                "real_time": 11.0,
+                "iterations": 100,
+            },
+            {
+                "name": "BM_Test",
+                "run_type": "iteration",
+                "cpu_time": 12.0,
+                "real_time": 13.0,
+                "iterations": 100,
+            },
+            {
+                "name": "BM_Test_mean",
+                "run_type": "aggregate",
+                "aggregate_name": "mean",
+                "cpu_time": 11.0,
+                "real_time": 12.0,
+                "iterations": 2,
+            },
+            {
+                "name": "BM_Test_stddev",
+                "run_type": "aggregate",
+                "aggregate_name": "stddev",
+                "cpu_time": 1.414,
+                "real_time": 1.414,
+                "iterations": 2,
+            },
+        ]
+    }
+    json_object = json.dumps(data, indent=4)
+    with open(output_file.full_path, "w") as f:
+      f.write(json_object)
+    mock_run.return_value.returncode = 0
+    self.create_tempfile(
+        file_path=os.path.join(
+            absltest.get_default_test_tmpdir(), "fake_benchmark"
+        ),
+    )
+    r = run.Run(
+        benchmark=bm.Benchmark(
+            name="fake_benchmark", benchmark_filter="BM_Test"
+        ),
+        out_file=output_file.full_path,
+    )
+    result = r.Execute()
+    mock_run.assert_called_once()
+    self.assertEqual(result.bm_cpu_times, [10.0, 12.0])
+    self.assertEqual(result.bm_wall_times, [11.0, 13.0])
+    self.assertEqual(result.iterations, [100, 100])
     self.assertEqual(result.rc, 0)
 
   @flagsaver.flagsaver(

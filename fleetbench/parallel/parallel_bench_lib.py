@@ -30,6 +30,7 @@ import pandas as pd
 from fleetbench.parallel import benchmark as bm
 from fleetbench.parallel import cpu
 from fleetbench.parallel import reporter
+from fleetbench.parallel import result
 from fleetbench.parallel import run
 from fleetbench.parallel import weights
 from fleetbench.parallel import worker
@@ -441,17 +442,27 @@ class ParallelBench:
       # benchmark to make the scheduling probabilities more accurate.
       for w in self.workers.values():
         for r in w.TryGetResults():
-          if r.rc != 0:
-            logging.error("Benchmark failed: %s", r.benchmark)
-            continue
-          self.runtimes[r.benchmark].append(
-              BenchmarkMetrics(
-                  total_duration=r.duration,  # pyrefly: ignore[bad-argument-type]
-                  per_iteration_wall_time=r.bm_wall_time,  # pyrefly: ignore[bad-argument-type]
-                  per_iteration_cpu_time=r.bm_cpu_time,  # pyrefly: ignore[bad-argument-type]
-                  per_bm_run_iteration=r.iteration,  # pyrefly: ignore[bad-argument-type]
-              )
+          self._RecordResult(r)
+
+  def _RecordResult(self, run_result: result.Result) -> None:
+    """Records benchmark metrics from a completed run result."""
+    if run_result.rc != 0:
+      logging.error("Benchmark failed: %s", run_result.benchmark)
+      return
+    for wall_time, cpu_time, iteration in zip(
+        run_result.bm_wall_times,
+        run_result.bm_cpu_times,
+        run_result.iterations,
+        strict=True,
+    ):
+      self.runtimes[run_result.benchmark].append(
+          BenchmarkMetrics(
+              total_duration=run_result.duration,  # pyrefly: ignore[bad-argument-type]
+              per_iteration_wall_time=wall_time,
+              per_iteration_cpu_time=cpu_time,
+              per_bm_run_iteration=iteration,
           )
+      )
 
   def GeneratePerfCounterDataFrame(self) -> pd.DataFrame | None:
     """Generates a DataFrame of performance counter results for each benchmark.
@@ -472,18 +483,21 @@ class ParallelBench:
       with open(file_path, "r") as f:
         file_content = f.read()
         try:
-          benchmark_result = json.loads(file_content)["benchmarks"][0]
+          benchmark_results = json.loads(file_content)["benchmarks"]
         except (json.JSONDecodeError, KeyError, IndexError):
           logging.exception("Failed to parse benchmark result in %s", file_path)
           continue
 
-      entry = {
-          "Benchmark": benchmark_result["name"],
-      }
-      for counter in self.perf_counters:
-        if counter in benchmark_result:
-          entry[counter] = benchmark_result[counter]
-      performance_data.append(entry)
+      for benchmark_result in benchmark_results:
+        if benchmark_result.get("run_type") == "aggregate":
+          continue
+        entry = {
+            "Benchmark": benchmark_result["name"],
+        }
+        for counter in self.perf_counters:
+          if counter in benchmark_result:
+            entry[counter] = benchmark_result[counter]
+        performance_data.append(entry)
 
     perf_counters_results = pd.DataFrame(performance_data)
     if perf_counters_results.empty:
@@ -595,14 +609,7 @@ class ParallelBench:
       for w in self.workers.values():
         results = w.StopAndGetResults()
         for r in results:
-          self.runtimes[r.benchmark].append(
-              BenchmarkMetrics(
-                  total_duration=r.duration,  # pyrefly: ignore[bad-argument-type]
-                  per_iteration_wall_time=r.bm_wall_time,  # pyrefly: ignore[bad-argument-type]
-                  per_iteration_cpu_time=r.bm_cpu_time,  # pyrefly: ignore[bad-argument-type]
-                  per_bm_run_iteration=r.iteration,  # pyrefly: ignore[bad-argument-type]
-              )
-          )
+          self._RecordResult(r)
 
       for cpu_id, w in self.workers.items():
         logging.debug("Joining worker on CPU %d", cpu_id)

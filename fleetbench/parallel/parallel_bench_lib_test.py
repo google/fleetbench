@@ -79,7 +79,9 @@ class ParallelBenchTest(parameterized.TestCase):
         stdout="fake_stdout",
         stderr="fake_stderr",
         duration=0.01,
-        bm_cpu_time=0.01,
+        bm_wall_times=[0.01],
+        bm_cpu_times=[0.01],
+        iterations=[1],
         result="fake_result",
     )
     self.create_tempfile(os.path.join(self.temp_dir.full_path, "fake_bench"))
@@ -225,7 +227,9 @@ class ParallelBenchTest(parameterized.TestCase):
         stdout="fake_stdout",
         stderr="fake_stderr",
         duration=0.01,
-        bm_cpu_time=0.01,
+        bm_wall_times=[0.01],
+        bm_cpu_times=[0.01],
+        iterations=[1],
         result="fake_result",
     )
     self.create_tempfile(os.path.join(self.temp_dir.full_path, "fake_bench"))
@@ -316,6 +320,48 @@ class ParallelBenchTest(parameterized.TestCase):
         ],
     )
 
+  def test_record_result_multiple_repetitions(self):
+    self.pb.runtimes["BM_Test1"] = [
+        parallel_bench_lib.BenchmarkMetrics(
+            total_duration=1,
+            per_iteration_wall_time=0,
+            per_iteration_cpu_time=0,
+            per_bm_run_iteration=0,
+        )
+    ]
+    self.pb.utilization_samples.append((pd.Timestamp.now(), 0.5))
+
+    run_result = result.Result(
+        benchmark="BM_Test1",
+        rc=0,
+        stdout="",
+        stderr="",
+        duration=2.0,
+        bm_wall_times=[10.0, 12.0],
+        bm_cpu_times=[9.0, 11.0],
+        iterations=[100, 100],
+    )
+    self.pb._RecordResult(run_result)
+
+    df = self.pb.ConvertToDataFrame()
+    self.assertEqual(
+        df.to_dict("records"),
+        [
+            {
+                "Benchmark": "BM_Test1",
+                "WallTimes": 10.0,
+                "CPUTimes": 9.0,
+                "Iterations": 100,
+            },
+            {
+                "Benchmark": "BM_Test1",
+                "WallTimes": 12.0,
+                "CPUTimes": 11.0,
+                "Iterations": 100,
+            },
+        ],
+    )
+
   def test_generate_perf_counter_dataframe(self):
     mock_data1 = {
         "benchmarks": [{
@@ -365,6 +411,49 @@ class ParallelBenchTest(parameterized.TestCase):
     expected_df = pd.DataFrame([
         {"Benchmark": "test_benchmark1", "instructions": 130.0, "cycles": 3.0},
         {"Benchmark": "test_benchmark2", "instructions": 200.0, "cycles": 2.0},
+    ]).set_index("Benchmark")
+    pd.testing.assert_frame_equal(df, expected_df)
+
+  def test_generate_perf_counter_dataframe_multiple_repetitions(self):
+    mock_data = {
+        "benchmarks": [
+            {
+                "name": "test_benchmark1",
+                "run_type": "iteration",
+                "cpu_time": 10,
+                "instructions": 100,
+                "cycles": 2,
+            },
+            {
+                "name": "test_benchmark1",
+                "run_type": "iteration",
+                "cpu_time": 20,
+                "instructions": 200,
+                "cycles": 4,
+            },
+            {
+                "name": "test_benchmark1_mean",
+                "run_type": "aggregate",
+                "aggregate_name": "mean",
+                "cpu_time": 15,
+                "instructions": 150,
+                "cycles": 3,
+            },
+        ]
+    }
+
+    self.pb.temp_root = os.path.join(self.pb.temp_parent_root, "run_0")
+    os.makedirs(self.pb.temp_root, exist_ok=True)
+
+    with open(os.path.join(self.pb.temp_root, "run_1"), "w") as f:
+      json.dump(mock_data, f)
+
+    self.pb.perf_counters = ["instructions", "cycles"]
+    df = self.pb.GeneratePerfCounterDataFrame()
+
+    self.assertIsInstance(df, pd.DataFrame)
+    expected_df = pd.DataFrame([
+        {"Benchmark": "test_benchmark1", "instructions": 150.0, "cycles": 3.0},
     ]).set_index("Benchmark")
     pd.testing.assert_frame_equal(df, expected_df)
 

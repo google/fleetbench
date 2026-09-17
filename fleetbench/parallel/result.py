@@ -14,6 +14,7 @@
 
 """Result of a benchmark run."""
 
+from collections.abc import Sequence
 import dataclasses
 from typing import Optional
 
@@ -28,6 +29,6 @@ class Result:
   stderr: str
   result: str = ""
   duration: Optional[float] = None
-  bm_wall_time: Optional[float] = None
-  bm_cpu_time: Optional[float] = None
-  iteration: Optional[int] = None
+  bm_wall_times: Sequence[float] = ()
+  bm_cpu_times: Sequence[float] = ()
+  iterations: Sequence[int] = ()
