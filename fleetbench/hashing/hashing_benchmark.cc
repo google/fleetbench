@@ -42,9 +42,7 @@ namespace hashing {
 using CacheInfo = benchmark::CPUInfo::CacheInfo;
 
 // Maps the default benchmarks to their minimum iteration counts.
-// We use the fleet-wide cold distributions as the defaults.
-
-// TODO: Double check the iteration counts.
+// We use the fleet-wide mixed distributions as the defaults.
 absl::NoDestructor<absl::flat_hash_map<std::string, benchmark::IterationCount>>
     kDefaultBenchmarks(
         {{"BM_HASHING_Extendcrc32cinternal_Fleet_Mixed", 2'000'000'000},

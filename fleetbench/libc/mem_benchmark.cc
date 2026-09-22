@@ -66,7 +66,6 @@ static constexpr int kMixedBenchmarkRepetitions = 10;
 static constexpr int kMixedBenchmarkBufferSize = 1024 * 1024 * 1024;
 
 // Maps the default benchmarks to their minimum iteration counts.
-// TODO: Double check the iteration counts.
 absl::NoDestructor<absl::flat_hash_map<std::string, benchmark::IterationCount>>
     kDefaultBenchmarks({{"BM_LIBC_Bcmp_Fleet_Mixed", 200'000'000},
                         {"BM_LIBC_Memcmp_Fleet_Mixed", 500'000'000},
