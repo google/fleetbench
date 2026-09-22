@@ -108,9 +108,24 @@ class Benchmark:
     self._name = os.path.basename(name)
     self._path = _FindBenchmarkPath(name)
     self._benchmark_filter = benchmark_filter
-    # Trailing $ since this is a regex and we don't want to match anything
-    # extra.
-    self._command_flag = [f"--benchmark_filter={self._benchmark_filter}$"]
+    # Ensure the benchmark name matches completely, so we don't accidentally
+    # match benchmarks that happen to contain the desired name plus something
+    # extra. Note that while `FleetbenchReporter` strips `iterations:N` when
+    # formatting output reports (`ReportRuns`), Google Benchmark evaluates
+    # `--benchmark_filter` against the internal registered `BenchmarkInstance`
+    # name prior to execution, which still includes `iterations:N` (placed
+    # before any trailing `repeats:N`, `process_time`, `manual_time`,
+    # `real_time`, and `threads:N` components).
+    match = re.search(
+        r"((?:/(?:repeats:[0-9]+|process_time|manual_time|real_time|threads:[0-9]+))*)$",
+        self._benchmark_filter,
+    )
+    assert match is not None
+    prefix = self._benchmark_filter[: match.start()]
+    suffix = match.group(1)
+    self._command_flag = [
+        f"--benchmark_filter={prefix}(/iterations:[0-9]+)?{suffix}$"
+    ]
 
   def CommandLine(self) -> list[str]:
     return [self._path] + self._command_flag

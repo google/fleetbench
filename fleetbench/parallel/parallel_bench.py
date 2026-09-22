@@ -105,6 +105,18 @@ _BENCHMARK_MIN_TIME = flags.DEFINE_string(
     "Minimum time to run each benchmark. Applied to all benchmarks.",
 )
 
+# TODO: Not all default benchmarks currently configure
+# UseExplicitIterationCounts() in C++ (specifically BM_RPC_Fleet/process_time
+# and BM_SWISSMAP_InsertMiss<...>). Add C++ explicit iteration defaults for them
+# and/or support a --benchmark_iterations flag for per-benchmark CLI overrides.
+_FINITE_WORK = flags.DEFINE_bool(
+    "finite_work",
+    False,
+    "If true, benchmarks run a fixed calibrated number of iterations instead "
+    "of running for a minimum duration. Cannot be used together with an "
+    "explicitly set --benchmark_min_time.",
+)
+
 _L1_DATA_SIZE = flags.DEFINE_integer(
     "L1_data_size",
     None,
@@ -284,9 +296,20 @@ def main(argv: Sequence[str]) -> None:
       _CUSTOM_BENCHMARK_WEIGHTS.value,
   )
 
+  if (
+      _FINITE_WORK.value
+      and flags.FLAGS["benchmark_min_time"].present
+      and _BENCHMARK_MIN_TIME.value
+  ):
+    raise app.UsageError(
+        "--finite_work and --benchmark_min_time cannot be used together."
+    )
+  benchmark_min_time = "" if _FINITE_WORK.value else _BENCHMARK_MIN_TIME.value
+
   bench.Run(
       benchmark_repetitions=_BENCHMARK_REPETITIONS.value,
-      benchmark_min_time=_BENCHMARK_MIN_TIME.value,
+      benchmark_min_time=benchmark_min_time,
+      finite_work=_FINITE_WORK.value,
   )
   logging.info("Benchmark output is in %s", _TEMP_ROOT.value)
 

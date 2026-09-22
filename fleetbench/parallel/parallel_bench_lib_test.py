@@ -171,6 +171,40 @@ class ParallelBenchTest(parameterized.TestCase):
     self.assertEqual(args[2], [{"col1": [1, 2]}, {"col1": [1, 2]}])
     self.assertEqual(args[3], 2)
 
+  @mock.patch.object(parallel_bench_lib.ParallelBench, "_PreRun", autospec=True)
+  @mock.patch.object(
+      parallel_bench_lib.ParallelBench, "_RunSchedulingLoop", autospec=True
+  )
+  @mock.patch.object(
+      parallel_bench_lib.ParallelBench,
+      "PostProcessBenchmarkResults",
+      autospec=True,
+  )
+  @mock.patch.object(
+      reporter, "GenerateFinalReport", autospec=True, return_value=None
+  )
+  @mock.patch.object(shutil, "rmtree", autospec=True)
+  @mock.patch.object(os, "makedirs", autospec=True)
+  def test_run_finite_work(
+      self,
+      unused_mock_makedirs,
+      unused_mock_rmtree,
+      unused_mock_generate_final_report,
+      mock_post_process_benchmark_results,
+      unused_mock_run_scheduling_loop,
+      mock_pre_run,
+  ):
+    mock_post_process_benchmark_results.return_value = (
+        {"date": "2025-02-14", "load_avg": [1.0, 2.0, 3.0]},
+        {"col1": [1, 2]},
+    )
+    self.pb.Run(finite_work=True)
+    mock_pre_run.assert_called_once_with(self.pb, 0, "", 0, True)
+
+  def test_run_finite_work_with_benchmark_min_time_error(self):
+    with self.assertRaises(ValueError):
+      self.pb.Run(benchmark_min_time="2s", finite_work=True)
+
   def test_set_extra_benchmark_flags(self):
     self.pb.perf_counters = ["instructions"]
     self.assertEqual(
@@ -360,6 +394,31 @@ class ParallelBenchTest(parameterized.TestCase):
                 "Iterations": 100,
             },
         ],
+    )
+
+  def test_record_result_short_duration_logs_warning(self):
+    self.pb.runtimes["BM_Short"] = [
+        parallel_bench_lib.BenchmarkMetrics(
+            total_duration=1,
+            per_iteration_wall_time=0,
+            per_iteration_cpu_time=0,
+            per_bm_run_iteration=0,
+        )
+    ]
+    run_result = result.Result(
+        benchmark="BM_Short",
+        rc=0,
+        stdout="",
+        stderr="",
+        duration=0.2,
+        bm_wall_times=[1.0],
+        bm_cpu_times=[1.0],
+        iterations=[100],
+    )
+    with self.assertLogs(level="WARNING") as cm:
+      self.pb._RecordResult(run_result)
+    self.assertTrue(
+        any("finished in 0.200s (< 0.5s)" in msg for msg in cm.output)
     )
 
   def test_generate_perf_counter_dataframe(self):

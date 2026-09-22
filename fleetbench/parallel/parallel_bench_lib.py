@@ -167,10 +167,16 @@ class ParallelBench:
       benchmark_repetitions: int,
       benchmark_min_time: str,
       repetition: int,
+      finite_work: bool = False,
   ) -> None:
     """Initial configuration steps."""
 
     logging.info("Initializing benchmarks and worker threads...")
+    if finite_work:
+      logging.info(
+          "Running in finite-work mode: benchmarks will execute fixed "
+          "calibrated iteration counts."
+      )
 
     benchmark_flags = self._SetExtraBenchmarkFlags(
         benchmark_repetitions,
@@ -449,6 +455,13 @@ class ParallelBench:
     if run_result.rc != 0:
       logging.error("Benchmark failed: %s", run_result.benchmark)
       return
+    if run_result.duration is not None and run_result.duration < 0.5:
+      logging.warning(
+          "Benchmark %s finished in %.3fs (< 0.5s), which may introduce high "
+          "process launch overhead.",
+          run_result.benchmark,
+          run_result.duration,
+      )
     for wall_time, cpu_time, iteration in zip(
         run_result.bm_wall_times,
         run_result.bm_cpu_times,
@@ -575,8 +588,15 @@ class ParallelBench:
       self,
       benchmark_repetitions: int = 0,
       benchmark_min_time: str = "",
+      finite_work: bool = False,
   ):
     """Run benchmarks in parallel."""
+    if finite_work and benchmark_min_time:
+      raise ValueError(
+          "finite_work and benchmark_min_time cannot be used together."
+      )
+    if finite_work:
+      benchmark_min_time = ""
 
     context_list = []
     data_list = []
@@ -592,6 +612,7 @@ class ParallelBench:
           benchmark_repetitions,
           benchmark_min_time,
           i,
+          finite_work,
       )
 
       logging.info(

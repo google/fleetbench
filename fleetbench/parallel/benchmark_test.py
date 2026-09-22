@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import re
 import subprocess
 from unittest import mock
 from absl.testing import absltest
@@ -37,7 +38,8 @@ class BenchmarkTest(absltest.TestCase):
     bm = benchmark.Benchmark(benchmark_path, "BM_Test")
     self.assertEqual(bm.Name(), "fake_benchmark (BM_Test)")
     self.assertEqual(
-        bm.CommandLine(), [benchmark_path, "--benchmark_filter=BM_Test$"]
+        bm.CommandLine(),
+        [benchmark_path, "--benchmark_filter=BM_Test(/iterations:[0-9]+)?$"],
     )
 
   def testBenchmarkDir(self):
@@ -73,7 +75,7 @@ class BenchmarkTest(absltest.TestCase):
     bm = benchmark.Benchmark(benchmark_path, "BM_Test")
     self.assertEqual(
         bm.CommandLine(),
-        [benchmark_path, "--benchmark_filter=BM_Test$"],
+        [benchmark_path, "--benchmark_filter=BM_Test(/iterations:[0-9]+)?$"],
     )
 
     bm.AddCommandFlags(["--benchmark_min_time=10"])
@@ -82,7 +84,7 @@ class BenchmarkTest(absltest.TestCase):
         bm.CommandLine(),
         [
             benchmark_path,
-            "--benchmark_filter=BM_Test$",
+            "--benchmark_filter=BM_Test(/iterations:[0-9]+)?$",
             "--benchmark_min_time=10",
         ],
     )
@@ -92,10 +94,39 @@ class BenchmarkTest(absltest.TestCase):
         bm.CommandLine(),
         [
             benchmark_path,
-            "--benchmark_filter=BM_Test$",
+            "--benchmark_filter=BM_Test(/iterations:[0-9]+)?$",
             "--benchmark_min_time=10",
             "--benchmark_perf_counters=ctr1,ctr2",
         ],
+    )
+
+  def testCommandLineMatchesExplicitIterations(self):
+    temp_dir = self.create_tempdir()
+    temp_dir.create_file("fake_benchmark")
+    benchmark_path = os.path.join(temp_dir, "fake_benchmark")
+    bm = benchmark.Benchmark(benchmark_path, "BM_Test")
+    filter_flag = bm.CommandLine()[1]
+    self.assertStartsWith(filter_flag, "--benchmark_filter=")
+    pattern = filter_flag.removeprefix("--benchmark_filter=")
+    self.assertIsNotNone(re.search(pattern, "BM_Test"))
+    self.assertIsNotNone(re.search(pattern, "BM_Test/iterations:100"))
+    self.assertIsNone(re.search(pattern, "BM_Test_Other"))
+    self.assertIsNone(re.search(pattern, "BM_Test/other:1"))
+
+    bm_threads = benchmark.Benchmark(
+        benchmark_path, "BM_Test/real_time/threads:1"
+    )
+    pattern_threads = bm_threads.CommandLine()[1].removeprefix(
+        "--benchmark_filter="
+    )
+    self.assertIsNotNone(
+        re.search(pattern_threads, "BM_Test/real_time/threads:1")
+    )
+    self.assertIsNotNone(
+        re.search(pattern_threads, "BM_Test/iterations:100/real_time/threads:1")
+    )
+    self.assertIsNone(
+        re.search(pattern_threads, "BM_Test/real_time/threads:10")
     )
 
   @mock.patch.object(subprocess, "run", autospec=True)
