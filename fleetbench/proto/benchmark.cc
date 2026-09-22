@@ -57,7 +57,7 @@ void RegisterBenchmarks() {
   benchmark::internal::Benchmark* benchmark =
       benchmark::RegisterBenchmark("BM_PROTO_Arena", BM_Protogen_Arena);
   if (UseExplicitIterationCounts()) {
-    benchmark->Iterations(100);
+    benchmark->Iterations(10);
   }
   benchmark::RegisterBenchmark("BM_PROTO_NoArena", BM_Protogen_NoArena);
 }
