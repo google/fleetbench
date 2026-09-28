@@ -116,6 +116,7 @@ py_binary(
 py_test(
     name = "parallel_bench_lib_test",
     srcs = ["parallel_bench_lib_test.py"],
+    data = ["//fleetbench"],
     deps = [
         ":benchmark",
         ":cpu",
@@ -128,6 +129,7 @@ py_test(
         "@com_google_absl_py//absl/testing:absltest",
         "@com_google_absl_py//absl/testing:flagsaver",
         "@com_google_absl_py//absl/testing:parameterized",
+        "@rules_python//python/runfiles",
         requirement("pandas"),
     ],
 )

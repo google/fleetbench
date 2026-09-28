@@ -23,6 +23,7 @@ from absl.testing import flagsaver
 from absl.testing import parameterized
 import pandas as pd
 
+from python.runfiles import Runfiles
 from fleetbench.parallel import benchmark as bm
 from fleetbench.parallel import cpu
 from fleetbench.parallel import parallel_bench_lib
@@ -204,6 +205,211 @@ class ParallelBenchTest(parameterized.TestCase):
   def test_run_finite_work_with_benchmark_min_time_error(self):
     with self.assertRaises(ValueError):
       self.pb.Run(benchmark_min_time="2s", finite_work=True)
+
+  def test_run_benchmark_iterations_without_finite_work_raises_error(self):
+    self.pb.benchmark_iterations = {
+        "BM_HASHING_Computecrc32c_Fleet_Mixed": 6_000_000_000
+    }
+    with self.assertRaises(ValueError):
+      self.pb.Run(finite_work=False)
+
+  def test_default_finite_work_iterations_keys_match_default_benchmarks(self):
+    fleetbench_path = Runfiles.Create().Rlocation(
+        "com_google_fleetbench/fleetbench/fleetbench"
+    )
+    self.assertSameElements(
+        parallel_bench_lib.DEFAULT_FINITE_WORK_ITERATIONS.keys(),
+        bm.GetSubBenchmarks(fleetbench_path),
+    )
+
+  @parameterized.named_parameters(
+      dict(
+          testcase_name="default_hashing_iterations",
+          benchmark_name="BM_HASHING_Computecrc32c_Fleet_Mixed",
+          custom_iterations={},
+          expected_flag="--benchmark_min_time=6000000000x",
+      ),
+      dict(
+          testcase_name="custom_exact_match_above_default",
+          benchmark_name="BM_TCMALLOC_5/real_time/threads:1",
+          custom_iterations={
+              "BM_TCMALLOC_5/real_time/threads:1": 100_000_000
+          },
+          expected_flag="--benchmark_min_time=100000000x",
+      ),
+      dict(
+          testcase_name="custom_filter_match_at_default_boundary",
+          benchmark_name=(
+              "BM_SWISSMAP_InsertMiss<::absl::flat_hash_set,"
+              " 64>/set_size:64/density:0"
+          ),
+          custom_iterations={"BM_SWISSMAP_InsertMiss": 8_000_000},
+          expected_flag="--benchmark_min_time=8000000x",
+      ),
+      dict(
+          testcase_name="custom_compression_filter_match",
+          benchmark_name="BM_COMPRESSION_Snappy_COMPRESS_Fleet",
+          custom_iterations={"Snappy_COMPRESS": 2_000_000_000},
+          expected_flag="--benchmark_min_time=2000000000x",
+      ),
+  )
+  @flagsaver.flagsaver
+  def test_run_finite_work_applies_iterations(
+      self,
+      benchmark_name,
+      custom_iterations,
+      expected_flag,
+  ):
+    FLAGS.benchmark_dir = self.temp_dir.full_path
+    self.create_tempfile(os.path.join(self.temp_dir.full_path, "fake_bench"))
+    mock_get_subbenchmarks = self.enter_context(
+        mock.patch.object(bm, "GetSubBenchmarks", autospec=True, spec_set=True)
+    )
+    mock_get_subbenchmarks.return_value = [benchmark_name]
+    self.enter_context(
+        mock.patch.object(
+            parallel_bench_lib.ParallelBench,
+            "_RunSchedulingLoop",
+            autospec=True,
+            spec_set=True,
+        )
+    )
+    mock_post_process = self.enter_context(
+        mock.patch.object(
+            parallel_bench_lib.ParallelBench,
+            "PostProcessBenchmarkResults",
+            autospec=True,
+            spec_set=True,
+            return_value=({"date": "2025-02-14"}, {}),
+        )
+    )
+    self.enter_context(
+        mock.patch.object(
+            reporter,
+            "GenerateFinalReport",
+            autospec=True,
+            spec_set=True,
+            return_value=None,
+        )
+    )
+
+    self.pb.benchmark_iterations = custom_iterations
+    self.pb.SetWeights(
+        benchmark_target="fake_bench",
+        benchmark_filter=None,
+        workload_filter=None,
+        scheduling_strategy=weights.SchedulingStrategy.BM_WEIGHTED,
+        custom_benchmark_weights=None,
+    )
+
+    self.pb.Run(finite_work=True)
+
+    mock_post_process.assert_called_once()
+    benchmark_obj = self.pb.benchmarks[f"fake_bench ({benchmark_name})"]
+    self.assertIn(expected_flag, benchmark_obj.CommandLine())
+
+  @parameterized.named_parameters(
+      dict(
+          testcase_name="hashing_one_below_default",
+          benchmark_name="BM_HASHING_Combine_contiguous_Fleet_Mixed",
+          custom_count=14_999_999_999,
+          expected_default=15_000_000_000,
+      ),
+      dict(
+          testcase_name="proto_below_default",
+          benchmark_name="BM_PROTO_Arena",
+          custom_count=5,
+          expected_default=10,
+      ),
+  )
+  @flagsaver.flagsaver
+  def test_run_finite_work_smaller_than_default_logs_warning(
+      self,
+      benchmark_name,
+      custom_count,
+      expected_default,
+  ):
+    FLAGS.benchmark_dir = self.temp_dir.full_path
+    self.create_tempfile(os.path.join(self.temp_dir.full_path, "fake_bench"))
+    mock_get_subbenchmarks = self.enter_context(
+        mock.patch.object(bm, "GetSubBenchmarks", autospec=True, spec_set=True)
+    )
+    mock_get_subbenchmarks.return_value = [benchmark_name]
+    self.enter_context(
+        mock.patch.object(
+            parallel_bench_lib.ParallelBench,
+            "_RunSchedulingLoop",
+            autospec=True,
+            spec_set=True,
+        )
+    )
+    self.enter_context(
+        mock.patch.object(
+            parallel_bench_lib.ParallelBench,
+            "PostProcessBenchmarkResults",
+            autospec=True,
+            spec_set=True,
+            return_value=({"date": "2025-02-14"}, {}),
+        )
+    )
+    self.enter_context(
+        mock.patch.object(
+            reporter,
+            "GenerateFinalReport",
+            autospec=True,
+            spec_set=True,
+            return_value=None,
+        )
+    )
+
+    self.pb.benchmark_iterations = {benchmark_name: custom_count}
+    self.pb.SetWeights(
+        benchmark_target="fake_bench",
+        benchmark_filter=None,
+        workload_filter=None,
+        scheduling_strategy=weights.SchedulingStrategy.BM_WEIGHTED,
+        custom_benchmark_weights=None,
+    )
+
+    with self.assertLogs(level="WARNING") as cm:
+      self.pb.Run(finite_work=True)
+
+    expected_warning = (
+        f"Configured iteration count {custom_count} for {benchmark_name} is"
+        f" smaller than the recommended default ({expected_default})"
+    )
+    self.assertTrue(any(expected_warning in msg for msg in cm.output))
+    benchmark_obj = self.pb.benchmarks[f"fake_bench ({benchmark_name})"]
+    self.assertIn(
+        f"--benchmark_min_time={custom_count}x", benchmark_obj.CommandLine()
+    )
+
+  @parameterized.named_parameters(
+      dict(testcase_name="zero_iterations", invalid_count=0),
+      dict(testcase_name="negative_iterations", invalid_count=-10),
+  )
+  @flagsaver.flagsaver
+  def test_run_finite_work_non_positive_iterations_raises_error(
+      self, invalid_count
+  ):
+    FLAGS.benchmark_dir = self.temp_dir.full_path
+    self.create_tempfile(os.path.join(self.temp_dir.full_path, "fake_bench"))
+    mock_get_subbenchmarks = self.enter_context(
+        mock.patch.object(bm, "GetSubBenchmarks", autospec=True, spec_set=True)
+    )
+    mock_get_subbenchmarks.return_value = ["BM_PROTO_Arena"]
+
+    self.pb.benchmark_iterations = {"BM_PROTO_Arena": invalid_count}
+    self.pb.SetWeights(
+        benchmark_target="fake_bench",
+        benchmark_filter=None,
+        workload_filter=None,
+        scheduling_strategy=weights.SchedulingStrategy.BM_WEIGHTED,
+        custom_benchmark_weights=None,
+    )
+
+    with self.assertRaises(ValueError):
+      self.pb.Run(finite_work=True)
 
   def test_set_extra_benchmark_flags(self):
     self.pb.perf_counters = ["instructions"]

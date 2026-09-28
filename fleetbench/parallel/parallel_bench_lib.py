@@ -48,6 +48,38 @@ class BenchmarkMetrics:
   per_bm_run_iteration: int
 
 
+# Default iteration counts for the 17 default benchmarks in finite-work mode.
+# Short-loop benchmarks (Hashing, TCMalloc, SwissMap, Compression) use higher
+# counts than their single-threaded C++ defaults so that each parallel_bench
+# worklet achieves a ~0.8s-2.0s median loop duration across supported hardware
+# platforms and maintains a low setup-to-loop overhead ratio.
+DEFAULT_FINITE_WORK_ITERATIONS: dict[str, int] = {
+    "BM_COMPRESSION_Snappy_COMPRESS_Fleet": 1_000_000_000,
+    "BM_COMPRESSION_Snappy_DECOMPRESS_Fleet": 4_000_000_000,
+    "BM_COMPRESSION_ZSTD_COMPRESS_Fleet/compression_level:-1/window_log:15": (
+        800_000_000
+    ),
+    "BM_COMPRESSION_ZSTD_DECOMPRESS_Fleet/compression_level:0/window_log:0": (
+        1_500_000_000
+    ),
+    "BM_CORD_Fleet": 100_000,
+    "BM_HASHING_Combine_contiguous_Fleet_Mixed": 15_000_000_000,
+    "BM_HASHING_Computecrc32c_Fleet_Mixed": 6_000_000_000,
+    "BM_HASHING_Extendcrc32cinternal_Fleet_Mixed": 30_000_000_000,
+    "BM_LIBC_Bcmp_Fleet_Mixed": 200_000_000,
+    "BM_LIBC_Memcmp_Fleet_Mixed": 500_000_000,
+    "BM_LIBC_Memcpy_Fleet_Mixed": 1_000_000_000,
+    "BM_LIBC_Memmove_Fleet_Mixed": 500_000_000,
+    "BM_LIBC_Memset_Fleet_Mixed": 3_000_000_000,
+    "BM_PROTO_Arena": 10,
+    "BM_RPC_Fleet/process_time": 8_000,
+    "BM_SWISSMAP_InsertMiss<::absl::flat_hash_set, 64>/set_size:64/density:0": (
+        8_000_000
+    ),
+    "BM_TCMALLOC_5/real_time/threads:1": 80_000_000,
+}
+
+
 class ParallelBench:
   """Run Fleetbench benchmarks in parallel.
 
@@ -58,6 +90,8 @@ class ParallelBench:
       move them around.
     benchmark_weights: Whether to use adaptive benchmark selection.
     benchmark_threads: Number of threads to use for selected benchmarks.
+    benchmark_iterations: Custom iteration counts for selected benchmarks in
+      finite-work mode.
     benchmarks: List of benchmarks to run.
     target_utilization: Target utilization from 0 to 1.
     duration: How long in seconds to run for.
@@ -100,6 +134,7 @@ class ParallelBench:
       l2_size: int | None,
       l3_size: int | None,
       command_prefix: str = "",
+      benchmark_iterations: dict[str, int] | None = None,
   ):
     """Initialize the parallel benchmark runner."""
 
@@ -112,6 +147,7 @@ class ParallelBench:
     self.cpu_affinity = cpu_affinity
     self.benchmark_weights: dict[str, float] = {}
     self.benchmark_threads = benchmark_threads
+    self.benchmark_iterations = benchmark_iterations or {}
     self.benchmarks: dict[str, bm.Benchmark] = {}
     self.target_utilization = utilization * 100
     self.duration = duration
@@ -162,6 +198,35 @@ class ParallelBench:
         self.benchmarks, scheduling_strategy, custom_benchmark_weights
     )
 
+  def _GetBenchmarkIterations(self, benchmark_name: str) -> int | None:
+    """Returns the iteration count for a benchmark in finite-work mode."""
+    default_iters = DEFAULT_FINITE_WORK_ITERATIONS.get(benchmark_name)
+    custom_iters = self.benchmark_iterations.get(benchmark_name)
+    if custom_iters is None:
+      for bm_filter, iters in self.benchmark_iterations.items():
+        if bm_filter in benchmark_name:
+          custom_iters = iters
+          break
+
+    if custom_iters is not None:
+      if custom_iters <= 0:
+        raise ValueError(
+            f"Iteration count for {benchmark_name} must be positive, got"
+            f" {custom_iters}."
+        )
+      if default_iters is not None and custom_iters < default_iters:
+        logging.warning(
+            "Configured iteration count %d for %s is smaller than the "
+            "recommended default (%d); this may result in a high "
+            "setup-to-loop overhead ratio or non-steady-state measurements.",
+            custom_iters,
+            benchmark_name,
+            default_iters,
+        )
+      return custom_iters
+
+    return default_iters
+
   def _PreRun(
       self,
       benchmark_repetitions: int,
@@ -189,6 +254,12 @@ class ParallelBench:
       if repetition == 0:
         for benchmark in self.benchmarks.values():
           benchmark.AddCommandFlags(benchmark_flags)
+
+    if finite_work and repetition == 0:
+      for benchmark in self.benchmarks.values():
+        iterations = self._GetBenchmarkIterations(benchmark.BenchmarkName())
+        if iterations is not None:
+          benchmark.AddCommandFlags([f"--benchmark_min_time={iterations}x"])
 
     # Initialize the runtimes with a fake wall time. Based on empirically
     # observed runtimes, TCMalloc take 4x longer to run than others.
@@ -595,6 +666,8 @@ class ParallelBench:
       raise ValueError(
           "finite_work and benchmark_min_time cannot be used together."
       )
+    if self.benchmark_iterations and not finite_work:
+      raise ValueError("benchmark_iterations requires finite_work=True.")
     if finite_work:
       benchmark_min_time = ""
 

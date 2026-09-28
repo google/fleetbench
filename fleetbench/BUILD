@@ -90,6 +90,7 @@ cc_test(
     malloc = "@com_google_tcmalloc//tcmalloc",
     stamp = -1,
     tags = ["manual"],
+    visibility = ["//fleetbench:__subpackages__"],
     deps = [
         ":benchmark_main",
         "//fleetbench/compression:compression_benchmark_lib",

@@ -105,10 +105,6 @@ _BENCHMARK_MIN_TIME = flags.DEFINE_string(
     "Minimum time to run each benchmark. Applied to all benchmarks.",
 )
 
-# TODO: Not all default benchmarks currently configure
-# UseExplicitIterationCounts() in C++ (specifically BM_RPC_Fleet/process_time
-# and BM_SWISSMAP_InsertMiss<...>). Add C++ explicit iteration defaults for them
-# and/or support a --benchmark_iterations flag for per-benchmark CLI overrides.
 _FINITE_WORK = flags.DEFINE_bool(
     "finite_work",
     False,
@@ -176,6 +172,16 @@ _CUSTOM_BENCHMARK_THREADS = flags.DEFINE_multi_string(
     "Number of threads to use for selected benchmarks. The input should be in"
     " the format of <benchmark_name|benchmark_filter>:<n_threads>. Benchmarks"
     " for which no thread count is specified will use one thread by default.",
+)
+
+_CUSTOM_BENCHMARK_ITERATIONS = flags.DEFINE_multi_string(
+    "benchmark_iterations",
+    [],
+    "Iteration counts to use for selected benchmarks when --finite_work is"
+    " enabled. The input should be in the format of"
+    " <benchmark_name|benchmark_filter>:<iterations>. Benchmarks for which"
+    " no iteration count is specified will use the default finite-work"
+    " iteration counts.",
 )
 
 _NUM_CPUS = flags.DEFINE_integer(
@@ -246,6 +252,35 @@ def _ParseBenchmarkThreads(
   return benchmark_threads
 
 
+def _ParseBenchmarkIterations(
+    benchmark_iterations_list: list[str],
+) -> dict[str, int]:
+  """Parses a list of benchmark iteration count specs into a dictionary.
+
+  The string element in the list should be in the format:
+  <benchmark_name|benchmark_filter>:<iterations>.
+
+  Args:
+    benchmark_iterations_list: A list of strings to parse.
+
+  Returns:
+    A dictionary of {<benchmark_name|benchmark_filter>: <iterations>}.
+  """
+  benchmark_iterations = {}
+  for spec in benchmark_iterations_list:
+    try:
+      benchmark, iterations = spec.rsplit(":", maxsplit=1)
+      benchmark_iterations[benchmark] = int(iterations)
+    except ValueError:
+      logging.warning(
+          "Invalid benchmark iteration string: %s. The format should be"
+          " <benchmark_name|benchmark_filter>:<iterations>. Skipping...",
+          spec,
+      )
+
+  return benchmark_iterations
+
+
 def main(argv: Sequence[str]) -> None:
   if len(argv) > 1:
     raise app.UsageError("Too many command-line arguments.")
@@ -272,6 +307,19 @@ def main(argv: Sequence[str]) -> None:
   else:
     raise ValueError(f"Unsupported CPU architecture: {cpu_arch}")
 
+  if (
+      _FINITE_WORK.value
+      and flags.FLAGS["benchmark_min_time"].present
+      and _BENCHMARK_MIN_TIME.value
+  ):
+    raise app.UsageError(
+        "--finite_work and --benchmark_min_time cannot be used together."
+    )
+  if _CUSTOM_BENCHMARK_ITERATIONS.value and not _FINITE_WORK.value:
+    raise app.UsageError(
+        "--benchmark_iterations can only be used with --finite_work."
+    )
+
   bench = parallel_bench_lib.ParallelBench(
       cpus=cpus,
       cpu_affinity=_CPU_AFFINITY.value,
@@ -286,6 +334,9 @@ def main(argv: Sequence[str]) -> None:
       l2_size=_L2_SIZE.value,
       l3_size=_L3_SIZE.value,
       command_prefix=_COMMAND_PREFIX.value,
+      benchmark_iterations=_ParseBenchmarkIterations(
+          _CUSTOM_BENCHMARK_ITERATIONS.value
+      ),
   )
 
   bench.SetWeights(
@@ -296,14 +347,6 @@ def main(argv: Sequence[str]) -> None:
       _CUSTOM_BENCHMARK_WEIGHTS.value,
   )
 
-  if (
-      _FINITE_WORK.value
-      and flags.FLAGS["benchmark_min_time"].present
-      and _BENCHMARK_MIN_TIME.value
-  ):
-    raise app.UsageError(
-        "--finite_work and --benchmark_min_time cannot be used together."
-    )
   benchmark_min_time = "" if _FINITE_WORK.value else _BENCHMARK_MIN_TIME.value
 
   bench.Run(
