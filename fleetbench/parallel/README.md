@@ -186,6 +186,19 @@ Here's a breakdown:
     https://github.com/google/benchmark
     usage.
 
+*   `--finite_work`: (Boolean, default: False) If true, benchmarks execute a
+    fixed calibrated number of iterations instead of running for a minimum
+    duration (`--benchmark_min_time`). Cannot be used together with an
+    explicitly set `--benchmark_min_time`.
+
+*   `--benchmark_iterations`: (String, repeatable) Custom iteration counts for
+    selected benchmarks when `--finite_work` is enabled. Format:
+    `"<benchmark_name|benchmark_filter>:<iterations>"`. Benchmarks not
+    explicitly specified use their calibrated finite-work defaults.
+
+    Example: `--finite_work --benchmark_iterations="BM_PROTO_Arena:20"
+    --benchmark_iterations="HASHING:10000000000"`
+
 *   `--benchmark_perf_counters`: (String, default: "") Comma-separated list of
     perf counters to collect for each individual benchmark run such as
     `--benchmark_perf_counters=cycles,instructions`
