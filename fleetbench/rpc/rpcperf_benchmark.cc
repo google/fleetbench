@@ -31,6 +31,10 @@
 
 namespace fleetbench::rpc {
 
+// Default benchmark name and its explicit iteration count.
+constexpr absl::string_view kDefaultBenchmarkName = "BM_RPC_Fleet";
+constexpr benchmark::IterationCount kDefaultBenchmarkIterations = 8000;
+
 void BM_Rpc(benchmark::State &state, absl::string_view program) {
   // Make each benchmark repetition reproducible, if using a fixed seed.
   Random::instance().Reset();
@@ -85,8 +89,13 @@ void BM_Rpc(benchmark::State &state, absl::string_view program) {
 void RegisterBenchmarks() {
   for (const auto &[program, _] : *fleetbench::rpc::kPrograms) {
     std::string benchmark_name = absl::StrCat("BM_RPC_", program);
-    benchmark::RegisterBenchmark(benchmark_name, BM_Rpc, program)
-        ->MeasureProcessCPUTime();
+    benchmark::internal::Benchmark* benchmark =
+        benchmark::RegisterBenchmark(benchmark_name, BM_Rpc, program);
+    benchmark->MeasureProcessCPUTime();
+    if (UseExplicitIterationCounts() &&
+        benchmark_name == kDefaultBenchmarkName) {
+      benchmark->Iterations(kDefaultBenchmarkIterations);
+    }
   }
 }
 
@@ -94,7 +103,8 @@ class BenchmarkRegisterer {
  public:
   BenchmarkRegisterer() {
     DynamicRegistrar::Get()->AddCallback(RegisterBenchmarks);
-    DynamicRegistrar::Get()->AddDefaultFilter("BM_RPC_Fleet");
+    DynamicRegistrar::Get()->AddDefaultFilter(
+        std::string(kDefaultBenchmarkName));
   }
 };
 

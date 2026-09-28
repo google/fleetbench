@@ -31,6 +31,8 @@ namespace fleetbench {
 
 using ::benchmark::DoNotOptimize;
 
+constexpr benchmark::IterationCount kDefaultColdBenchmarkIterations = 2000000;
+
 // Helper function used to implement two similar benchmarks that the given input
 // key is NOT present in the set.
 template <template <class...> class SetT, size_t kValueSizeT, bool kLookup,
@@ -422,13 +424,13 @@ void RegisterColdBenchmarks() {
            density <= static_cast<int64_t>(Density::kMax); density++) {
         if (UseExplicitIterationCounts() &&
             absl::string_view(benchmark->GetName()) ==
-                "BM_SWISSMAP_InsertHit_Cold<::absl::flat_hash_set, 64>" &&
+                "BM_SWISSMAP_InsertMiss<::absl::flat_hash_set, 64>" &&
             set_size == 64 && density == static_cast<int64_t>(Density::kMin)) {
-          REGISTER_BENCHMARK_TEMPLATE(BM_SWISSMAP_InsertHit_Cold,
+          REGISTER_BENCHMARK_TEMPLATE(BM_SWISSMAP_InsertMiss,
                                       ::absl::flat_hash_set, 64)
               ->ArgNames({"set_size", "density"})
               ->Args({set_size, density})
-              ->Iterations(5000000);
+              ->Iterations(kDefaultColdBenchmarkIterations);
         } else {
           benchmark->Args({set_size, density});
         }
