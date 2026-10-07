@@ -143,6 +143,9 @@ class RunTest(absltest.TestCase):
       benchmark_dir=absltest.get_default_test_tmpdir(),
   )
   def testBenchmarkFailed(self, mock_run):
+    output_file = self.create_tempfile(
+        content='{"context": {}, "benchmarks": ['
+    )
     mock_run.side_effect = subprocess.CalledProcessError(
         returncode=1, cmd="fake_benchmark", stderr="something bad happened"
     )
@@ -154,11 +157,12 @@ class RunTest(absltest.TestCase):
 
     r = run.Run(
         benchmark=bm.Benchmark("fake_benchmark", benchmark_filter="BM_Test"),
-        out_file="fake_file",
+        out_file=output_file.full_path,
     )
     result = r.Execute()
     self.assertEqual(result.rc, 1)
     self.assertEqual(result.stderr, "something bad happened")
+    self.assertFalse(os.path.exists(output_file.full_path))
 
   @mock.patch.object(subprocess, "run", autospec=True)
   @flagsaver.flagsaver(

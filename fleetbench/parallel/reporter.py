@@ -52,16 +52,21 @@ def AggregateContext(input_dir: str) -> dict[str, Any]:
     filepath = os.path.join(input_dir, filename)
 
     with open(filepath, "r") as f:
-      data = json.load(f)
-    context = data["context"]
+      try:
+        data = json.load(f)
+        context = data["context"]
+        load_avg = context.pop("load_avg")
+      except (json.JSONDecodeError, KeyError):
+        logging.exception("Failed to parse benchmark context in %s", filepath)
+        continue
 
     if first_file:
       aggregated_data = context.copy()
       first_file = False
-      load_avg_lists.append(aggregated_data.pop("load_avg"))
+      load_avg_lists.append(load_avg)
 
     else:
-      load_avg_lists.append(context.pop("load_avg"))
+      load_avg_lists.append(load_avg)
 
       for key, value in context.items():
         if key == "date":

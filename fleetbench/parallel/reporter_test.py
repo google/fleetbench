@@ -115,6 +115,36 @@ class ReportedTest(absltest.TestCase):
         log_output.records[0].getMessage(),
     )
 
+  def test_aggregate_context_invalid_json(self):
+    data0 = {
+        "context": {
+            "date": "2025-02-14",
+            "load_avg": [1.0, 2.0, 3.0],
+            "hostname": "host1",
+        }
+    }
+    self._write_json_file(self.test_dir.create_file("run0"), data0)
+    truncated_file = self.test_dir.create_file("run1")
+    with open(truncated_file, "w") as f:
+      f.write('{"context": {"date": "2025-02-14"}, "benchmarks": [')
+
+    with self.assertLogs(level="ERROR") as log_output:
+      result = reporter.AggregateContext(self.test_dir.full_path)
+
+    self.assertLen(log_output.records, 1)
+    self.assertIn(
+        "Failed to parse benchmark context",
+        log_output.records[0].getMessage(),
+    )
+    self.assertEqual(
+        result,
+        {
+            "date": "2025-02-14",
+            "load_avg": [1.0, 2.0, 3.0],
+            "hostname": "host1",
+        },
+    )
+
   def test_aggregate_final_context_single_context(self):
     context = {
         "date": "2025-02-14",

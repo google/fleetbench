@@ -15,6 +15,7 @@
 """Runs a single benchmark and collects the results and metadata."""
 
 import json
+import os
 import shlex
 import subprocess
 import time
@@ -52,6 +53,8 @@ class Run:
       end = time.time()
     except subprocess.CalledProcessError as e:
       logging.exception("Run failed: %s (%s)", command, e.stderr)
+      if os.path.exists(self.out_file):
+        os.remove(self.out_file)
       return result.Result(
           benchmark=self.benchmark.Name(),
           rc=e.returncode,
