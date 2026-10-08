@@ -192,8 +192,8 @@ class ReportedTest(absltest.TestCase):
         },
         {
             "Benchmark": "BM_Test2",
-            "WallTimes": 4,
-            "CPUTimes": 5,
+            "WallTimes": 0.0864,
+            "CPUTimes": 0.0856,
             "Iterations": 20,
         },
         {
@@ -205,7 +205,7 @@ class ReportedTest(absltest.TestCase):
     ])
     perf_counter_df = pd.DataFrame([
         {"Benchmark": "BM_Test1", "instructions": 130.0, "cycles": 3.0},
-        {"Benchmark": "BM_Test2", "instructions": 200.0, "cycles": 2.0},
+        {"Benchmark": "BM_Test2", "instructions": 0.1234, "cycles": 0.2345},
     ])
     combined_df = reporter.GenerateBenchmarkReport(
         benchmark_df, perf_counter_df
@@ -219,23 +219,23 @@ class ReportedTest(absltest.TestCase):
             "Mean_Wall_Time": 4.5,
             "Mean_CPU_Time": 5.0,
             "Mean_Iterations": 30,
-            "Wall_Time_std": 2.121,
-            "CPU_Time_std": 2.828,
-            "Iterations_std": 28.284,
+            "Wall_Time_std": math.sqrt(4.5),
+            "CPU_Time_std": math.sqrt(8.0),
+            "Iterations_std": math.sqrt(800.0),
             "instructions": 130.0,
             "cycles": 3.0,
         },
         {
             "Benchmark": "BM_Test2",
             "Count": 1,
-            "Mean_Wall_Time": 4,
-            "Mean_CPU_Time": 5.0,
+            "Mean_Wall_Time": 0.0864,
+            "Mean_CPU_Time": 0.0856,
             "Mean_Iterations": 20,
             "Wall_Time_std": math.nan,
             "CPU_Time_std": math.nan,
             "Iterations_std": math.nan,
-            "instructions": 200.0,
-            "cycles": 2.0,
+            "instructions": 0.1234,
+            "cycles": 0.2345,
         },
     ])
     pd.testing.assert_frame_equal(combined_df, expected_df)

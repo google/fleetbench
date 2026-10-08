@@ -183,18 +183,14 @@ def GenerateBenchmarkReport(
       df["Benchmark"].astype(str).str.replace(r".* \((.*)\)", r"\1", regex=True)
   )
 
-  grouped_results = (
-      df.groupby("Benchmark")
-      .agg(
-          Count=("WallTimes", "count"),
-          Mean_Wall_Time=("WallTimes", "mean"),
-          Mean_CPU_Time=("CPUTimes", "mean"),
-          Mean_Iterations=("Iterations", "mean"),
-          Wall_Time_std=("WallTimes", "std"),
-          CPU_Time_std=("CPUTimes", "std"),
-          Iterations_std=("Iterations", "std"),
-      )
-      .round(3)
+  grouped_results = df.groupby("Benchmark").agg(
+      Count=("WallTimes", "count"),
+      Mean_Wall_Time=("WallTimes", "mean"),
+      Mean_CPU_Time=("CPUTimes", "mean"),
+      Mean_Iterations=("Iterations", "mean"),
+      Wall_Time_std=("WallTimes", "std"),
+      CPU_Time_std=("CPUTimes", "std"),
+      Iterations_std=("Iterations", "std"),
   )
   grouped_results["Mean_Iterations"] = grouped_results[
       "Mean_Iterations"

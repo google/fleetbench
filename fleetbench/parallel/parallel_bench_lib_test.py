@@ -639,9 +639,9 @@ class ParallelBenchTest(parameterized.TestCase):
     mock_data2 = {
         "benchmarks": [{
             "name": "test_benchmark2",
-            "cpu_time": 20,
-            "instructions": 200,
-            "cycles": 2,
+            "cpu_time": 0.0864,
+            "instructions": 0.1234,
+            "cycles": 0.2345,
         }]
     }
 
@@ -672,10 +672,14 @@ class ParallelBenchTest(parameterized.TestCase):
     # The first benchmark has:
     #   100 instructions and 1 cycle in run_1,
     #   160 instructions and 5 cycles in run_3.
-    # The second benchmark has 200 instructions and 2 cycles in run_2.
+    # The second benchmark has 0.1234 instructions and 0.2345 cycles in run_2.
     expected_df = pd.DataFrame([
         {"Benchmark": "test_benchmark1", "instructions": 130.0, "cycles": 3.0},
-        {"Benchmark": "test_benchmark2", "instructions": 200.0, "cycles": 2.0},
+        {
+            "Benchmark": "test_benchmark2",
+            "instructions": 0.1234,
+            "cycles": 0.2345,
+        },
     ]).set_index("Benchmark")
     pd.testing.assert_frame_equal(df, expected_df)
 
