@@ -140,7 +140,7 @@ class Worker(threading.Thread):
         self._result_q.put(task.run.Execute())
         if extra_workers and self._affinity:
           os.sched_setaffinity(threading.get_native_id(), [self.cpu])
-          for extra_worker in extra_workers:
-            extra_worker.Unblock()
+        for extra_worker in extra_workers:
+          extra_worker.Unblock()
 
     logging.debug("Worker %d exiting", self.cpu)

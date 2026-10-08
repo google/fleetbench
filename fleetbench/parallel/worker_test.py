@@ -48,6 +48,35 @@ class WorkerTest(absltest.TestCase):
     self.assertEmpty(w2.StopAndGetResults())
     mock_sched_setaffinity.assert_called()
 
+  @mock.patch.object(os, "sched_setaffinity", autospec=True)
+  def testWorkerExecutesWithExtraWorkersWithoutAffinity(
+      self, mock_sched_setaffinity
+  ):
+    w = worker.Worker(cpu=1, affinity=False)
+    w2 = worker.Worker(cpu=2, affinity=False)
+    w.start()
+    w2.start()
+
+    self.assertTrue(w2.TryBlock())
+    run = mock.MagicMock()
+    fake_result = mock.MagicMock()
+    run.Execute.return_value = fake_result
+    self.assertTrue(w.TryAddRun(run, [w2]))
+    self.assertEqual(w.StopAndGetResults(), [fake_result])
+    run.Execute.assert_called_once()
+    mock_sched_setaffinity.assert_not_called()
+
+    second_run = mock.MagicMock()
+    second_result = mock.MagicMock()
+    second_run.Execute.return_value = second_result
+    can_add_run = w2.TryAddRun(second_run, [])
+    w2_results = w2.StopAndGetResults()
+    w.join()
+    w2.join()
+    self.assertTrue(can_add_run)
+    self.assertEqual(w2_results, [second_result])
+    second_run.Execute.assert_called_once()
+
 
 if __name__ == "__main__":
   absltest.main()
