@@ -144,8 +144,10 @@ int main(int argc, char* argv[]) {
   fleetbench::DynamicRegistrar::Get()->Run();
 
   fleetbench::AddEffectiveCacheSizeToContextIfSpecified();
-  fleetbench::FleetbenchReporter display_reporter(
+  std::unique_ptr<benchmark::BenchmarkReporter> default_display_reporter(
       benchmark::CreateDefaultDisplayReporter());
+  fleetbench::FleetbenchReporter display_reporter(
+      default_display_reporter.get());
   if (!fleetbench::FindInCommandLine("--benchmark_out=")) {
     benchmark::RunSpecifiedBenchmarks(&display_reporter);
   } else {
