@@ -65,6 +65,10 @@ BROTLI_DECOMPRESS_COMPRESSION_LEVEL = [2]
 # the fleet mostly uses size 18.
 BROTLI_WINDOW_SIZE = [18]
 
+# Consecutive rejected draws before call sizes are capped to what the dataset
+# can provide.
+_MAX_CONSECUTIVE_FAILURES = 1000
+
 
 @dataclasses.dataclass(frozen=True)
 class CorpusChunk:
@@ -113,6 +117,7 @@ class CorpusChunkManager:
     self.binary = binary
     self.dataset_dir = dataset_dir
     self.chunk_size = chunk_size
+    self.total_dataset_bytes = 0
     self.max_ratio_lookup = collections.defaultdict(dict)
     self.lookup_table = collections.defaultdict(dict)
 
@@ -254,15 +259,14 @@ class CorpusChunkManager:
           )
       return lookup_table
 
+    self.total_dataset_bytes = chunk_id * self.chunk_size
     self.lookup_table = create_lookup_table()
 
   def compute_compression_ratio(self, chunk_array, compression_level=None):
     """Calculate compression ratio when concatenating all chunks in the array."""
     if not chunk_array:
       return -1
-    uncompressed_data = bytes()
-    for chunk in chunk_array:
-      uncompressed_data += chunk.data
+    uncompressed_data = b"".join(chunk.data for chunk in chunk_array)
 
     if self.algorithm == "Snappy":
       compressed_data = self.compress_function(uncompressed_data)  # pyrefly: ignore[missing-argument]
@@ -310,6 +314,10 @@ class CorpusChunkManager:
     # to get the desired call size. Comparing final vs. target compression
     # ratio, we confirm doing so won't hurt the performance.
     if target_call_size < 1024:
+      if not (
+          0 <= current_compression_ratio_index < max_compression_ratio_index
+      ):
+        return None
       chunk_list = self.lookup_table[parameters][
           current_compression_ratio_index
       ]
@@ -326,6 +334,10 @@ class CorpusChunkManager:
       )
       output_chunk_array.append(corpus_chunk)
       return output_chunk_array
+
+    # The dataset cannot provide more bytes than it has.
+    if 0 < self.total_dataset_bytes < target_call_size:
+      return None
 
     for call_size in range(0, int(target_call_size), self.chunk_size):
       # Periodically evaluate generated file so far, and adjust ratio if it's
@@ -390,6 +402,74 @@ class CorpusChunkManager:
 
     return output_chunk_array
 
+  def _create_capped_chunk_array(
+      self, target_call_size, target_compression_ratio, parameters
+  ):
+    """Selects chunks for the largest achievable power-of-2 call size.
+
+    `create_chunk_array` walks the lookup table from the target ratio bucket
+    downwards, so the bytes it can collect are bounded by the chunks in buckets
+    at or below the target ratio. This caps the call size at that bound (and at
+    the target), snapping to the nearest non-empty ratio bucket when no chunk is
+    at or below the target ratio, and halves the size until a selection
+    succeeds.
+
+    Args:
+      target_call_size: the sampled call size in bytes.
+      target_compression_ratio: the sampled compression ratio.
+      parameters: the sampled CompressionParameters.
+
+    Returns:
+      A list of chunks, or None if no selection of at least one chunk exists.
+    """
+    lookup_lists = self.lookup_table[parameters]
+    nonempty_indices = [i for i, chunks in enumerate(lookup_lists) if chunks]
+    if not nonempty_indices:
+      raise RuntimeError("No corpus chunks available in dataset.")
+
+    ratio_idx = min(
+        max(0, int(target_compression_ratio * 10)), len(lookup_lists) - 1
+    )
+
+    def snap_to_nearest_nonempty_ratio():
+      nearest_idx = min(nonempty_indices, key=lambda i: abs(i - ratio_idx))
+      # Use the bucket midpoint so int(ratio * 10) maps back to nearest_idx
+      # despite floating-point rounding.
+      return nearest_idx, (nearest_idx + 0.5) / 10.0
+
+    if target_call_size < self.chunk_size:
+      chunks = self.create_chunk_array(
+          target_call_size, target_compression_ratio, parameters
+      )
+      if chunks:
+        return chunks
+      _, nearest_ratio = snap_to_nearest_nonempty_ratio()
+      return self.create_chunk_array(
+          target_call_size, nearest_ratio, parameters
+      )
+
+    available_bytes = (
+        sum(len(lookup_lists[i]) for i in range(ratio_idx + 1))
+        * self.chunk_size
+    )
+    if available_bytes < self.chunk_size:
+      ratio_idx, target_compression_ratio = snap_to_nearest_nonempty_ratio()
+      available_bytes = (
+          sum(len(lookup_lists[i]) for i in range(ratio_idx + 1))
+          * self.chunk_size
+      )
+
+    max_bytes = min(int(target_call_size), available_bytes)
+    capped_size = 1 << (max_bytes.bit_length() - 1)
+    while capped_size >= self.chunk_size:
+      chunks = self.create_chunk_array(
+          capped_size, target_compression_ratio, parameters
+      )
+      if chunks:
+        return chunks
+      capped_size //= 2
+    return None
+
   def sample_parameters(self, distribution):
     """Sampled compression parameters from input distribution."""
     sampled_parameters = distribution.sample_child_counts()
@@ -453,7 +533,7 @@ class CorpusChunkManager:
         )
     return parameters, target_call_size, target_compression_ratio
 
-  def generate_benchmark_corpus(self, distribution):
+  def generate_benchmark_corpus(self, distribution, cap_call_size=False):
     """Generate fleet-representative corpus.
 
     We sample a set of target compression parameters from distributions, and
@@ -461,6 +541,8 @@ class CorpusChunkManager:
     obtained compression parameters should be similar to the sampled ones.
     Args:
       distribution: the parameters distribution
+      cap_call_size: whether to cap the sampled call size at what the dataset
+        can provide for the sampled parameters.
 
     Returns:
       A synthesized string that is composed by several 1KiB chunks, and
@@ -480,19 +562,20 @@ class CorpusChunkManager:
       )
       target_compression_ratio = max_ratio
 
-    output_chunks_array = self.create_chunk_array(
-        target_call_size, target_compression_ratio, parameters
-    )
+    if cap_call_size:
+      output_chunks_array = self._create_capped_chunk_array(
+          target_call_size, target_compression_ratio, parameters
+      )
+    else:
+      output_chunks_array = self.create_chunk_array(
+          target_call_size, target_compression_ratio, parameters
+      )
 
     if not output_chunks_array:
       return None
 
     # Get final corpus and compute final compression ratio
-    result = bytes()
-    for chunk in output_chunks_array:
-      result += chunk.data
-
-    random.shuffle(list(result))
+    result = b"".join(chunk.data for chunk in output_chunks_array)
 
     if self.algorithm == "Snappy":
       compressed_data = self.compress_function(result)  # pyrefly: ignore[missing-argument]
@@ -543,10 +626,34 @@ class CorpusChunkManager:
       os.makedirs(file_directory)
 
     benchmark_id = 0
+    consecutive_failures = 0
+    # Once no draw has succeeded within _MAX_CONSECUTIVE_FAILURES, the
+    # distribution is treated as infeasible and every draw is capped. Otherwise
+    # only the draw after a failure streak is capped, so mixed distributions
+    # keep rejection sampling.
+    cap_all = False
     while benchmark_id < benchmark_nums:
-      result = self.generate_benchmark_corpus(distribution)
+      cap = cap_all or consecutive_failures >= _MAX_CONSECUTIVE_FAILURES
+      result = self.generate_benchmark_corpus(distribution, cap_call_size=cap)
       if result is None:
+        consecutive_failures += 1
+        if (
+            not cap_all
+            and benchmark_id == 0
+            and consecutive_failures >= _MAX_CONSECUTIVE_FAILURES
+        ):
+          logging.warning(
+              "No feasible sample for %s %s %s after %d consecutive draws"
+              " (dataset %d bytes); capping call sizes to dataset capacity.",
+              self.algorithm,
+              self.operation,
+              name,
+              consecutive_failures,
+              self.total_dataset_bytes,
+          )
+          cap_all = True
         continue
+      consecutive_failures = 0
       relative_filename = f"corpus_{benchmark_id}"
       filename = os.path.join(file_directory, relative_filename)
       with open(filename, "wb") as f:

@@ -39,6 +39,15 @@ DATASET_DIR = (
 )
 
 
+class _StubDistribution:
+
+  def __init__(self, samples):
+    self._samples = iter(samples)
+
+  def sample_child_counts(self):
+    return next(self._samples)
+
+
 class CorpusGeneratorTest(absltest.TestCase):
 
   def test_generate_chunks_snappy_simple(self):
@@ -264,6 +273,59 @@ class CorpusGeneratorTest(absltest.TestCase):
     )
     self.assertLen(output_list, 1)
     self.assertLen(output_list[0].data, target_call_size)
+
+  def test_generate_benchmarks_caps_oversized_high_ratio(self):
+    manager = corpus_generator.CorpusChunkManager(
+        "Brotli", "COMPRESS", DATASETS_TEST_SIMPLE, "A"
+    )
+    oversized = {
+        "call_size": 27.0,
+        "compression_level": 4.0,
+        "compression_ratio": 14.2,
+    }
+    output_dir = self.create_tempdir().full_path
+    with self.assertLogs(level="WARNING") as logs:
+      manager.generate_benchmarks(
+          _StubDistribution([oversized] * 1002), 2, "A", output_dir
+      )
+    self.assertLen(logs.output, 1)
+    out = os.path.join(output_dir, "Brotli_COMPRESS_A")
+    sizes = {f: os.path.getsize(os.path.join(out, f)) for f in os.listdir(out)}
+    self.assertEqual(sizes, {"corpus_0": 2**17, "corpus_1": 2**17})
+
+  def test_generate_benchmarks_terminates_for_oversized_sparse_low_ratio(self):
+    manager = corpus_generator.CorpusChunkManager(
+        "Snappy", "COMPRESS", DATASETS_TEST_SIMPLE, "A"
+    )
+    sparse = {"call_size": 27.0, "compression_ratio": 1.2}
+    output_dir = self.create_tempdir().full_path
+    with self.assertLogs(level="WARNING"):
+      manager.generate_benchmarks(
+          _StubDistribution([sparse] * 1002), 2, "A", output_dir
+      )
+    out = os.path.join(output_dir, "Snappy_COMPRESS_A")
+    for name in ("corpus_0", "corpus_1"):
+      size = os.path.getsize(os.path.join(out, name))
+      self.assertBetween(size, manager.chunk_size, 2**17)
+      self.assertEqual(size & (size - 1), 0)
+
+  def test_generate_benchmarks_preserves_rejection_for_mixed_distribution(self):
+    manager = corpus_generator.CorpusChunkManager(
+        "Snappy", "COMPRESS", DATASETS_TEST_SIMPLE, "A"
+    )
+    oversized = {"call_size": 27.0, "compression_ratio": 1.6}
+    feasible = {"call_size": 10.0, "compression_ratio": 1.6}
+    samples = [oversized] * 600 + [feasible] + [oversized] * 1001 + [feasible]
+    output_dir = self.create_tempdir().full_path
+    with self.assertNoLogs(level="WARNING"):
+      manager.generate_benchmarks(
+          _StubDistribution(samples), 3, "A", output_dir
+      )
+    out = os.path.join(output_dir, "Snappy_COMPRESS_A")
+    sizes = {f: os.path.getsize(os.path.join(out, f)) for f in os.listdir(out)}
+    self.assertEqual(
+        sizes, {"corpus_0": 2**10, "corpus_1": 2**17, "corpus_2": 2**10}
+    )
 
 
 if __name__ == "__main__":
