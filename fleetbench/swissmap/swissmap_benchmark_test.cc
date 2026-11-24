@@ -16,10 +16,28 @@
 
 #include "fleetbench/swissmap/swissmap_benchmark.h"
 
+#include <cstddef>
+#include <cstdint>
+
 #include "gtest/gtest.h"
 #include "absl/container/flat_hash_set.h"
 
 namespace fleetbench {
+
+TEST(SwissmapBenchmarkTest, HashEntropy) {
+  constexpr size_t kExpectedVaryingBits =
+      (~size_t{0} << (sizeof(size_t) * 8 - 30)) | ((size_t{1} << 30) - 1);
+  for (uint32_t (*gen)() : {&RandomExistent, &RandomNonexistent}) {
+    size_t seen_ones = 0;
+    size_t seen_zeros = 0;
+    for (int i = 0; i < 1000; ++i) {
+      const size_t h = Hash{}(gen());
+      seen_ones |= h;
+      seen_zeros |= ~h;
+    }
+    EXPECT_EQ(seen_ones & seen_zeros, kExpectedVaryingBits);
+  }
+}
 
 TEST(SwissmapBenchmarkTest, Density) {
   auto set1 = GenerateSet<absl::flat_hash_set<Value<4>, Hash, Eq>>(

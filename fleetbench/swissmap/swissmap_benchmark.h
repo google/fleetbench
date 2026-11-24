@@ -358,10 +358,13 @@ class alignas(kSize < 8 ? 4 : 8) Value : private Ballast<kSize - 4> {
 
 // Use a low cost hash function. The purpose of this benchmark is to focus on
 // the implementations of the containers, not the quality or speed of their hash
-// functions. We can't use identity hash function with random 32-bit keys
-// because then the high bits of the hashes would be always 0.
+// functions. `RandomExistent()` and `RandomNonexistent()` only randomize the
+// low 30 bits of the keys (bits 30 and 31 are fixed), so shift those 30 random
+// bits to the top of `size_t` instead of leaving the high bits constant.
 struct Hash {
-  size_t operator()(size_t x) const { return x ^ (x << 32); }
+  size_t operator()(size_t x) const {
+    return x ^ (x << (sizeof(size_t) * 8 - 30));
+  }
 };
 
 struct Eq {
